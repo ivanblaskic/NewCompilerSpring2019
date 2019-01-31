@@ -53,13 +53,13 @@
 		- use syntax that looks nice
 	13) + write a dozen test R1 programs
 	14) + extend your interpreter from R0 to R1
-	15) ? extend your random generation function from R0 to R1
+	15) + extend your random generation function from R0 to R1
 		- have the env that records which variables are bound by prior lets 
 		  and allow these variables to be used in depth-0 expressions
-		- if none are yet defined --> 2 options: have one initial x w value
-												 or do read or random #
-	16) ? write some R1-specific optimizer test
-	17) ? extend your optimizer from R0 to R1
+		- if none are yet defined --> 2 options: have one initial x w value or do read or random #
+
+	16) ... write some R1-specific optimizer test
+	17) ... extend your optimizer from R0 to R1
 		- you should inline variables that have been reduced to values or other variables
 
 	18) ! define data types for X0 program ASTs
@@ -84,6 +84,7 @@
 		- create intermediate file containing the assembly on disk - you can look at assembly 
 		  you producing during compilation in the future 
 		- automatically compare results of assembled program and your interpreter
+
 	23) ! define data types for C0 program ASTs
 		- var = ...
 		- label = ...
@@ -162,10 +163,16 @@ ExpR0* R();
 
 ExpR0* I(int _value);
 
+static int number_counter;
+
 class NumR0 : public ExpR0 {
 public:
 	NumR0(int _value) {
 		this->value = _value;
+	}
+	NumR0() {
+		this->value = number_counter;
+		number_counter++;
 	}
 	int eval(list<pair<std::string, int>> *_info) {
 		return this->value;
@@ -491,6 +498,10 @@ ExpR0* N(ExpR0* e) {
 	return new NegR0(e);
 }
 
+ExpR0* I() {
+	return new NumR0();
+}
+
 ExpR0* R() {
 	return new ReadR0();
 }
@@ -526,7 +537,13 @@ ExpR0* onNth(int m) {
 	if (m < 0) cout << "Error calling function onNth: m < 0\n";
 }
 
-/*
+/* 15) ? extend your random generation function from R0 to R1
+- have the env that records which variables are bound by prior lets
+and allow these variables to be used in depth - 0 expressions
+- if none are yet defined-- > 2 options: have one initial x w value
+or do read or random #
+*/
+// 
 ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	(*_info).push_back(std::make_pair("x", 10));
 	if (n == 0) {
@@ -536,11 +553,12 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 			return R();
 		}
 		else if((temp_1 % 3) == 1) {
-			mode = Automated;
-			return R();
+			return I();
 		}
 		else {
-			return V("x");
+			pair<std::string, int> *temp_pair = new pair<std::string, int>();
+			*temp_pair = (_info)->back();
+			return V(temp_pair->first);
 		}
 	}
 	else {
@@ -556,7 +574,6 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		}
 	}
 }
-*/
 
 // -----------------------------------------------------------------------------------------------------------
 //				-	-	-----			-------	----- -   - -----

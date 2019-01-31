@@ -45,10 +45,11 @@ int main() {
 	system("Pause");
 	*/
 
+	/*
 	// optimization test
 	mode = Interactive;
 
-	/* success * 3+
+	// success * 3+
 	// program 4 definition
 	// (+ [read] [+ (+ [10] [-(7)]) (+ [14] [read])]) = (+ read [+ 3 (+ 14 read)]) = (+ 17 (+ read read)) 
 	ExpR0 *test_suite4 = A(R(), A(A(I(10), N(I(7))), A(I(14), R())));
@@ -100,16 +101,24 @@ int main() {
 	cout << test_program_onNth->prnt() << " = " << test_program_onNth->intrp();
 	cout << "\n\n";
 	system("Pause");
+	*/
 
+	// L ( [x (L[(x L[(x (+ x (read))) (-[read])]) (+ [-(read)] [Let([x read] [read])])])] 
+	//		[Let([x (+ [+ (read) (read)] [Let ([x x] [x])])] [+ (-[read]) (+ [read] [x])])]) = 20
+	// 
 	// function randP test
+	mode = Interactive;
+	list<pair<std::string, int>> *info = new list<pair<std::string, int>>();
+
 	int n_test = 4;
-	for (int i = 1; i < 100; ++i) {
-		ProgR0 *test_program_randP = new ProgR0(NULL, randP(n_test));
+	for (int i = 1; i < 2; ++i) {
+		ProgR0 *test_program_randP = new ProgR0(info, randP(info,n_test));
 		cout << test_program_randP->prnt() << " = " << test_program_randP->intrp();
 		cout << "\n\n";
 		system("Pause");
 	}
 
+	/*
 	// program 1 definition
 	// (+ [-(5) (+ [read] 10)]) = (-5) + (10 + read) = 5 + read
 	mode = Interactive;
