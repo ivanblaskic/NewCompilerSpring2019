@@ -2,21 +2,22 @@
 Compiler Written in C++ for Jay to Review
 
 # ToDoList 26 for Saturday and Sunday
-Define data types for R0 program ASTs.
-Write a pretty-printer for R0 programs.
-Build a test suite of a dozen R0 programs.
-Write an interpreter for R0 programs.
-Write a function that generates an R0 program that computes 2^N for a given N.
-Write a function that generates a random R0 program of depth N.
-Extend your test suite to generate a large number of random programs.
-Write some optimizer tests.
-Write an optimizer for R0.
-Extend your test suite to use your optimizer.
-Extend your data types from R0 to R1.
-Extend your pretty printer from R0 to R1.
-Write a dozen test R1 programs.
-Extend your interpreter from R0 to R1.
-Extend your random generation function from R0 to R1.
++ Define data types for R0 program ASTs.
++ Write a pretty-printer for R0 programs.
++ Build a test suite of a dozen R0 programs.
++ Write an interpreter for R0 programs.
++ Write a function that generates an R0 program that computes 2^N for a given N.
++ Write a function that generates a random R0 program of depth N.
++ Extend your test suite to generate a large number of random programs.
++ Write some optimizer tests.
++ Write an optimizer for R0.
++ Extend your test suite to use your optimizer.
++ Extend your data types from R0 to R1.
++ Extend your pretty printer from R0 to R1.
++ Write a dozen test R1 programs.
++ Extend your interpreter from R0 to R1.
++ Extend your random generation function from R0 to R1. 
+--> January 31st, 10:48am
 Write some R1-specific optimizer tests.
 Extend your optimizer from R0 to R1.
 Define data types for X0 program ASTs.
