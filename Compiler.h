@@ -57,9 +57,7 @@
 		- have the env that records which variables are bound by prior lets 
 		  and allow these variables to be used in depth-0 expressions
 		- if none are yet defined --> 2 options: have one initial x w value or do read or random #
-
-	16) 1/... write some R1-specific optimizer test
-
+	16) + write some R1-specific optimizer test
 	17) + extend your optimizer from R0 to R1
 		- you should inline variables that have been reduced to values or other variables
 
@@ -152,7 +150,7 @@ public:
 	int virtual eval(list<pair<string, int>> *_info) = 0;
 	virtual string toString() = 0;
 	bool virtual simpleExp() = 0;
-	virtual ExpR0* opt(list<pair<std::string, int>> *_info) = 0;
+	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) = 0;
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
@@ -192,7 +190,7 @@ public:
 	bool simpleExp() {
 		return true;
 	} 
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
 		return this;
 	}
 	int retVal() {
@@ -237,7 +235,7 @@ public:
 	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
 		return this;
 	}
 	bool isNum() {
@@ -269,7 +267,7 @@ public:
 	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
 		lexp = lexp->opt(_info);
 		rexp = rexp->opt(_info);
 		if (lexp->isNum() && rexp->isNum()) {
@@ -354,7 +352,7 @@ public:
 	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
 		exp = exp->opt(_info);
 		if (exp->isNum()) {
 			NumR0* num = dynamic_cast<NumR0*>(exp);
@@ -425,11 +423,11 @@ public:
 	bool simpleExp() {
 		return true;
 	}
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
-		std::list<pair<std::string, int>>::iterator it;
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
+		std::list<pair<std::string, ExpR0*>>::iterator it;
 		for (it = (*_info).begin(); it != (*_info).end(); ++it) {
 			if ((*it).first == this->name) {
-				return I((*it).second);
+				return (*it).second;
 			}
 		}
 		cout << "Uninitialized Variable Used: " << this->name << "\n\n";
@@ -449,7 +447,8 @@ private:
 	list<pair<string, int>> *info;
 };
 
-// gotta figure out all 4 optimization functions for let and var
+// kad je variabla ista koristena tada brises u novom environmentu staru vrijednost
+// testiraj kad je variabla x_exp
 class LetR0 : public ExpR0 {
 public:
 	LetR0(VarR0 *_variable, ExpR0 *_x_exp, ExpR0 *_b_exp) {
@@ -480,21 +479,31 @@ public:
 	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt(list<pair<std::string, int>> *_info) {
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
 		ExpR0 *x_expO = this->x_exp->opt(_info);
+		list<pair<string, ExpR0*>> *new_info = new list<pair<string, ExpR0*>>();
+		*new_info = *_info;
+		std::list<pair<std::string, ExpR0*>>::iterator it;
 		if (x_expO->simpleExp()) {
-			std::list<pair<std::string, int>>::iterator it;
-			NumR0* tmp_num = dynamic_cast<NumR0*>(x_expO);
-			for (it = (*_info).begin(); it != (*_info).end(); ++it) {
+			// NumR0* tmp_num = dynamic_cast<NumR0*>(x_expO);
+			for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
 				if ((*it).first == variable->toString()) {
-					(*it).second = tmp_num->retVal();
+					(*it).second = x_expO;
+					return this->b_exp->opt(new_info);
 				}
 			}
-			(*_info).push_back(std::make_pair(this->variable->toString(), tmp_num->retVal()));
-			return this->b_exp->opt(_info);
+			(*new_info).push_back(std::make_pair(this->variable->toString(), x_expO));
+			return this->b_exp->opt(new_info);
 		}
 		else {
-			return L(V(this->variable->toString()), x_expO, b_exp->opt(_info));
+			for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
+				if ((*it).first == this->variable->toString()) {
+					(*it).second = V(this->variable->toString());
+					return L(V(this->variable->toString()), x_expO, b_exp->opt(new_info));
+				}
+			}
+			(*new_info).push_back(std::make_pair(this->variable->toString(), V(this->variable->toString())));
+			return L(V(this->variable->toString()), x_expO, b_exp->opt(new_info));
 		}
 	}
 	bool isNum() {
@@ -553,7 +562,7 @@ public:
 	string prnt() {
 		return code->toString();
 	}
-	ExpR0* optmz(list<pair<std::string, int>> *_info) {
+	ExpR0* optmz(list<pair<std::string, ExpR0*>> *_info) {
 		return code->opt(_info);
 	}
 private:
@@ -567,13 +576,6 @@ ExpR0* onNth(int m) {
 	if (m < 0) cout << "Error calling function onNth: m < 0\n";
 }
 
-/* 15) ? extend your random generation function from R0 to R1
-- have the env that records which variables are bound by prior lets
-and allow these variables to be used in depth - 0 expressions
-- if none are yet defined-- > 2 options: have one initial x w value
-or do read or random #
-*/
-// 
 ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	(*_info).push_back(std::make_pair("x", 10));
 	if (n == 0) {

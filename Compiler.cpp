@@ -12,18 +12,59 @@ int main() {
 
 	mode = Interactive;
 
+	/* 
 	// R1 optimization test_suite
+	// success * 5
 	// Let([X 5] Let([Y 95] X+Y)) = 100
-	ExpR0 *te_2 = L(V("x"), I(5), L(V("y"), I(95), A(V("x"), V("y"))));
-
+	ExpR0 *te_1 = L(V("x"), I(5), L(V("y"), I(95), A(V("x"), V("y"))));
 	cout << "is it 100?" << "\n";
-	cout << te_2->toString() << " = " << te_2->eval(new list<pair<string, int>>());
+	cout << te_1->toString() << " = " << te_1->eval(new list<pair<string, int>>());
 	cout << "\n\n";
-	ExpR0 *test_suite6_opt = te_2->opt(new list<pair<string, int>>());
-	cout << test_suite6_opt->toString() << " = " << test_suite6_opt->eval(new list<pair<string, int>>());
+	ExpR0 *test_suite1_opt = te_1->opt(new list<pair<string, ExpR0*>>());
+	cout << test_suite1_opt->toString() << " = " << test_suite1_opt->eval(new list<pair<string, int>>());
 	cout << "\n\n";
 	system("Pause");
 
+	// Add([Neg(Let ([X 10] X+100))] [Add(Let([X 5] Let([Y 6] Let([Z X+Y] Z))), 100)]) = -110 + 100 + 11 = 1 
+	ExpR0 *te_2 = A(N(L(V("x"), I(10), A(V("x"), I(100)))), A(L(V("x"), I(5), L(V("y"), I(6), L(V("z"), A(V("x"), V("y")), V("z")))), I(100)));
+	cout << "is it 1?" << "\n";
+	cout << te_2->toString() << " = " << te_2->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	ExpR0 *test_suite2_opt = te_2->opt(new list<pair<string, ExpR0*>>());
+	cout << test_suite2_opt->toString() << " = " << test_suite2_opt->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	system("Pause");
+
+	// (-[+ (let [(x [+ 21 14]) (+ x 14)]) (-[let ([y 10] [+ (y) -(100)])])]) = -139
+	ExpR0 *te_3 = N(A(L(V("x"), A(I(21), I(14)), A(V("x"), (I(14)))), (N(L(V("y"), I(10), A(V("y"), N(I(100))))))));
+	cout << "is it -139?" << "\n";
+	cout << te_3->toString() << " = " << te_3->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	ExpR0 *test_suite3_opt = te_3->opt(new list<pair<string, ExpR0*>>());
+	cout << test_suite3_opt->toString() << " = " << test_suite3_opt->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	system("Pause");
+
+	//  let([x 5][(let [(x [read]) (x+5)]]) = (read) + 10
+	ExpR0 *te_4 = L(V("x"),I(5),L(V("x"), R(), A(V("x"), I(5))));
+	cout << "is it read + 5?" << "\n";
+	cout << te_4->toString() << " = " << te_4->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	ExpR0 *test_suite4_opt = te_4->opt(new list<pair<string, ExpR0*>>());
+	cout << test_suite4_opt->toString() << " = " << test_suite4_opt->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	system("Pause");
+
+	//  let([x 5][(let [(y x) (y+5)]]) = 10
+	ExpR0 *te_5 = L(V("x"), I(5), L(V("y"), V("x"), A(V("y"), I(5))));
+	cout << "is it 10?" << "\n";
+	cout << te_5->toString() << " = " << te_5->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	ExpR0 *test_suite5_opt = te_5->opt(new list<pair<string, ExpR0*>>());
+	cout << test_suite5_opt->toString() << " = " << test_suite5_opt->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	system("Pause");
+	*/
 
 	/*
 	// R1 test_suite
