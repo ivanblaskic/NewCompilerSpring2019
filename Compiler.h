@@ -58,8 +58,9 @@
 		  and allow these variables to be used in depth-0 expressions
 		- if none are yet defined --> 2 options: have one initial x w value or do read or random #
 
-	16) ... write some R1-specific optimizer test
-	17) ... extend your optimizer from R0 to R1
+	16) 1/... write some R1-specific optimizer test
+
+	17) + extend your optimizer from R0 to R1
 		- you should inline variables that have been reduced to values or other variables
 
 	18) ! define data types for X0 program ASTs
@@ -144,12 +145,14 @@ static Mode mode = Interactive;
 
 enum Operation {Add, Neg, Read, Num};
 
+class VarR0;
+
 class ExpR0 {
 public:
 	int virtual eval(list<pair<string, int>> *_info) = 0;
 	virtual string toString() = 0;
-	bool virtual simpleExp(ExpR0* _exp) = 0;
-	virtual ExpR0* opt() = 0;
+	bool virtual simpleExp() = 0;
+	virtual ExpR0* opt(list<pair<std::string, int>> *_info) = 0;
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
@@ -162,6 +165,12 @@ ExpR0* N(ExpR0* e);
 ExpR0* R();
 
 ExpR0* I(int _value);
+
+ExpR0* I();
+
+VarR0* V(string x);
+
+ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
@@ -180,10 +189,10 @@ public:
 	string toString() {
 		return to_string(this->value);
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return true;
 	} 
-	ExpR0* opt() {
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
 		return this;
 	}
 	int retVal() {
@@ -225,10 +234,10 @@ public:
 			return to_string(this->value);
 		}
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt() {
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
 		return this;
 	}
 	bool isNum() {
@@ -257,12 +266,12 @@ public:
 	string toString() {
 		return "(+ " + this->lexp->toString() + " " + this->rexp->toString() + ")";
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt() {
-		lexp = lexp->opt();
-		rexp = rexp->opt();
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
+		lexp = lexp->opt(_info);
+		rexp = rexp->opt(_info);
 		if (lexp->isNum() && rexp->isNum()) {
 			NumR0* lnum = dynamic_cast<NumR0*>(lexp);
 			NumR0* rnum = dynamic_cast<NumR0*>(rexp);
@@ -342,11 +351,11 @@ public:
 	string toString() {
 		return "(- " + this->exp->toString() + ")";
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt() {
-		exp = exp->opt();
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
+		exp = exp->opt(_info);
 		if (exp->isNum()) {
 			NumR0* num = dynamic_cast<NumR0*>(exp);
 			return (I(-1 * num->retVal()));
@@ -413,10 +422,17 @@ public:
 	string toString() {
 		return name;
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return true;
 	}
-	ExpR0* opt() {
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = (*_info).begin(); it != (*_info).end(); ++it) {
+			if ((*it).first == this->name) {
+				return I((*it).second);
+			}
+		}
+		cout << "Uninitialized Variable Used: " << this->name << "\n\n";
 		return this;
 	}
 	bool isNum() {
@@ -461,11 +477,25 @@ public:
 	string toString() {
 		return "Let[(" + this->variable->toString() + " " + this->x_exp->toString() + ") " + this->b_exp->toString() + "]";
 	}
-	bool simpleExp(ExpR0* _exp) {
+	bool simpleExp() {
 		return false;
 	}
-	ExpR0* opt() {
-		return this;
+	ExpR0* opt(list<pair<std::string, int>> *_info) {
+		ExpR0 *x_expO = this->x_exp->opt(_info);
+		if (x_expO->simpleExp()) {
+			std::list<pair<std::string, int>>::iterator it;
+			NumR0* tmp_num = dynamic_cast<NumR0*>(x_expO);
+			for (it = (*_info).begin(); it != (*_info).end(); ++it) {
+				if ((*it).first == variable->toString()) {
+					(*it).second = tmp_num->retVal();
+				}
+			}
+			(*_info).push_back(std::make_pair(this->variable->toString(), tmp_num->retVal()));
+			return this->b_exp->opt(_info);
+		}
+		else {
+			return L(V(this->variable->toString()), x_expO, b_exp->opt(_info));
+		}
 	}
 	bool isNum() {
 		return false;
@@ -523,8 +553,8 @@ public:
 	string prnt() {
 		return code->toString();
 	}
-	ExpR0* optmz() {
-		return code->opt();
+	ExpR0* optmz(list<pair<std::string, int>> *_info) {
+		return code->opt(_info);
 	}
 private:
 	list<pair<string, int>> *info;

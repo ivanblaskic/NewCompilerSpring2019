@@ -10,6 +10,21 @@ int main() {
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
+	mode = Interactive;
+
+	// R1 optimization test_suite
+	// Let([X 5] Let([Y 95] X+Y)) = 100
+	ExpR0 *te_2 = L(V("x"), I(5), L(V("y"), I(95), A(V("x"), V("y"))));
+
+	cout << "is it 100?" << "\n";
+	cout << te_2->toString() << " = " << te_2->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	ExpR0 *test_suite6_opt = te_2->opt(new list<pair<string, int>>());
+	cout << test_suite6_opt->toString() << " = " << test_suite6_opt->eval(new list<pair<string, int>>());
+	cout << "\n\n";
+	system("Pause");
+
+
 	/*
 	// R1 test_suite
 	// success * 12
@@ -103,6 +118,8 @@ int main() {
 	system("Pause");
 	*/
 
+	/* 
+	// randP function for R1 successfully tested
 	// L ( [x (L[(x L[(x (+ x (read))) (-[read])]) (+ [-(read)] [Let([x read] [read])])])] 
 	//		[Let([x (+ [+ (read) (read)] [Let ([x x] [x])])] [+ (-[read]) (+ [read] [x])])]) = 20
 	// 
@@ -117,6 +134,7 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 	}
+	*/
 
 	/*
 	// program 1 definition
