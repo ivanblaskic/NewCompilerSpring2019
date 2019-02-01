@@ -33,6 +33,8 @@ Compiler Written in C++ for Jay to Review
 - Write an interpreter for C0 programs.
 - Write a few tests for uniquify that predict its output.
 - 
+- 3
+- 
 - Implement the uniquify pass for R1 programs.
 - Connect uniquify to your test suite.
 - Write a half-dozen tests for resolve-complex that predict its output.
@@ -47,6 +49,9 @@ Compiler Written in C++ for Jay to Review
 - Write a half-dozen tests for select-instr that predict its output.
 - Implement the select-instr pass for C0 programs.
 - Connect select-instr to your test suite.
+- 
+- 4
+- 
 - Write a few tests for assign-homes that predict its output.
 - Implement the assign-homes pass for X0 programs.
 - Connect assign-homes to your test suite.
