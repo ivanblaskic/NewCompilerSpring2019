@@ -10,7 +10,7 @@ int main() {
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-	mode = Interactive;
+	// mode = Interactive;
 
 	/* 
 	// R1 optimization test_suite
@@ -300,6 +300,20 @@ int main() {
 	//				 - -	-	-			 ---	-	- -  -- -
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
+
+	//
+	list<pair<std::string, int>> *_variables_list = new list<pair<std::string, int>>();
+	list<InstrX0*> *_instructions_list_1 = new list<InstrX0*> (AddqX0(IntX0(5),RegX0("rax")));
+	list<InstrX0*> *_instructions_list_2 = new list<InstrX0*> (SubqX0(IntX0(5),RegX0("rax")));
+	LabelX0 *_label_1 = new LabelX0 ("main");
+	BlockX0 *_block_1 = new BlockX0 (_instructions_list_1);
+	LabelX0 *_label_2 = new LabelX0 ("loop");
+	BlockX0 *_block_2 = new BlockX0 (_instructions_list_2);
+	(*_variables_list).push_back(std::make_pair("x", 0)); 
+	(*label_block_list).push_back(std::make_pair(_label_1, _instructions_list_1));
+	(*label_block_list).push_back(std::make_pair(_label_2, _instructions_list_2));
+	ProgramX0 *_code = new ProgramX0(_variables_list);
+	// 
 
 	/*
 	// instructions tester

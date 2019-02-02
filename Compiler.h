@@ -138,6 +138,9 @@
 
 using namespace std;
 
+/*
+// R0-R1: steps 1-17
+
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
 
@@ -606,6 +609,7 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		}
 	}
 }
+*/
 
 // -----------------------------------------------------------------------------------------------------------
 //				-	-	-----			-------	----- -   - -----
@@ -617,24 +621,28 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 
 /*
 	18) +/- define data types for X0 program ASTs
+		
+		--> jos malo rada na strukturi + unique pointeri eventualno + koristi proslost i stari X0 kod
+
 		- var = var-not-otherwise-mentioned
-		- - label = string
+		- - label = string --> places that you can JUMP to --> goto replaces if, ... in X86
 		- register = ...
 		- arg = ...
 		- instr = ...
 		- - blk = ... --> dodaj - sadrzi informacije o machine stateu/ovima i instrukciju
+							- instructions under labels
 		- - p = ... --> sadrzi - informacije o machine stateu/ovima i label s odgovarajucim blockom
-	19) ? write an emitter for X0 programs
+	19) ! write an emitter for X0 programs - obicni toString jel...
 		- should emit in the syntax of the assembler you will use
 		- takes a parameter whether variables should be allowed in the output
 		- only makes sense for debugging
-	20) 1/12 build a test suite of a dozen X0 programs
+	20) 1/12 build a test suite of a dozen X0 programs - jasno trivijalno
 		- intrp should ony ret value of rax on retq rather than entire state of machine
 		- ideally these programs are manually compiled versions of your R1 test programs
-	21) +/- write an interpreter for X0 programs
+	21) +/- write an interpreter for X0 programs - interpretator jasno
 		- register file is simple fixed vector where registers are indices and the stack is stack
 		- have to have special case for when you callq to system function like read or print
-	22) ? connect your X0 test suite to system assembler
+	22) ? connect your X0 test suite to system assembler --> google the shit out of it
 		- create intermediate file containing the assembly on disk - you can look at assembly
 		  you producing during compilation in the future
 		- automatically compare results of assembled program and your interpreter
@@ -659,7 +667,7 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 					| (popq arg)
 	+ arg	::=		  $int		-> number
 					| %reg		-> registar
-					- | int(%reg) -> memory
+					- | %reg(offset) -> memory
 					- | var(x)
 	+ reg	::=		  rsp
 					| rbp
@@ -682,7 +690,9 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	+ X860	::=		(instr+)
 */
 
-/*
+// label --> block	LIST
+static list<pair<LabelX0*, BlockX0*>> *label_block_list = new list<pair<LabelX0*, BlockX0*>>();
+
 // stack implementation for registers: rsp | rbp
 struct Node {
 	int data;
@@ -694,7 +704,7 @@ struct Node {
 static Node *top = NULL;
 
 // register ::= rax | rbx | rcx | rdx | rsi | rdi | r8 | r9 | r10 | r11 | r12 | r13 | r14 | r15
-static list<pair<std::string, int>> RegistersX0 = {
+static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int>> {
 	std::make_pair("rax", 0),
 	std::make_pair("rbx", 0),
 	std::make_pair("rcx", 0),
@@ -709,17 +719,17 @@ static list<pair<std::string, int>> RegistersX0 = {
 	std::make_pair("r13", 0),
 	std::make_pair("r14", 0),
 	std::make_pair("r15", 0),
-	//std::make_pair("rsp", 0),
-	//std::make_pair("rbp", 0)
+	std::make_pair("rsp", 0),
+	std::make_pair("rbp", 0)
 };
 
 // program counter
 static int pcnt;
 
-// arg ::= $int | %reg | int(%reg)
+// arg ::= $int | %reg | int(%reg) + var(x)
 class ArgX0 {
 public:
-	int virtual eval(list<pair<std::string, int>> *_regs) = 0;
+	int virtual eval(list<pair<std::string, int>> *_variables_list) = 0;
 	void virtual setValue(int _value) = 0;
 	string virtual getName(void) = 0;
 	string virtual toString(void) = 0;
@@ -738,7 +748,7 @@ public:
 	IntX0(int _value) {
 		this->value = _value;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
 		return this->value;
 	}
 	string toString() {
@@ -754,9 +764,9 @@ public:
 	RegX0(string _name) {
 		this->name = _name;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		// variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->name) {
 				this->setValue((*it).second);
 				return this->value;
@@ -776,45 +786,49 @@ public:
 private:
 	int value;
 	string name;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
-*/
 
-/*
-// int (%reg) <-- arg
+// %reg (offset) <-- arg
 class IntRegX0 : public ArgX0 {
 public:
-	IntRegX0(int _offset, string _name) {
-		this->name = _name;
+	IntRegX0(int _offset, RegX0 *_reg) {
+		this->reg = _reg;
 		this->offset = _offset;
 		// this->value = getVal(lookupList(this->name));
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		// this->variables_list = _variables_list;
+		return (this->offset + this->reg->eval(variables_list));
 	}
 	void setValue(int _value) {
 		this->value = _value;
 	}
-	string getName() {
-		return this->name;
-		// setVal(this-> name, this->value);
-	}
 	string toString() {
-		return to_string(this->offset) + "(%" + this->name + ")";
+		return "%" + this->reg->toString() + "(" + to_string(this->offset) + ")";
 	}
 private:
+	RegX0 *reg;
 	int value, offset;
-	string name;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
+// not sure what this one does
 // var (x) <-- var
 class VarX0 : public ArgX0 {
 public:
 	VarX0(string _name) {
 		this->name = _name;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		variables_list = _variables_list;
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = variables_list->begin(); it != variables_list->end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
+		}
+		cout << "Uninitialized Variable is Being Used Under Following name: " + this->name + "!\n";
 		return this->value;
 	}
 	void setValue(int _value) {
@@ -830,15 +844,13 @@ public:
 private:
 	string name;
 	int value;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
-*/
 
-/*
-//instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg)
+//instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg) | (jump label)
 class InstrX0 {
 public:
-	virtual int eval(list<pair<std::string, int>> *_regs) {
+	virtual int eval(list<pair<std::string, int>> *_variables_list) {
 		return 10;
 	}
 	virtual string toString() {
@@ -865,9 +877,9 @@ public:
 		delete (tmp);
 		return value;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
 				if (!isEmpty()) {
 					((*it).second = pop());
@@ -887,7 +899,7 @@ public:
 	}
 private:
 	ArgX0 *dest;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (pushq arg) <-- instruction
@@ -902,9 +914,9 @@ public:
 		rsp->link = top;
 		top = rsp;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->src->getName()) {
 				(push((*it).second));
 				return 0;
@@ -918,16 +930,16 @@ public:
 	}
 private:
 	ArgX0 *src;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (retq) <-- instruction (function marking success with storing 0 in %rax)
 class RetqX0 : public InstrX0 {
 public:
 	RetqX0() {}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == "rax") {
 				(*it).second = 0;
 				success = true;
@@ -947,7 +959,7 @@ public:
 	}
 private:
 	bool success = false;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (callq print_int) <-- instruction (function printing out %rdi)
@@ -955,9 +967,9 @@ class CallqX0 : public InstrX0 {
 public:
 	CallqX0() {
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == "rdi") {
 				value = (*it).second;
 				return 0;
@@ -970,7 +982,7 @@ public:
 	}
 private:
 	int value;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (negq arg) <-- instruction
@@ -979,11 +991,11 @@ public:
 	NegqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = -this->dest->eval(this->regs));
+				((*it).second = -this->dest->eval(this->variables_list));
 				return 0;
 			}
 		}
@@ -994,7 +1006,7 @@ public:
 	}
 private:
 	ArgX0 *dest;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (subq arg, arg) <-- instruction
@@ -1004,11 +1016,11 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->regs) - this->dest->eval(this->regs));
+				((*it).second = this->src->eval(this->variables_list) - this->dest->eval(this->variables_list));
 				return 0;
 			}
 		}
@@ -1019,7 +1031,7 @@ public:
 	}
 private:
 	ArgX0 *src, *dest;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (addq arg, arg) <-- instruction
@@ -1029,11 +1041,11 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->regs) + this->dest->eval(this->regs));
+				((*it).second = this->src->eval(this->variables_list) + this->dest->eval(this->variables_list));
 				return 0;
 			}
 		}
@@ -1044,7 +1056,7 @@ public:
 	}
 private:
 	ArgX0 *src, *dest;
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 };
 
 // (movq arg arg) <-- instruction
@@ -1054,11 +1066,11 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
-		for (std::list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->regs));
+				((*it).second = this->src->eval(this->variables_list));
 				return 0;
 			}
 		}
@@ -1068,23 +1080,53 @@ public:
 		return "\tmovq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
 	}
 private:
-	list<pair<std::string, int>> *regs;
+	list<pair<std::string, int>> *variables_list;
 	ArgX0 *src;
 	ArgX0 *dest;
 };
 
+class LabelX0 {
+public:
+	LabelX0(string _name) {
+		this->name = _name;
+	}
+private:
+	// int address; might be needed
+	string name;
+};
+
+class BlockX0 {
+public:
+	BlockX0 (list<InstrX0*> *_instructions_list) {
+		this->instructions_list = _instructions_list;
+	}
+	int instructions_cnt() {
+		list<InstrX0*>::iterator it;
+		instr_cnt = 0;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			instr_cnt++;
+		}
+		return instr_cnt;
+	}
+private:
+	list<InstrX0*> *instructions_list;
+	int instr_cnt;
+};
+
+// p := program info [label->block]
+// ... code
+
 //X860  ::= (instr+)
 class ProgramX0 {
 public:
-	ProgramX0(list<std::unique_ptr<InstrX0>> *_instructions) {
+	ProgramX0(list<pair<std::string, int>> *_variables_list) {
+		this->variables_list = _variables_list;
 		pcnt = 0;
-		this->instructions = _instructions;
 	}
-	void execute(list<pair<std::string, int>> *_regs) {
-		this->regs = _regs;
+	void execute() {
 		cout << "\nProgram:\n\n";
-		for (list<std::unique_ptr<InstrX0>>::iterator it = this->instructions->begin(); it != this->instructions->end(); ++it) {
-			if ((*it)->eval(this->regs) == 0) {
+		for (list<pair<LabelX0*, BlockX0*>>::iterator it = label_block_list->begin(); it != label_block_list->end(); ++it) {
+			if ((*it).second->eval(this->variables_list) == 0) {
 				cout << pcnt << "\t" << (*it)->toString();
 				pcnt += 8;
 			}
@@ -1095,16 +1137,16 @@ public:
 		}
 		pcnt = 0;
 		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tRegister\tValue\n";
-		for (list<pair<std::string, int>>::iterator it = this->regs->begin(); it != this->regs->end(); ++it) {
+		for (list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			cout << "\t" << (*it).first << "\t\t" << to_string((*it).second) << "\n";
 		}
 		cout << "\n";
 	}
 private:
-	list<pair<std::string, int>> *regs;
-	list<std::unique_ptr<InstrX0>> *instructions;
+	list<pair<std::string, int>> *variables_list;
+	list<std::unique_ptr<InstrX0>> *instructions_list;
 };
-*/
+
 
 // -----------------------------------------------------------------------------------------------------------
 //				 ----	-----			-------	----- -   - -----
