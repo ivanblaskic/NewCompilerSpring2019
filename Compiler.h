@@ -61,7 +61,7 @@
 	17) + extend your optimizer from R0 to R1
 		- you should inline variables that have been reduced to values or other variables
 
-	18) ! define data types for X0 program ASTs
+	18) + define data types for X0 program ASTs
 		- var = var-not-otherwise-mentioned
 		- label = string
 		- register = ...
@@ -69,7 +69,7 @@
 		- instr = ...
 		- blk = ...
 		- p = ...
-	19) ? write an emitter for X0 programs
+	19) + write an emitter for X0 programs
 		- should emit in the syntax of the assembler you will use 
 		- takes a parameter whether variables should be allowed in the output
 		- only makes sense for debugging
@@ -690,8 +690,11 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	+ X860	::=		(instr+)
 */
 
+class LabelX0;
+class BlockX0;
+
 // label --> block	LIST
-static list<pair<LabelX0*, BlockX0*>> *label_block_list = new list<pair<LabelX0*, BlockX0*>>();
+static list <pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>> label_block_list;
 
 // stack implementation for registers: rsp | rbp
 struct Node {
@@ -736,7 +739,7 @@ public:
 private:
 };
 
-// $int <-- arg
+// $int <-- arg - BRAVO
 class IntX0 : public ArgX0 {
 public:
 	void setValue(int _value) {
@@ -774,6 +777,8 @@ public:
 		}
 		return 1;
 	}
+	// set value is just setting local variable of that instance of class
+	// is that what's expected?
 	void setValue(int _value) {
 		this->value = _value;
 	}
@@ -821,7 +826,7 @@ public:
 		this->name = _name;
 	}
 	int eval(list<pair<std::string, int>> *_variables_list) {
-		variables_list = _variables_list;
+		this->variables_list = _variables_list;
 		std::list<pair<std::string, int>>::iterator it;
 		for (it = variables_list->begin(); it != variables_list->end(); ++it) {
 			if ((*it).first == this->name) {
@@ -850,18 +855,17 @@ private:
 //instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg) | (jump label)
 class InstrX0 {
 public:
-	virtual int eval(list<pair<std::string, int>> *_variables_list) {
-		return 10;
-	}
-	virtual string toString() {
-		return "Error InstrX0 class had to do print.\n";
-	}
+	virtual ~InstrX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	virtual int eval(list<pair<std::string, int>> *_variables_list) = 0;
+	virtual string toString() = 0;
 private:
+	InstrX0 *temp;
 };
 
 // (popq arg) <-- instruction
 class PopqX0 : public InstrX0 {
 public:
+	~PopqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	PopqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
@@ -905,6 +909,7 @@ private:
 // (pushq arg) <-- instruction
 class PushqX0 : public InstrX0 {
 public:
+	~PushqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	PushqX0(ArgX0* _src) {
 		this->src = _src;
 	}
@@ -936,6 +941,7 @@ private:
 // (retq) <-- instruction (function marking success with storing 0 in %rax)
 class RetqX0 : public InstrX0 {
 public:
+	~RetqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	RetqX0() {}
 	int eval(list<pair<std::string, int>> *_variables_list) {
 		this->variables_list = _variables_list;
@@ -965,6 +971,7 @@ private:
 // (callq print_int) <-- instruction (function printing out %rdi)
 class CallqX0 : public InstrX0 {
 public:
+	~CallqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	CallqX0() {
 	}
 	int eval(list<pair<std::string, int>> *_variables_list) {
@@ -988,6 +995,7 @@ private:
 // (negq arg) <-- instruction
 class NegqX0 : public InstrX0 {
 public:
+	~NegqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	NegqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
@@ -1012,6 +1020,7 @@ private:
 // (subq arg, arg) <-- instruction
 class SubqX0 : public InstrX0 {
 public:
+	~SubqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	SubqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
@@ -1037,6 +1046,7 @@ private:
 // (addq arg, arg) <-- instruction
 class AddqX0 : public InstrX0 {
 public:
+	~AddqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	AddqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
@@ -1062,6 +1072,7 @@ private:
 // (movq arg arg) <-- instruction
 class MovqX0 : public InstrX0 {
 public:
+	~MovqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	MovqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
@@ -1085,68 +1096,80 @@ private:
 	ArgX0 *dest;
 };
 
-class LabelX0 {
-public:
-	LabelX0(string _name) {
-		this->name = _name;
-	}
-private:
-	// int address; might be needed
-	string name;
-};
+class LabelX0;
 
+// block info instructions
 class BlockX0 {
 public:
-	BlockX0 (list<InstrX0*> *_instructions_list) {
+	BlockX0 (list<std::shared_ptr<InstrX0>> *_instructions_list) {
 		this->instructions_list = _instructions_list;
 	}
 	int instructions_cnt() {
-		list<InstrX0*>::iterator it;
+		list<std::shared_ptr<InstrX0>>::iterator it;
 		instr_cnt = 0;
 		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
 			instr_cnt++;
 		}
 		return instr_cnt;
 	}
+	int eval(list<pair<std::string, int>> *_variables_list) {
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		instr_cnt = 0;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			return (*it)->eval(_variables_list);
+		}
+		return instr_cnt;
+	}
+	// output to terminal for now
+	void emit() {
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			cout << (*it)->toString() << "\t";
+		}
+	}
 private:
-	list<InstrX0*> *instructions_list;
+	list<std::shared_ptr<InstrX0>> *instructions_list;
 	int instr_cnt;
+	LabelX0 *label;
 };
 
-// p := program info [label->block]
-// ... code
+// label instruction
+class LabelX0 {
+public:
+	LabelX0(string _name) {
+		this->name = _name; 
+	}
+	void emit() {
+		cout << name << "\t";
+	}
+private:
+	string name;
+};
 
-//X860  ::= (instr+)
+// program info [label->block]
 class ProgramX0 {
 public:
 	ProgramX0(list<pair<std::string, int>> *_variables_list) {
 		this->variables_list = _variables_list;
 		pcnt = 0;
 	}
+	// static list <pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>> label_block_list;
 	void execute() {
-		cout << "\nProgram:\n\n";
-		for (list<pair<LabelX0*, BlockX0*>>::iterator it = label_block_list->begin(); it != label_block_list->end(); ++it) {
-			if ((*it).second->eval(this->variables_list) == 0) {
-				cout << pcnt << "\t" << (*it)->toString();
-				pcnt += 8;
-			}
-			else {
-				cout << "\n\tError executing program.\n\tCheck Address: " << pcnt << ".\n\n";
-				cout << (*it)->toString();
-			}
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			it->second->eval(NULL);
 		}
-		pcnt = 0;
-		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tRegister\tValue\n";
-		for (list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-			cout << "\t" << (*it).first << "\t\t" << to_string((*it).second) << "\n";
+	}
+	void emit() {
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			it->first->emit();
+			it->second->emit();
 		}
-		cout << "\n";
 	}
 private:
 	list<pair<std::string, int>> *variables_list;
-	list<std::unique_ptr<InstrX0>> *instructions_list;
 };
-
 
 // -----------------------------------------------------------------------------------------------------------
 //				 ----	-----			-------	----- -   - -----

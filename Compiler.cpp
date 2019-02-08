@@ -301,10 +301,10 @@ int main() {
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-	//
+	/*
 	list<pair<std::string, int>> *_variables_list = new list<pair<std::string, int>>();
-	list<InstrX0*> *_instructions_list_1 = new list<InstrX0*> (AddqX0(IntX0(5),RegX0("rax")));
-	list<InstrX0*> *_instructions_list_2 = new list<InstrX0*> (SubqX0(IntX0(5),RegX0("rax")));
+	list<InstrX0*> *_instructions_list_1 = new list<InstrX0*> (new AddqX0(new IntX0(5),new RegX0("rax")));
+	list<InstrX0*> *_instructions_list_2 = new list<InstrX0*> (new SubqX0(new IntX0(5),new RegX0("rax")));
 	LabelX0 *_label_1 = new LabelX0 ("main");
 	BlockX0 *_block_1 = new BlockX0 (_instructions_list_1);
 	LabelX0 *_label_2 = new LabelX0 ("loop");
@@ -313,7 +313,7 @@ int main() {
 	(*label_block_list).push_back(std::make_pair(_label_1, _instructions_list_1));
 	(*label_block_list).push_back(std::make_pair(_label_2, _instructions_list_2));
 	ProgramX0 *_code = new ProgramX0(_variables_list);
-	// 
+	*/ 
 
 	/*
 	// instructions tester
@@ -331,11 +331,27 @@ int main() {
 	//instrX0 *popq_tester		= new PopqX0	(new RegX0("rcx"));							// popq		reg
 	*/
 
-	/*
-	// program tester initialization
-	list<std::unique_ptr<InstrX0>> prog_tester;
-	pcnt = 0;
+	// label init
+	std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
 
+	// block init
+	pcnt = 0;
+	list<std::shared_ptr<InstrX0>> blk_main_list;
+	blk_main_list.push_back(std::make_shared<MovqX0>(new IntX0(10),new RegX0("rax")));
+	blk_main_list.push_back(std::make_shared<MovqX0>(new RegX0("rax"), new RegX0("rbx")));
+	blk_main_list.push_back(std::make_shared<AddqX0>(new IntX0(15), new RegX0("rax")));
+	BlockX0 *temp_blk = new BlockX0(&blk_main_list);
+	auto blk_main = std::make_shared<BlockX0>(*temp_blk);
+
+	// program init
+	label_block_list.emplace_back(make_pair(lbl_main, blk_main));
+
+	// program call
+	ProgramX0 *program_test = new ProgramX0(NULL);
+	program_test->emit();
+	program_test->execute();
+
+	/*
 	prog_tester.emplace_back(new MovqX0(new IntX0(10),		new RegX0("rax")));
 	prog_tester.emplace_back(new MovqX0(new RegX0("rax"),	new RegX0("rbx")));
 	prog_tester.emplace_back(new AddqX0(new IntX0(15),		new RegX0("rax")));
@@ -347,14 +363,13 @@ int main() {
 	prog_tester.emplace_back(new CallqX0());
 	prog_tester.emplace_back(new PushqX0(new RegX0("rax")));
 	prog_tester.emplace_back(new PopqX0(new RegX0("rbx")));
+	*/
 
-	ProgramX0 *x0_tester = new ProgramX0(&prog_tester);
+	// ProgramX0 *x0_tester = new ProgramX0(&prog_tester);
 
 	// program tester execution
-	x0_tester->execute(&RegistersX0);
 	
 	system("Pause");
-	*/
 
 	/*
 	// instructions execution test
