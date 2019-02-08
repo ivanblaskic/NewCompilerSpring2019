@@ -21,11 +21,11 @@ Compiler Written in C++ for Jay to Review
 + Extend your optimizer from R0 to R1.
 + Define data types for X0 program ASTs.
 + Write an emitter for X0 programs.
+- Build a test suite of a dozen X0 programs. Add 11 more.
++ Write an interpreter for X0 programs.
 - 
 + --> February 8th, 11:11pm <--
 - 
-- Build a test suite of a dozen X0 programs.
-- Write an interpreter for X0 programs.
 - Connect your X0 test suite to your system assembler.
 - Define data types for C0 program ASTs.
 - Write a pretty printer for C0 programs.
