@@ -19,11 +19,11 @@ Compiler Written in C++ for Jay to Review
 + Extend your random generation function from R0 to R1. 
 + Write some R1-specific optimizer tests.
 + Extend your optimizer from R0 to R1.
++ Define data types for X0 program ASTs.
++ Write an emitter for X0 programs.
 - 
-+ --> January 31st, 8:20pm <--
++ --> February 8th, 11:11pm <--
 - 
-- Define data types for X0 program ASTs.
-- Write an emitter for X0 programs.
 - Build a test suite of a dozen X0 programs.
 - Write an interpreter for X0 programs.
 - Connect your X0 test suite to your system assembler.
