@@ -76,7 +76,7 @@
 	20) 1/12 build a test suite of a dozen X0 programs
 		- intrp should ony ret value of rax on retq rather than entire state of machine
 		- ideally these programs are manually compiled versions of your R1 test programs
-	21) ! write an interpreter for X0 programs
+	21) + write an interpreter for X0 programs
 		- register file is simple fixed vector where registers are indices and the stack is stack
 		- have to have special case for when you callq to system function like read or print
 	22) ? connect your X0 test suite to system assembler 
@@ -760,6 +760,9 @@ public:
 private:
 	int value;
 };
+IntX0* IX(int _value) {
+	return new IntX0(_value);
+}
 
 // %reg <-- arg
 class RegX0 : public ArgX0 {
@@ -793,6 +796,9 @@ private:
 	string name;
 	list<pair<std::string, int>> *variables_list;
 };
+RegX0* RX(string _name) {
+	return new RegX0(_name);
+}
 
 // %reg (offset) <-- arg
 class IntRegX0 : public ArgX0 {
@@ -812,11 +818,17 @@ public:
 	string toString() {
 		return "%" + this->reg->toString() + "(" + to_string(this->offset) + ")";
 	}
+	string getName() {
+		return "Register type has no name.";
+	}
 private:
 	RegX0 *reg;
 	int value, offset;
 	list<pair<std::string, int>> *variables_list;
 };
+IntRegX0* IRX(int _offset,RegX0 *_reg) {
+	return new IntRegX0(_offset, _reg);
+}
 
 // not sure what this one does
 // var (x) <-- var
@@ -851,6 +863,9 @@ private:
 	int value;
 	list<pair<std::string, int>> *variables_list;
 };
+VarX0* VX(string _name) {
+	return new VarX0(_name);
+}
 
 //instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg) | (jump label)
 class InstrX0 {
@@ -905,6 +920,9 @@ private:
 	ArgX0 *dest;
 	list<pair<std::string, int>> *variables_list;
 };
+PopqX0* PopX(ArgX0 *_arg) {
+	return new PopqX0(_arg);
+}
 
 // (pushq arg) <-- instruction
 class PushqX0 : public InstrX0 {
@@ -937,6 +955,9 @@ private:
 	ArgX0 *src;
 	list<pair<std::string, int>> *variables_list;
 };
+PushqX0* PshX(ArgX0 *_arg) {
+	return new PushqX0(_arg);
+}
 
 // (retq) <-- instruction (function marking success with storing 0 in %rax)
 class RetqX0 : public InstrX0 {
@@ -967,6 +988,9 @@ private:
 	bool success = false;
 	list<pair<std::string, int>> *variables_list;
 };
+RetqX0* RtX() {
+	return new RetqX0();
+};
 
 // (callq print_int) <-- instruction (function printing out %rdi)
 class CallqX0 : public InstrX0 {
@@ -978,19 +1002,23 @@ public:
 		this->variables_list = _variables_list;
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == "rdi") {
-				value = (*it).second;
+				this->value = (*it).second;
+				cout << "\nInfo:\n\tValue at %rdi is: " << this->value << "\n\n";
 				return 0;
 			}
 		}
 		return 5;
 	}
 	string toString() {
-		return ("\tcallq\t\tprint_int\n\n\t\t('Value at %rdi: " + to_string(this->value) + "')\n\n");
+		return "\tcallq\t\tprint_int\n";
 	}
 private:
 	int value;
 	list<pair<std::string, int>> *variables_list;
 };
+CallqX0* CllX() {
+	return new CallqX0();
+}
 
 // (negq arg) <-- instruction
 class NegqX0 : public InstrX0 {
@@ -1016,6 +1044,9 @@ private:
 	ArgX0 *dest;
 	list<pair<std::string, int>> *variables_list;
 };
+NegqX0* NgX(ArgX0* _dest) {
+	return new NegqX0(_dest);
+}
 
 // (subq arg, arg) <-- instruction
 class SubqX0 : public InstrX0 {
@@ -1042,6 +1073,9 @@ private:
 	ArgX0 *src, *dest;
 	list<pair<std::string, int>> *variables_list;
 };
+SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
+	return new SubqX0(_src, _dest);
+}
 
 // (addq arg, arg) <-- instruction
 class AddqX0 : public InstrX0 {
@@ -1068,6 +1102,9 @@ private:
 	ArgX0 *src, *dest;
 	list<pair<std::string, int>> *variables_list;
 };
+AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
+	return new AddqX0(_src, _dest);
+}
 
 // (movq arg arg) <-- instruction
 class MovqX0 : public InstrX0 {
@@ -1095,6 +1132,9 @@ private:
 	ArgX0 *src;
 	ArgX0 *dest;
 };
+MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
+	return new MovqX0(_src, _dest);
+}
 
 class LabelX0;
 
@@ -1116,7 +1156,8 @@ public:
 		list<std::shared_ptr<InstrX0>>::iterator it;
 		instr_cnt = 0;
 		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
-			return (*it)->eval(_variables_list);
+			instr_cnt++;
+			(*it)->eval(_variables_list);
 		}
 		return instr_cnt;
 	}

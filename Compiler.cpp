@@ -337,9 +337,18 @@ int main() {
 	// block init
 	pcnt = 0;
 	list<std::shared_ptr<InstrX0>> blk_main_list;
-	blk_main_list.push_back(std::make_shared<MovqX0>(new IntX0(10),new RegX0("rax")));
-	blk_main_list.push_back(std::make_shared<MovqX0>(new RegX0("rax"), new RegX0("rbx")));
-	blk_main_list.push_back(std::make_shared<AddqX0>(new IntX0(15), new RegX0("rax")));
+
+	blk_main_list.push_back(std::make_shared<MovqX0>(IX(10),RX("rax")));		// movq		intX0, regx0
+	blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), RX("rbx")));	// movq		regX0, regx0
+	blk_main_list.push_back(std::make_shared<AddqX0>(IX(15), RX("rax")));		// addq		intx0, regX0
+	blk_main_list.push_back(std::make_shared<AddqX0>(RX("rbx"), RX("rax")));	// addq		regX0, regX0
+	blk_main_list.push_back(std::make_shared<SubqX0>(IX(10),RX("rax")));		// subq		intX0, regX0
+	blk_main_list.push_back(std::make_shared<SubqX0>(RX("rax"),RX("rdi")));		// subq		regX0, regX0
+	blk_main_list.push_back(std::make_shared<NegqX0>(RX("rbx")));				// negq		regX0
+	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+	blk_main_list.push_back(std::make_shared<PopqX0>(RX("rcx")));				// popq		regX0
+	blk_main_list.push_back(std::make_shared<CallqX0>());						// callq
+	blk_main_list.push_back(std::make_shared<RetqX0>());						// retq
 	BlockX0 *temp_blk = new BlockX0(&blk_main_list);
 	auto blk_main = std::make_shared<BlockX0>(*temp_blk);
 
@@ -350,61 +359,26 @@ int main() {
 	ProgramX0 *program_test = new ProgramX0(NULL);
 	program_test->emit();
 	program_test->execute();
+	system("Pause");
 
 	/*
-	prog_tester.emplace_back(new MovqX0(new IntX0(10),		new RegX0("rax")));
-	prog_tester.emplace_back(new MovqX0(new RegX0("rax"),	new RegX0("rbx")));
-	prog_tester.emplace_back(new AddqX0(new IntX0(15),		new RegX0("rax")));
-	prog_tester.emplace_back(new AddqX0(new RegX0("rbx"),	new RegX0("rax")));
-	prog_tester.emplace_back(new SubqX0(new IntX0(100),		new RegX0("rax")));
-	prog_tester.emplace_back(new SubqX0(new RegX0("rax"),	new RegX0("rbx")));
-	//prog_tester.emplace_back(new RetqX0());
+
 	prog_tester.emplace_back(new NegqX0(new RegX0("rbx")));
 	prog_tester.emplace_back(new CallqX0());
 	prog_tester.emplace_back(new PushqX0(new RegX0("rax")));
 	prog_tester.emplace_back(new PopqX0(new RegX0("rbx")));
 	*/
 
-	// ProgramX0 *x0_tester = new ProgramX0(&prog_tester);
-
-	// program tester execution
 	
-	system("Pause");
-
-	/*
-	// instructions execution test
-	movq_tester1->eval(&regs);
-	movq_tester2->eval(&regs);
-	addq_tester1->eval(&regs);
-	addq_tester2->eval(&regs);
-	subq_tester1->eval(&regs);
-	subq_tester2->eval(&regs);
-	negq_tester->eval(&regs);
-	callq_tester->eval(&regs);
-	retq_tester->eval(&regs);
-
-	// instructions print
-	cout << "\nProgram:\n";
-	cout << movq_tester1->toString();
-	cout << movq_tester2->toString();
-	cout << addq_tester1->toString();
-	cout << addq_tester2->toString();
-	cout << subq_tester1->toString();
-	cout << subq_tester2->toString();
-	cout << negq_tester->toString();
-	cout << callq_tester->toString();
-	cout << retq_tester->toString();
-	*/
-	
-	/*
 	// registers print
 	cout << "\nMemory:\n";
 	cout << "\tRegister\tValue\n";
-	for (std::list<pair<std::string,int>>::iterator it = ptr_register_list->begin(); it != ptr_register_list->end(); ++it) {
+	for (std::list<pair<std::string,int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 	}
 	cout << "\n";
-	*/
+
+	system("Pause");
 
 	// -----------------------------------------------------------------------------------------------------------
 	//				 ----	-----			-------	----- -   - -----
