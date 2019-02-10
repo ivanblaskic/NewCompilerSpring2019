@@ -23,34 +23,38 @@ Compiler Written in C++ for Jay to Review
 + Write an emitter for X0 programs.
 - Build a test suite of a dozen X0 programs. Add 11 more.
 + Write an interpreter for X0 programs.
++ Connect your X0 test suite to your system assembler.
 - 
-+ --> February 8th, 11:11pm <--
++ --> February 10th, 10:10pm <--
+- F+
 - 
-- Connect your X0 test suite to your system assembler.
+C0 BASICS
 - Define data types for C0 program ASTs.
 - Write a pretty printer for C0 programs.
 - Build a test suite of a dozen C0 programs.
 - Write an interpreter for C0 programs.
+UNIQUIFY()
 - Write a few tests for uniquify that predict its output.
-- 
-- 3
-- 
 - Implement the uniquify pass for R1 programs.
 - Connect uniquify to your test suite.
+RESOLVE-COMPLEX()
 - Write a half-dozen tests for resolve-complex that predict its output.
 - Implement the resolve-complex pass for R1 programs.
 - Connect resolve-complex to your test suite.
+EXPLIXATE-CONTROL()
 - Write a half-dozen tests for explicate-control that predict its output.
 - Implement the explicate-control pass for R1 programs.
 - Connect explicate-control to your test suite.
+UNCOVER-LOCALS()
 - Write a few tests for uncover-locals that predict its output.
 - Implement the uncover-locals pass for C0 programs.
 - Connect uncover-locals to your test suite.
+SELECT-INSTR()
 - Write a half-dozen tests for select-instr that predict its output.
 - Implement the select-instr pass for C0 programs.
 - Connect select-instr to your test suite.
 - 
-- 4
+- D-
 - 
 - Write a few tests for assign-homes that predict its output.
 - Implement the assign-homes pass for X0 programs.
