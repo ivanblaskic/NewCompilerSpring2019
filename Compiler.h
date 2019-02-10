@@ -1518,9 +1518,11 @@ ProgramX0* PX(){
 			  | (+ arg arg)
 
 	stmt	::= (assign var exp)
-			  | (return arg)
+			   -| (return arg)
 
-	C0   ::= (program (var*) stmt+)
+	- tail	::= (return arg)
+
+	C0   ::= (program (var*) stmt+) + [label->tail]
 
 	C Code: progC0
 		- receives list of stmts initialized in main
@@ -1534,7 +1536,7 @@ ProgramX0* PX(){
 					--> adds new statement to existing set of statements received from arguments
 */
 
-/*
+
 
 static list<pair<string, int>> variables;
 
@@ -1722,61 +1724,15 @@ private:
 
 // (program (var*) stmt+) <-- C0
 class ProgC0 : public C0 {
+
 public:
-	ProgC0(list<std::unique_ptr<StmtC0>> *_stmts) {
-		this->stmts = _stmts;
+
+	ProgC0(list<std::unique_ptr<StmtC0>> *stmts_) {
+		this->stmts = stmts_;
 	}
-	// called from deepest node returns newly initialized program C0 with return variable
-	ProgC0(VarC0 *_var) {
-		this->stmts = new list<std::unique_ptr<StmtC0>>();
-		this->vars = new list<pair<string, int>>{ (make_pair(_var->toString(), 0)) };
-		this->ret_arg = _var;
-	}
-	ProgC0() {
-		this->stmts = new list<std::unique_ptr<StmtC0>>();
-		this->vars = new list<pair<string, int>>();
-	}
-	// called from deepest node returns newly initialized program C0 with return value of int
-	ProgC0(IntC0 *_int) {
-		this->stmts = new list<std::unique_ptr<StmtC0>>();
-		this->vars = new list<pair<string, int>>();
-		this->ret_arg = _int;
-	}
-	ProgC0(ArgC0 *ass_arg, VarC0 *_var, ProgC0 *_prog) {
-		this->stmts = _prog->stmts;
-		this->vars = _prog->vars;
-		this->stmts->emplace_back(new AssignC0(_var, ass_arg));
-		this->ret_arg = _var;
-	}
-	// called after flattening arguments in operations so we have program with assignment statements that happened in them
-	ProgC0(ExpC0 *_exp, VarC0 *_var, ProgC0 *_merging_one, ProgC0 *_merging_two) {
-		this->stmts = _merging_one->stmts;
-		this->stmts->emplace_back(_merging_two->stmts);
-		this->vars = _merging_one->vars;
-		this->vars->emplace_back(_merging_two->vars);
-		this->stmts->emplace_back(new AssignC0(_var, _exp));
-		this->ret_arg = _var;
-	}
-	void execute() {
-		cout << "\nProgram:\n\n";
-		for (std::list<std::unique_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
-			if ((*it)->eval(this->vars) == 0) {
-				cout << "\t" << (*it)->toString();
-			}
-			else {
-				cout << "\n\tError executing program.\n\tCheck statement: " << (*it)->toString() << "\n";
-			}
-		}
-		StmtC0 *ret_var = new RetC0(this->ret_argument());
-		cout << "\t" << ret_var->toString();
-		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
-		for (std::list<pair<std::string, int>>::iterator it = this->vars->begin(); it != this->vars->end(); ++it) {
-			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
-		}
-		cout << "\n";
-	}
-	void execute(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
+
+	void execute(list<pair<string, int>> *vars_) {
+		this->vars = vars_;
 		cout << "\nProgram:\n\n";
 		for (std::list<std::unique_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
 			if ((*it)->eval(vars) == 0) {
@@ -1786,23 +1742,18 @@ public:
 				cout << "\n\tError executing program.\n\tCheck statement: " << (*it)->toString() << "\n";
 			}
 		}
-		StmtC0 *ret_var = new RetC0(this->ret_argument());
-		cout << "\t" << ret_var->toString();
 		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
 		for (std::list<pair<std::string, int>>::iterator it = vars->begin(); it != vars->end(); ++it) {
 			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 		}
 		cout << "\n";
 	}
-	ArgC0* ret_argument(void) {
-		return this->ret_arg;
-	}
+
 private:
+
 	list<pair<string, int>> *vars;
 	list<std::unique_ptr<StmtC0>> *stmts;
-	ArgC0 *ret_arg;
-};
 
-*/
+};
 
 #endif
