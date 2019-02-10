@@ -1,5 +1,36 @@
 #include "Compiler.h"
 
+void print_variables_x0() {
+	cout << "\nVariables:\n";
+	cout << "\tName\tValue\n";
+	for (std::list<pair<std::string, int>>::iterator it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
+	}
+	cout << "\n";
+	system("Pause");
+}
+void print_registers_x0() {
+	cout << "\nMemory:\n";
+	cout << "\tRegister\tValue\n";
+	for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
+	}
+	cout << "\n";
+	system("Pause");
+}
+void print_stack_x0() {
+	cout << "\nStack Values:\n";
+	cout << "\tAddress\t\tValue\n";
+	Node *temp = NULL;
+	temp = top;
+	while (temp != NULL) {
+		cout << "\t" << temp << "\t" << temp->data << "\n";
+		temp = temp->link;
+	}
+	cout << "\n";
+	system("Pause");
+}
+
 int main() {
 
 	// -----------------------------------------------------------------------------------------------------------
@@ -302,83 +333,51 @@ int main() {
 	// -----------------------------------------------------------------------------------------------------------
 
 	/*
-	list<pair<std::string, int>> *_variables_list = new list<pair<std::string, int>>();
-	list<InstrX0*> *_instructions_list_1 = new list<InstrX0*> (new AddqX0(new IntX0(5),new RegX0("rax")));
-	list<InstrX0*> *_instructions_list_2 = new list<InstrX0*> (new SubqX0(new IntX0(5),new RegX0("rax")));
-	LabelX0 *_label_1 = new LabelX0 ("main");
-	BlockX0 *_block_1 = new BlockX0 (_instructions_list_1);
-	LabelX0 *_label_2 = new LabelX0 ("loop");
-	BlockX0 *_block_2 = new BlockX0 (_instructions_list_2);
-	(*_variables_list).push_back(std::make_pair("x", 0)); 
-	(*label_block_list).push_back(std::make_pair(_label_1, _instructions_list_1));
-	(*label_block_list).push_back(std::make_pair(_label_2, _instructions_list_2));
-	ProgramX0 *_code = new ProgramX0(_variables_list);
-	*/ 
 
-	/*
-	// instructions tester
-	instrX0 *movq_tester1		= new MovqX0	(new IntX0(10),		new RegX0("rax"));		// movq		int -> reg
-	instrX0 *movq_tester2		= new MovqX0	(new RegX0("rax"),	new RegX0("rbx"));		// movq		reg -> reg
-	instrX0 *addq_tester1		= new AddqX0	(new IntX0(15),		new RegX0("rax"));		// addq		int -> reg
-	instrX0 *addq_tester2		= new AddqX0	(new RegX0("rbx"),	new RegX0("rax"));		// addq		reg -> reg
-	instrX0 *subq_tester1		= new SubqX0	(new IntX0(100),	new RegX0("rax"));		// subq		int -> reg
-	instrX0 *subq_tester2		= new SubqX0	(new RegX0("rax"),	new RegX0("rbx"));		// subq		reg -> reg
-	instrX0 *retq_tester		= new RetqX0	();											// retq
-	instrX0 *negq_tester		= new NegqX0	(new RegX0("rbx"));							// negq		reg
-	instrX0 *callq_tester		= new CallqX0	();											// callq	print_int -> calling function that prints %rdi
-	//instrX0 *pushq_tester1	= new PushqX0	(new IntX0(10));							// pushq	int
-	//instrX0 *pushq_tester2	= new PushqX0	(new RegX0("rax"));							// pushq	reg
-	//instrX0 *popq_tester		= new PopqX0	(new RegX0("rcx"));							// popq		reg
-	*/
-
-	// label init
+	// label-block init
 	std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
 
-	// block init
-	pcnt = 0;
 	list<std::shared_ptr<InstrX0>> blk_main_list;
-
 	blk_main_list.push_back(std::make_shared<MovqX0>(IX(10),RX("rax")));		// movq		intX0, regx0
 	blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), RX("rbx")));	// movq		regX0, regx0
 	blk_main_list.push_back(std::make_shared<AddqX0>(IX(15), RX("rax")));		// addq		intx0, regX0
+	blk_main_list.push_back(std::make_shared<CallqX0>());						// callq
 	blk_main_list.push_back(std::make_shared<AddqX0>(RX("rbx"), RX("rax")));	// addq		regX0, regX0
 	blk_main_list.push_back(std::make_shared<SubqX0>(IX(10),RX("rax")));		// subq		intX0, regX0
 	blk_main_list.push_back(std::make_shared<SubqX0>(RX("rax"),RX("rdi")));		// subq		regX0, regX0
 	blk_main_list.push_back(std::make_shared<NegqX0>(RX("rbx")));				// negq		regX0
 	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
 	blk_main_list.push_back(std::make_shared<PopqX0>(RX("rcx")));				// popq		regX0
-	blk_main_list.push_back(std::make_shared<CallqX0>());						// callq
+	blk_main_list.push_back(std::make_shared<MovqX0>(VX("x"), RX("rdx")));		// movq		varX0, regx0
+	blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX("x")));		// movq		regX0, varX0
+	// works perfect, creates loop if used here
+	// blk_main_list.push_back(std::make_shared<JumpX0>(LbX("main:")));			// jmp		labelX0			
 	blk_main_list.push_back(std::make_shared<RetqX0>());						// retq
 	BlockX0 *temp_blk = new BlockX0(&blk_main_list);
 	auto blk_main = std::make_shared<BlockX0>(*temp_blk);
 
-	// program init
+	pcnt = 0;
 	label_block_list.emplace_back(make_pair(lbl_main, blk_main));
 
 	// program call
-	ProgramX0 *program_test = new ProgramX0(NULL);
+	init_variables_list.push_back(std::make_pair("x", 36));
+	ProgramX0 *program_test = PX();
 	program_test->emit();
 	program_test->execute();
 	system("Pause");
-
-	/*
-
-	prog_tester.emplace_back(new NegqX0(new RegX0("rbx")));
-	prog_tester.emplace_back(new CallqX0());
-	prog_tester.emplace_back(new PushqX0(new RegX0("rax")));
-	prog_tester.emplace_back(new PopqX0(new RegX0("rbx")));
-	*/
-
 	
-	// registers print
-	cout << "\nMemory:\n";
-	cout << "\tRegister\tValue\n";
-	for (std::list<pair<std::string,int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
-	}
-	cout << "\n";
+	// variables print
+	print_variables_x0();
 
-	system("Pause");
+	// registers print
+	print_registers_x0();
+
+	// stack print
+	print_stack_x0();
+
+	*/
 
 	// -----------------------------------------------------------------------------------------------------------
 	//				 ----	-----			-------	----- -   - -----

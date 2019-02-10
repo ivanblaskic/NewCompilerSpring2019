@@ -60,7 +60,6 @@
 	16) + write some R1-specific optimizer test
 	17) + extend your optimizer from R0 to R1
 		- you should inline variables that have been reduced to values or other variables
-
 	18) + define data types for X0 program ASTs
 		- var = var-not-otherwise-mentioned
 		- label = string
@@ -79,10 +78,14 @@
 	21) + write an interpreter for X0 programs
 		- register file is simple fixed vector where registers are indices and the stack is stack
 		- have to have special case for when you callq to system function like read or print
-	22) ? connect your X0 test suite to system assembler 
+	22) + connect your X0 test suite to system assembler 
 		- create intermediate file containing the assembly on disk - you can look at assembly 
 		  you producing during compilation in the future 
 		- automatically compare results of assembled program and your interpreter
+
+*/
+
+/*
 
 	23) ! define data types for C0 program ASTs
 		- var = ...
@@ -99,20 +102,109 @@
 	26) ! write an interpreter for C0 programs
 		- should use global environment for variables values and should error 
 		  when undefined variables are referenced
+		  
+	27) ! write a few tests for uniquify that predict its output
+		- this is only possible if your unique names are predictable
+		- these tests should be explicitly designed to have multiple occurrences of the same variable in the input 
+		  that mean different things
+	28) ! implement the uniquify pass for R1 programs
+		- this accepts R1 programs and returns new R1 programs that are guaranteed 
+		  to use unique variables in each let expression 
+		- I recommend doing something to make the unique names deterministic, so it is possible to write tests
+	29) ! connect uniquify to your test suite
+		- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
+	30) ! write a half-dozen tests for resolve-complex that predict its output
+		- write a half-dozen tests for resolve-complex that predict its output
+		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
+	31)	! implement the resolve-complex pass for R1 programs
+		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions 
+		- we can express this as a new language
+	32) ! connect resolve-complex to your test suite
+		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter 
+		- you could also write a function that checks to see if your result is in the correct form 
+		- remember, this pass requires uniquify to have already run
+	33) ! write a half-dozen tests for explicate-control that predict its output
+		- work through the complicated examples and especially ensure that the order of operations (especially read calls) 
+		  is preserved
+	34) ! implement the explicate-control pass for R1 programs
+		- this accepts R1 programs and returns new C0 programs by lifting variables definitions 
+		  outside of the bound expression position of let forms 
+		- remember to use the mutually recursive functions explicate-control-tail and explicate-control-assign
+	35) ! connect explicate-control to your test suite
+		- ensure that every test program behaves the same before and after explicate-control by using the C0 interpreter 
+		- remember, this pass requires resolve-complex to have already run
+	36) ! write a few tests for uncover-locals that predict its output
+		- this should be very easy to do!
+	37) ! implement the uncover-locals pass for C0 programs
+		- this pass collects the set of variables used in the program 
+		  and stores them for later passes in the auxiliary field of C0 programs
+	38)	! connect uncover-locals to your test suite
+		- ensure that every test program behaves the same before and after uncover-locals by using the C0 interpter 
+		- this is trivial because uncover-locals shouldn’t effect the behavior of programs 
+		- you’re just doing this to make sure you call it and to make you didn’t accidentally change anything important 
+		  during this pass
+	39) ! write a half-dozen tests for select-instr that predict its output
+		- you’ll want to make sure that you maintain the correct order and select the write assembly instructions
+	40) ! implement the select-instr pass for C0 programs
+		- this pass takes C0 programs and returns X0 programs 
+		- it should preserve the set of variables used in the program
+		- remember to use helper functions for each kind of C0 AST
+	41) ! connect select-instr to your test suite
+		- ensure that every test program behaves the same before and after select-instr by using the X0 interpreter
+	42) ! write a few tests for assign-homes that predict its output
+		- you’ll want to make sure that the output program contains no variables 
+		  and that variables are assigned homes consistently
+	43) ! implement the assign-homes pass for X0 programs
+		- this pass takes X0 programs and returns new X0 programs which do not mention variables
+		- for now, it should just assign everything to consistent stack locations in an arbitrary way 
+		  based on the set of variables used in the program
+	44) ! connect assign-homes to your test suite
+		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter 
+		- you may want to also include a check that guarantees the result contains no variable references
+	45) ! write a half-dozen tests for patch-instructions that predict its output
+		- you’ll want to make sure memory references are legal
+	46) ! implement the patch-instructions pass for X0 programs
+		- this pass takes X0 programs and returns new X0 programs which mention memory 
+		  either zero or one times per instruction
+	47) ! connect patch-instructions to your test suite
+		- ensure that every test program behaves the same before and after patch-instructions 
+		  by using the X0 interpreter
+		- remember, this pass assumes that assign-homes has run
+	48) ! implement your language runtime
+		- initially, this is just two functions: read_int and print_int 
+		- the first corresponds to the read call and the second is automatically used at the end of programs
+	49) ! implement the main-generation pass for X0 programs
+		- this pass should extend your final X0 programs with the prelude and postlude operations 
+		  that set up the stack pointer appropriately for your code
+	50) ! connect your test suite to your system assembler and language runtime
+		- close the final knot and get an actual compiler by having your final X0 programs 
+		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
+		- you finally have a working compiler! Aren’t you proud? 
+	51) ! write a dozen tests for uncover-live that predict its output
+		- I don’t remember using examples from real programs, because they are likely to be too complicated
+		- instead, use simple ones that you come up with by hand
+	52) ! implement the uncover-live pass for X0 programs
+		- this pass takes X0 programs and returns new X0 programs 
+		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction 
+		- make sure that you add registers to the live sets, not just variables
 
-	// OPTIMIZER's JOB
+		D-
 
-	// (+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
-	// opt (+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
-	// = opt (+ [+ (27) (read)] [+ (12) (+ [+ (read) (read)] [read])])
-	// = (+ [39] [+ (+ [+ (read) (read)] [read]) (read)]
-	// opt [+ (+ [5] [read]) (+ [10] [12])] = opt [+ (+ [5] [read]) (22)] = [+ (27) (read)]
-	// opt (+ [5] [read]) = (+ [5] [read])
-	// opt (+ [10] [12]) = (22)
-	// opt [+ (+ [read][read])(+ [12] [read])] = (+ [(12)] [+ (+ [read] [read]) (read)])
-	// opt [+ (read) (read)] = (+ [read] [read])
-	// opt [+ (12) (read)] = (+ [12] [read])
+*/
 
+/*
+	OPTIMIZER's JOB:
+
+		(+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
+		opt (+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
+		= opt (+ [+ (27) (read)] [+ (12) (+ [+ (read) (read)] [read])])
+		= (+ [39] [+ (+ [+ (read) (read)] [read]) (read)]
+		opt [+ (+ [5] [read]) (+ [10] [12])] = opt [+ (+ [5] [read]) (22)] = [+ (27) (read)]
+		opt (+ [5] [read]) = (+ [5] [read])
+		opt (+ [10] [12]) = (22)
+		opt [+ (+ [read][read])(+ [12] [read])] = (+ [(12)] [+ (+ [read] [read]) (read)])
+		opt [+ (read) (read)] = (+ [read] [read])
+		opt [+ (12) (read)] = (+ [12] [read])
 */
 
 // -----------------------------------------------------------------------------------------------------------
@@ -655,20 +747,21 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 			callq print_int
 			movq $0, %rax retq
 
-	- p		::=		program		info	[label->block]	... sve labele po programu
-	- blk	::=		block		info	instr			... sve instrukcije po bloku
-	+ instr	::=		  (addq arg arg)
+	- p		::=		program		info	[label->block]	... 
+	- blk	::=		block		info	instr			... 
+	+ instr	::=		  (addq arg arg)					{[q = quad = 4*normal size of number = 4*16b]}
 					| (subq arg arg)
 					| (movq arg arg)
-					| (retq)
+					| (retq)			{[escape & say what's rax]}
 					| (negq arg)
-					| (callq label)
-					| (pushq arg)
-					| (popq arg)
-	+ arg	::=		  $int		-> number
-					| %reg		-> registar
-					- | %reg(offset) -> memory
-					- | var(x)
+					| (callq label)		{[callq _read_int]}
+					| (pushq arg)		{[(%rsp)->ms(%rsp)-8] [%rsp(0)->ms(src)]}
+					| (popq arg)		{[(%rsp)->ms(dst)] [%rsp->ms(%rsp)+8]}
+					| (jmp label)		{[xbi ms label]} 
+	+ arg	::=		  $int					-> number
+					| %reg					-> registar
+					| %reg(offset)			-> memory
+					| var(x)				-> variable
 	+ reg	::=		  rsp
 					| rbp
 					| rax
@@ -690,14 +783,16 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	+ X860	::=		(instr+)
 */
 
+/*
 class LabelX0;
 class BlockX0;
 
 // label --> block	LIST
-static list <pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>> label_block_list;
+static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
+static list<pair<std::string, int>> init_variables_list;
 
 // stack implementation for registers: rsp | rbp
-struct Node {
+static struct Node {
 	int data;
 	Node *link;
 };
@@ -732,7 +827,7 @@ static int pcnt;
 // arg ::= $int | %reg | int(%reg) + var(x)
 class ArgX0 {
 public:
-	int virtual eval(list<pair<std::string, int>> *_variables_list) = 0;
+	int virtual eval() = 0;
 	void virtual setValue(int _value) = 0;
 	string virtual getName(void) = 0;
 	string virtual toString(void) = 0;
@@ -751,7 +846,7 @@ public:
 	IntX0(int _value) {
 		this->value = _value;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
+	int eval() {
 		return this->value;
 	}
 	string toString() {
@@ -770,7 +865,7 @@ public:
 	RegX0(string _name) {
 		this->name = _name;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
+	int eval() {
 		// variables_list = _variables_list;
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->name) {
@@ -794,7 +889,6 @@ public:
 private:
 	int value;
 	string name;
-	list<pair<std::string, int>> *variables_list;
 };
 RegX0* RX(string _name) {
 	return new RegX0(_name);
@@ -808,9 +902,9 @@ public:
 		this->offset = _offset;
 		// this->value = getVal(lookupList(this->name));
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
+	int eval() {
 		// this->variables_list = _variables_list;
-		return (this->offset + this->reg->eval(variables_list));
+		return (this->offset + this->reg->eval());
 	}
 	void setValue(int _value) {
 		this->value = _value;
@@ -824,23 +918,20 @@ public:
 private:
 	RegX0 *reg;
 	int value, offset;
-	list<pair<std::string, int>> *variables_list;
 };
 IntRegX0* IRX(int _offset,RegX0 *_reg) {
 	return new IntRegX0(_offset, _reg);
 }
 
-// not sure what this one does
-// var (x) <-- var
+// var (x) <-- arg
 class VarX0 : public ArgX0 {
 public:
 	VarX0(string _name) {
 		this->name = _name;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	int eval() {
 		std::list<pair<std::string, int>>::iterator it;
-		for (it = variables_list->begin(); it != variables_list->end(); ++it) {
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
 			if ((*it).first == this->name) {
 				return (*it).second;
 			}
@@ -861,7 +952,6 @@ public:
 private:
 	string name;
 	int value;
-	list<pair<std::string, int>> *variables_list;
 };
 VarX0* VX(string _name) {
 	return new VarX0(_name);
@@ -871,10 +961,11 @@ VarX0* VX(string _name) {
 class InstrX0 {
 public:
 	virtual ~InstrX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
-	virtual int eval(list<pair<std::string, int>> *_variables_list) = 0;
+	virtual int eval() = 0;
 	virtual string toString() = 0;
+	virtual bool isEnd() = 0;
+	virtual bool isJump() = 0;
 private:
-	InstrX0 *temp;
 };
 
 // (popq arg) <-- instruction
@@ -896,8 +987,7 @@ public:
 		delete (tmp);
 		return value;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
 				if (!isEmpty()) {
@@ -916,9 +1006,14 @@ public:
 	string toString() {
 		return "\tpopq\t\t" + this->dest->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
 	ArgX0 *dest;
-	list<pair<std::string, int>> *variables_list;
 };
 PopqX0* PopX(ArgX0 *_arg) {
 	return new PopqX0(_arg);
@@ -937,8 +1032,7 @@ public:
 		rsp->link = top;
 		top = rsp;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->src->getName()) {
 				(push((*it).second));
@@ -951,9 +1045,14 @@ public:
 	string toString() {
 		return "\tpushq\t\t" + this->src->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
 	ArgX0 *src;
-	list<pair<std::string, int>> *variables_list;
 };
 PushqX0* PshX(ArgX0 *_arg) {
 	return new PushqX0(_arg);
@@ -964,11 +1063,11 @@ class RetqX0 : public InstrX0 {
 public:
 	~RetqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	RetqX0() {}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == "rax") {
-				(*it).second = 0;
+				// (*it).second = 0;
+				cout << "\tValue at %rax is : " << (*it).second << "\n\n";
 				success = true;
 				return 0;
 			}
@@ -984,37 +1083,48 @@ public:
 			return "\tretq\n";
 		}
 	}
+	bool isEnd() {
+		return true;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
 	bool success = false;
-	list<pair<std::string, int>> *variables_list;
 };
 RetqX0* RtX() {
 	return new RetqX0();
 };
 
-// (callq print_int) <-- instruction (function printing out %rdi)
+// (callq read_int) <-- instruction (function printing out %rdi)
 class CallqX0 : public InstrX0 {
 public:
 	~CallqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	CallqX0() {
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	int eval() {
+		cout << "\nType the input value -> ";
+		cin >> this->value;
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-			if ((*it).first == "rdi") {
-				this->value = (*it).second;
-				cout << "\nInfo:\n\tValue at %rdi is: " << this->value << "\n\n";
+			if ((*it).first == "rax") {
+				(*it).second = this->value;
+				cout << "\nInfo:\n\tValue at %rax is now: " << this->value << "\n\n";
 				return 0;
 			}
 		}
 		return 5;
 	}
 	string toString() {
-		return "\tcallq\t\tprint_int\n";
+		return "\tcallq\t\tread_int\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
 	}
 private:
 	int value;
-	list<pair<std::string, int>> *variables_list;
 };
 CallqX0* CllX() {
 	return new CallqX0();
@@ -1027,11 +1137,17 @@ public:
 	NegqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
-		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = -this->dest->eval(this->variables_list));
+				((*it).second = -this->dest->eval());
+				return 0;
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = -this->dest->eval());
 				return 0;
 			}
 		}
@@ -1040,9 +1156,14 @@ public:
 	string toString() {
 		return "\tnegq\t\t" + this->dest->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
 	ArgX0 *dest;
-	list<pair<std::string, int>> *variables_list;
 };
 NegqX0* NgX(ArgX0* _dest) {
 	return new NegqX0(_dest);
@@ -1056,22 +1177,60 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
-		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->variables_list) - this->dest->eval(this->variables_list));
-				return 0;
-			}
-		}
-		return 3;
+	int eval() {
+		if (readValue(&rd_dst, this->dest->getName()) == 1)
+			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
+		writeValue(this->rd_dst - this->rd_src);
+		return 0;
 	}
 	string toString() {
 		return "\tsubq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	int readValue(int *_val, string _name) {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	void writeValue(int _value) {
+		this->dest->setValue(_value);
+	}
+	bool isJump() {
+		return false;
+	}
 private:
+	int src_rd = 0;
+	int rd_src, rd_dst;
 	ArgX0 *src, *dest;
-	list<pair<std::string, int>> *variables_list;
 };
 SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
 	return new SubqX0(_src, _dest);
@@ -1085,22 +1244,60 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
-		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->variables_list) + this->dest->eval(this->variables_list));
-				return 0;
+	int eval() {
+		if (readValue(&rd_dst, this->dest->getName()) == 1)
+			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
+writeValue(this->rd_dst + this->rd_src);
+return 0;
+	}
+	int readValue(int *_val, string _name) {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
 			}
 		}
-		return 2;
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	void writeValue(int _value) {
+		this->dest->setValue(_value);
 	}
 	string toString() {
 		return "\taddq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
+	int src_rd = 0;
 	ArgX0 *src, *dest;
-	list<pair<std::string, int>> *variables_list;
+	int rd_src, rd_dst;
 };
 AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
 	return new AddqX0(_src, _dest);
@@ -1114,11 +1311,17 @@ public:
 		this->src = _src;
 		this->dest = _dest;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
-		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval(this->variables_list));
+				((*it).second = this->src->eval());
+				return 0;
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = this->src->eval());
 				return 0;
 			}
 		}
@@ -1127,16 +1330,19 @@ public:
 	string toString() {
 		return "\tmovq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
 	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
 private:
-	list<pair<std::string, int>> *variables_list;
 	ArgX0 *src;
 	ArgX0 *dest;
 };
 MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
 	return new MovqX0(_src, _dest);
 }
-
-class LabelX0;
 
 // block info instructions
 class BlockX0 {
@@ -1152,14 +1358,22 @@ public:
 		}
 		return instr_cnt;
 	}
-	int eval(list<pair<std::string, int>> *_variables_list) {
+	int eval() {
 		list<std::shared_ptr<InstrX0>>::iterator it;
 		instr_cnt = 0;
 		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
 			instr_cnt++;
-			(*it)->eval(_variables_list);
+			(*it)->eval();
+			if ((*it)->isEnd()) {
+				end = true;
+				return 0;
+			}
+			if ((*it)->isJump() == true) {
+				jump = true;
+				return 0;
+			}
 		}
-		return instr_cnt;
+		return 0;
 	}
 	// output to terminal for now
 	void emit() {
@@ -1168,7 +1382,15 @@ public:
 			cout << (*it)->toString() << "\t";
 		}
 	}
+	bool isEnd() {
+		return end;
+	}
+	bool isJump() {
+		return jump;
+	}
 private:
+	bool end = false;
+	bool jump = false;
 	list<std::shared_ptr<InstrX0>> *instructions_list;
 	int instr_cnt;
 	LabelX0 *label;
@@ -1183,22 +1405,64 @@ public:
 	void emit() {
 		cout << name << "\t";
 	}
+	string getName() {
+		return this->name;
+	}
 private:
 	string name;
+};
+LabelX0* LbX(string _name) {
+	return new LabelX0(_name);
+}
+
+// (jmp label) <-- instruction
+class JumpX0 : public InstrX0 {
+public:
+	~JumpX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	JumpX0(LabelX0 *_label) {
+		this->label = _label;
+	}
+	int eval() {
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			if ((it->first->getName()) == (this->label->getName())) {
+				it->second->eval();
+				if ((it->second)->isEnd()) {
+					return 0;
+				}
+				if ((it->second)->isJump() == true) {
+					return 0;
+				}
+			}
+		}
+	}
+	string toString() {
+		return "\tjmp\t\t" + label->getName() + "\n";
+	};
+	bool isEnd() {
+		return false;
+	};
+	bool isJump() {
+		return true;
+	};
+private:
+	LabelX0 *label;
 };
 
 // program info [label->block]
 class ProgramX0 {
 public:
-	ProgramX0(list<pair<std::string, int>> *_variables_list) {
-		this->variables_list = _variables_list;
+	ProgramX0() {
 		pcnt = 0;
 	}
-	// static list <pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>> label_block_list;
 	void execute() {
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
-			it->second->eval(NULL);
+			if(it->second->eval()==0) 
+				cout << "\tSuccessful Run\n\n";
+			if ((it->second)->isEnd()) {
+				return;
+			}
 		}
 	}
 	void emit() {
@@ -1209,8 +1473,11 @@ public:
 		}
 	}
 private:
-	list<pair<std::string, int>> *variables_list;
 };
+ProgramX0* PX(){
+	return new ProgramX0();
+}
+*/
 
 // -----------------------------------------------------------------------------------------------------------
 //				 ----	-----			-------	----- -   - -----
