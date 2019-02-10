@@ -25,7 +25,7 @@ Compiler Written in C++ for Jay to Review
 + Write an interpreter for X0 programs.
 + Connect your X0 test suite to your system assembler.
 - 
-+ --> February 10th, 10:10pm <--
+--> February 10th, 10:10pm <--
 - F+
 - 
 C0 BASICS
@@ -54,6 +54,7 @@ SELECT-INSTR()
 - Implement the select-instr pass for C0 programs.
 - Connect select-instr to your test suite.
 - 
+--> February 17th, 23:59pm <--
 - D-
 - 
 - Write a few tests for assign-homes that predict its output.
