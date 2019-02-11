@@ -712,26 +712,15 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 // -----------------------------------------------------------------------------------------------------------
 
 /*
-	18) +/- define data types for X0 program ASTs
-		
-		--> jos malo rada na strukturi + unique pointeri eventualno + koristi proslost i stari X0 kod
-
-		- var = var-not-otherwise-mentioned
-		- - label = string --> places that you can JUMP to --> goto replaces if, ... in X86
-		- register = ...
-		- arg = ...
-		- instr = ...
-		- - blk = ... --> dodaj - sadrzi informacije o machine stateu/ovima i instrukciju
-							- instructions under labels
-		- - p = ... --> sadrzi - informacije o machine stateu/ovima i label s odgovarajucim blockom
-	19) ! write an emitter for X0 programs - obicni toString jel...
+	18) + define data types for X0 program ASTs
+	19) + write an emitter for X0 programs - obicni toString jel...
 		- should emit in the syntax of the assembler you will use
 		- takes a parameter whether variables should be allowed in the output
 		- only makes sense for debugging
 	20) 1/12 build a test suite of a dozen X0 programs - jasno trivijalno
 		- intrp should ony ret value of rax on retq rather than entire state of machine
 		- ideally these programs are manually compiled versions of your R1 test programs
-	21) +/- write an interpreter for X0 programs - interpretator jasno
+	21) + write an interpreter for X0 programs - interpretator jasno
 		- register file is simple fixed vector where registers are indices and the stack is stack
 		- have to have special case for when you callq to system function like read or print
 	22) ? connect your X0 test suite to system assembler --> google the shit out of it
@@ -1536,22 +1525,20 @@ ProgramX0* PX(){
 					--> adds new statement to existing set of statements received from arguments
 */
 
-
-
 static list<pair<string, int>> variables;
 
 // (exp)
 class ExpC0 {
 public:
-	virtual int eval(list<pair<string, int>> *_vars) = 0;
+	virtual int eval() = 0;
 	string virtual toString() = 0;
 private:
 };
 
-// (argument)
+// (argument) <-- exp?
 class ArgC0 : public ExpC0 {
 public:
-	virtual int eval(list<pair<string, int>> *_vars) = 0;
+	virtual int eval() = 0;
 	string virtual toString() = 0;
 private:
 };
@@ -1562,7 +1549,7 @@ public:
 	IntC0(int _value) {
 		this->value = _value;
 	}
-	int eval(list<pair<string, int>> *_vars) {
+	int eval() {
 		return this->value;
 	}
 	string toString() {
@@ -1578,9 +1565,8 @@ public:
 	VarC0(string _name) {
 		this->name = _name;
 	}
-	int setVal(int _value, list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		for (list<pair<string, int>>::iterator it = this->vars->begin(); it != this->vars->end(); it++) {
+	int setVal(int _value) {
+		for (list<pair<string, int>>::iterator it = variables.begin(); it != variables.end(); it++) {
 			if ((*it).first == this->name) {
 				(*it).second = _value;
 				return 0;
@@ -1589,9 +1575,8 @@ public:
 		cout << "\tVariable: " << this->name << " is not found.\n";
 		return 1;
 	}
-	int eval(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		for (list<pair<string, int>>::iterator it = this->vars->begin(); it != this->vars->end(); it++) {
+	int eval() {
+		for (list<pair<string, int>>::iterator it = variables.begin(); it != variables.end(); it++) {
 			if ((*it).first == this->name) {
 				return (*it).second;
 			}
@@ -1603,7 +1588,6 @@ public:
 		return "\t(" + this->name + ")";
 	}
 private:
-	list<pair<string, int>> *vars;
 	string name;
 };
 
@@ -1611,7 +1595,7 @@ private:
 class ReadC0 : public ExpC0 {
 public:
 	ReadC0() {}
-	int eval(list<pair<string, int>> *_vars) {
+	int eval() {
 		cout << "Enter the integer value for (read): ";
 		cin >> this->value;
 		cout << "\n";
@@ -1622,7 +1606,6 @@ public:
 	}
 private:
 	int value;
-	list<pair<string, int>> *vars;
 };
 
 // (- arg) <-- exp
@@ -1631,15 +1614,13 @@ public:
 	NegC0(ArgC0 *_arg) {
 		this->arg = _arg;
 	}
-	int eval(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		return (-this->arg->eval(this->vars));
+	int eval() {
+		return (-this->arg->eval());
 	}
 	string toString() {
 		return "\t(- " + this->arg->toString() + ")";
 	}
 private:
-	list<pair<string, int>> *vars;
 	ArgC0 *arg;
 };
 
@@ -1650,22 +1631,20 @@ public:
 		this->left = _left;
 		this->right = _right;
 	}
-	int eval(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		return (this->left->eval(this->vars) + this->right->eval(this->vars));
+	int eval() {
+		return (this->left->eval() + this->right->eval());
 	}
 	string toString() {
 		return "\t(+ " + this->left->toString() + " " + this->right->toString() + ")";
 	}
 private:
 	ArgC0 *left, *right;
-	list<pair<string, int>> *vars;
 };
 
 // (stmt)
 class StmtC0 {
 public:
-	virtual int eval(list<pair<string, int>> *_vars) = 0;
+	virtual int eval() = 0;
 	virtual string toString() = 0;
 private:
 };
@@ -1677,9 +1656,8 @@ public:
 		this->var = _var;
 		this->exp = _exp;
 	}
-	int eval(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		if (this->var->setVal(this->exp->eval(this->vars), this->vars) == 0) {
+	int eval() {
+		if (this->var->setVal(this->exp->eval()) == 0) {
 			return 0;
 		}
 		else {
@@ -1691,7 +1669,6 @@ public:
 		return "\t(assign\t" + this->var->toString() + this->exp->toString() + ")\n";
 	}
 private:
-	list<pair<string, int>> *vars;
 	VarC0 *var;
 	ExpC0 *exp;
 };
@@ -1702,9 +1679,8 @@ public:
 	RetC0(ArgC0 *_arg) {
 		this->arg = _arg;
 	}
-	int eval(list<pair<string, int>> *_vars) {
-		this->vars = _vars;
-		cout << "\t\t>> Return Value is " << this->arg->eval(this->vars) << " for following return statement <<\n";
+	int eval() {
+		cout << "\t\t>> Return Value is " << this->arg->eval() << " for following return statement <<\n";
 		return 0;
 	}
 	string toString() {
@@ -1712,13 +1688,12 @@ public:
 	}
 private:
 	ArgC0 *arg;
-	list<pair<string, int>> *vars;
 };
 
 // C0
 class C0 {
 public:
-	virtual void execute(list<pair<string, int>> *vars_) = 0;
+	virtual void execute() = 0;
 private:
 };
 
@@ -1726,16 +1701,13 @@ private:
 class ProgC0 : public C0 {
 
 public:
-
 	ProgC0(list<std::unique_ptr<StmtC0>> *stmts_) {
 		this->stmts = stmts_;
 	}
-
-	void execute(list<pair<string, int>> *vars_) {
-		this->vars = vars_;
+	void execute() {
 		cout << "\nProgram:\n\n";
 		for (std::list<std::unique_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
-			if ((*it)->eval(vars) == 0) {
+			if ((*it)->eval() == 0) {
 				cout << "\t" << (*it)->toString();
 			}
 			else {
@@ -1743,17 +1715,13 @@ public:
 			}
 		}
 		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
-		for (std::list<pair<std::string, int>>::iterator it = vars->begin(); it != vars->end(); ++it) {
+		for (std::list<pair<std::string, int>>::iterator it = variables.begin(); it != variables.end(); ++it) {
 			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 		}
 		cout << "\n";
 	}
-
 private:
-
-	list<pair<string, int>> *vars;
 	list<std::unique_ptr<StmtC0>> *stmts;
-
 };
 
 #endif

@@ -403,8 +403,7 @@ int main() {
 	
 		// list of statements tester
 		list<std::unique_ptr<StmtC0>> prog_tester;
-		list<pair<std::string, int>> vars;
-
+		
 		prog_tester.emplace_back(assign_read2var);
 		prog_tester.emplace_back(assign_int2var);
 		prog_tester.emplace_back(assign_var2var);
@@ -414,15 +413,15 @@ int main() {
 		prog_tester.emplace_back(ret_var);
 		prog_tester.emplace_back(ret_int);
 	
-		vars.push_back(std::make_pair("a", 0));
-		vars.push_back(std::make_pair("b", 0));
-		vars.push_back(std::make_pair("c", 0));
-		vars.push_back(std::make_pair("x", 0));
-		vars.push_back(std::make_pair("y", 0));
-		vars.push_back(std::make_pair("z", 0));
+		variables.push_back(std::make_pair("a", 0));
+		variables.push_back(std::make_pair("b", 0));
+		variables.push_back(std::make_pair("c", 0));
+		variables.push_back(std::make_pair("x", 0));
+		variables.push_back(std::make_pair("y", 0));
+		variables.push_back(std::make_pair("z", 0));
 			
 		ProgC0 *program = new ProgC0(&prog_tester);
-		program->execute(&vars);
+		program->execute();
 
 		system("pause");
 
