@@ -97,16 +97,15 @@
 	26) + write an interpreter for C0 programs
 		- should use global environment for variables values and should error 
 		  when undefined variables are referenced
-
-	27) ! write a few tests for uniquify that predict its output
+	27) + write a few tests for uniquify that predict its output
 		- this is only possible if your unique names are predictable
 		- these tests should be explicitly designed to have multiple occurrences of the same variable in the input 
 		  that mean different things
-	28) ! implement the uniquify pass for R1 programs
+	28) + implement the uniquify pass for R1 programs
 		- this accepts R1 programs and returns new R1 programs that are guaranteed 
 		  to use unique variables in each let expression 
 		- I recommend doing something to make the unique names deterministic, so it is possible to write tests
-	29) ! connect uniquify to your test suite
+	29) 1/12 connect uniquify to your test suite
 		- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
 
 	30) ! write a half-dozen tests for resolve-complex that predict its output
@@ -253,6 +252,8 @@ using namespace std;
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
 
+static int variable_counter_R1 = 0;
+
 enum Operation {Add, Neg, Read, Num};
 
 class VarR0;
@@ -266,6 +267,7 @@ public:
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
+	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) = 0;
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
@@ -317,6 +319,9 @@ public:
 	bool isNegExp() {
 		return false;
 	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		return this;
+	}
 private:
 	int value;
 };
@@ -358,6 +363,9 @@ public:
 	}
 	bool isNegExp() {
 		return false;
+	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		return this;
 	}
 private:
 	int value;
@@ -444,9 +452,14 @@ public:
 	ExpR0* getL() {
 		return lexp;
 	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		this->mapp = _mapp;
+		return new AddR0(this->lexp->uniquify(this->mapp), this->rexp->uniquify(this->mapp));
+	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
+	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
 class NegR0 : public ExpR0 {
@@ -505,18 +518,24 @@ public:
 	ExpR0* getExp() {
 		return exp;
 	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		this->mapp = _mapp;
+		return new NegR0(this->exp->uniquify(mapp));
+	}
 private:
 	ExpR0 *exp;
 	list<pair<string, int>> *info;
 	int value;
+	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
-// gotta figure out all 4 optimization functions for let and var
 class VarR0 : public ExpR0 {
 public:
 	VarR0(string _name) {
 		this->name = _name;
-		// put it into the list of variables 
+	}
+	VarR0(VarR0 *old_variable) {
+		this->name = old_variable->name + "_" + to_string(variable_counter_R1++);
 	}
 	int eval(list<pair<std::string, int>> *_info) {
 		this->info = _info;
@@ -554,9 +573,25 @@ public:
 	bool isNegExp() {
 		return false;
 	}
+	void setString(string _name) {
+		this->name = _name;
+	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		mapp = _mapp;
+		std::list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>::iterator it;
+		for (it = (*mapp).begin(); it != (*mapp).end(); ++it) {
+			if ((*it).first->toString() == this->toString()) {
+				this->setString((*it).second->toString());
+				return this;
+			}
+		}
+		cout << "\n\tNo mapping - error occured.\n";
+		return this;
+	}
 private:
 	string name;
 	list<pair<string, int>> *info;
+	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
 // kad je variabla ista koristena tada brises u novom environmentu staru vrijednost
@@ -577,7 +612,7 @@ public:
 		std::list<pair<std::string, int>>::iterator it;
 		for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
 			if ((*it).first == this->variable->toString()) {
-				((*it).second = var_value);
+				(*it).second = var_value;
 				return b_exp->eval(new_info);
 			}
 		}
@@ -627,10 +662,33 @@ public:
 	bool isNegExp() {
 		return false;
 	}
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		this->mapp = _mapp;
+		VarR0 *new_variable = new VarR0(this->variable);
+		std::list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>::iterator it;
+		for (it = (*mapp).begin(); it != (*mapp).end(); ++it) {
+			// if this variable already has been mapped we skratch that 
+			// and put new mapping in 
+			if ((*it).first->toString() == this->variable->toString()) {
+				this->new_mapp = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
+				new_mapp = mapp;
+				std::list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>::iterator it1;
+				for (it1 = (*new_mapp).begin(); it1 != (*new_mapp).end(); ++it1) {
+					if ((*it1).first->toString() == this->variable->toString()) {
+						(*it1).second = unique_ptr<VarR0>(new_variable);
+					}
+				}
+				return new LetR0(new VarR0(new_variable->toString()), this->x_exp->uniquify(new_mapp), this->b_exp->uniquify(new_mapp));
+			}
+		}
+		(*mapp).emplace_back(std::make_pair(unique_ptr<VarR0>(new VarR0(this->variable->toString())), unique_ptr<VarR0>(new_variable)));
+		return new LetR0(new VarR0(new_variable->toString()), this->x_exp->uniquify(mapp), this->b_exp->uniquify(mapp));
+	}
 private:
 	VarR0 *variable;
 	ExpR0 *x_exp, *b_exp;
 	list<pair<string, int>> *info;
+	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp,*new_mapp;
 };
 
 ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be) {
@@ -718,7 +776,6 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		}
 	}
 }
-*/
 
 // -----------------------------------------------------------------------------------------------------------
 //				-	-	-----			-------	----- -   - -----
@@ -1541,6 +1598,8 @@ ProgramX0* PX(){
 					--> adds new statement to existing set of statements received from arguments
 */
 
+/*
+
 class LabelC0;
 class TailC0;
 
@@ -1809,5 +1868,7 @@ public:
 	}
 private:
 };
+
+*/
 
 #endif
