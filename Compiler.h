@@ -82,12 +82,7 @@
 		- create intermediate file containing the assembly on disk - you can look at assembly 
 		  you producing during compilation in the future 
 		- automatically compare results of assembled program and your interpreter
-
-*/
-
-/*
-
-	23) ! define data types for C0 program ASTs
+	23) + define data types for C0 program ASTs
 		- var = ...
 		- label = ...
 		- arg = ...
@@ -95,14 +90,14 @@
 		- stmt = ...
 		- tail = ...
 		- p = ...
-	24) ! write a pretty printer for C0 programs
+	24) + write a pretty printer for C0 programs
 		- purely debugging tool
 	25) 1/12 build a test suite of a dozen C0 programs
 		- manually compiled versions of R1 test programs
-	26) ! write an interpreter for C0 programs
+	26) + write an interpreter for C0 programs
 		- should use global environment for variables values and should error 
 		  when undefined variables are referenced
-		  
+
 	27) ! write a few tests for uniquify that predict its output
 		- this is only possible if your unique names are predictable
 		- these tests should be explicitly designed to have multiple occurrences of the same variable in the input 
@@ -113,6 +108,7 @@
 		- I recommend doing something to make the unique names deterministic, so it is possible to write tests
 	29) ! connect uniquify to your test suite
 		- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
+
 	30) ! write a half-dozen tests for resolve-complex that predict its output
 		- write a half-dozen tests for resolve-complex that predict its output
 		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
@@ -123,6 +119,7 @@
 		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter 
 		- you could also write a function that checks to see if your result is in the correct form 
 		- remember, this pass requires uniquify to have already run
+
 	33) ! write a half-dozen tests for explicate-control that predict its output
 		- work through the complicated examples and especially ensure that the order of operations (especially read calls) 
 		  is preserved
@@ -133,6 +130,7 @@
 	35) ! connect explicate-control to your test suite
 		- ensure that every test program behaves the same before and after explicate-control by using the C0 interpreter 
 		- remember, this pass requires resolve-complex to have already run
+
 	36) ! write a few tests for uncover-locals that predict its output
 		- this should be very easy to do!
 	37) ! implement the uncover-locals pass for C0 programs
@@ -143,6 +141,7 @@
 		- this is trivial because uncover-locals shouldn’t effect the behavior of programs 
 		- you’re just doing this to make sure you call it and to make you didn’t accidentally change anything important 
 		  during this pass
+
 	39) ! write a half-dozen tests for select-instr that predict its output
 		- you’ll want to make sure that you maintain the correct order and select the write assembly instructions
 	40) ! implement the select-instr pass for C0 programs
@@ -151,6 +150,7 @@
 		- remember to use helper functions for each kind of C0 AST
 	41) ! connect select-instr to your test suite
 		- ensure that every test program behaves the same before and after select-instr by using the X0 interpreter
+
 	42) ! write a few tests for assign-homes that predict its output
 		- you’ll want to make sure that the output program contains no variables 
 		  and that variables are assigned homes consistently
@@ -161,6 +161,7 @@
 	44) ! connect assign-homes to your test suite
 		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter 
 		- you may want to also include a check that guarantees the result contains no variable references
+
 	45) ! write a half-dozen tests for patch-instructions that predict its output
 		- you’ll want to make sure memory references are legal
 	46) ! implement the patch-instructions pass for X0 programs
@@ -170,6 +171,7 @@
 		- ensure that every test program behaves the same before and after patch-instructions 
 		  by using the X0 interpreter
 		- remember, this pass assumes that assign-homes has run
+
 	48) ! implement your language runtime
 		- initially, this is just two functions: read_int and print_int 
 		- the first corresponds to the read call and the second is automatically used at the end of programs
@@ -230,8 +232,23 @@
 
 using namespace std;
 
-/*
-// R0-R1: steps 1-17
+
+// R0-R1: steps 1-17 + 27-29
+
+/*	
+
+27) ! write a few tests for uniquify that predict its output
+	- this is only possible if your unique names are predictable
+	- these tests should be explicitly designed to have multiple occurrences of the same variable in the input
+	  that mean different things
+28) ! implement the uniquify pass for R1 programs
+	- this accepts R1 programs and returns new R1 programs that are guaranteed
+	  to use unique variables in each let expression
+	- I recommend doing something to make the unique names deterministic, so it is possible to write tests
+29) ! connect uniquify to your test suite
+	- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
+
+*/
 
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
@@ -1477,7 +1494,7 @@ ProgramX0* PX(){
 // -----------------------------------------------------------------------------------------------------------
 
 /*
-	23) ! define data types for C0 program ASTs
+	23) + define data types for C0 program ASTs
 		- var = ...
 		- label = ...
 		- arg = ...
@@ -1485,11 +1502,11 @@ ProgramX0* PX(){
 		- stmt = ...
 		- tail = ...
 		- p = ...
-	24) ! write a pretty printer for C0 programs
+	24) + write a pretty printer for C0 programs
 		- purely debugging tool
 	25) 1/12 build a test suite of a dozen C0 programs
 		- manually compiled versions of R1 test programs
-	26) ! write an interpreter for C0 programs
+	26) + write an interpreter for C0 programs
 		- should use global environment for variables values and should error
 		  when undefined variables are referenced
 */
@@ -1507,12 +1524,11 @@ ProgramX0* PX(){
 			  | (+ arg arg)
 
 	stmt	::= (assign var exp)
-			   -| (return arg)
 
-	- tail	::= (return arg)
+	tail	::= (return arg) | (seq stmt tail)
 
-	C0   ::= (program (var*) stmt+) + [label->tail]
-
+	C0   ::= (program info + [label->tail]) <-- {label->tail refers to instruction set}
+	
 	C Code: progC0
 		- receives list of stmts initialized in main
 		- executes in a way that it receives all variables necessary for execution
@@ -1525,7 +1541,11 @@ ProgramX0* PX(){
 					--> adds new statement to existing set of statements received from arguments
 */
 
-static list<pair<string, int>> variables;
+class LabelC0;
+class TailC0;
+
+static list<pair<string, int>> Variables;
+static list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>> label_tail_list;
 
 // (exp)
 class ExpC0 {
@@ -1535,8 +1555,8 @@ public:
 private:
 };
 
-// (argument) <-- exp?
-class ArgC0 : public ExpC0 {
+// (argument) <-- exp
+class ArgC0 : public ExpC0{
 public:
 	virtual int eval() = 0;
 	string virtual toString() = 0;
@@ -1566,17 +1586,17 @@ public:
 		this->name = _name;
 	}
 	int setVal(int _value) {
-		for (list<pair<string, int>>::iterator it = variables.begin(); it != variables.end(); it++) {
+		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
 			if ((*it).first == this->name) {
 				(*it).second = _value;
 				return 0;
 			}
 		}
-		cout << "\tVariable: " << this->name << " is not found.\n";
+		cout << "\tError: Variable: " << this->name << " is not found.\n";
 		return 1;
 	}
 	int eval() {
-		for (list<pair<string, int>>::iterator it = variables.begin(); it != variables.end(); it++) {
+		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
 			if ((*it).first == this->name) {
 				return (*it).second;
 			}
@@ -1673,8 +1693,8 @@ private:
 	ExpC0 *exp;
 };
 
-// (return arg) <-- stmt
-class RetC0 : public StmtC0 {
+// (return arg) 
+class RetC0 {
 public:
 	RetC0(ArgC0 *_arg) {
 		this->arg = _arg;
@@ -1686,42 +1706,108 @@ public:
 	string toString() {
 		return "\t(return " + this->arg->toString() + ")\n";
 	}
+	ArgC0* get_arg() {
+		return this->arg;
+	}
 private:
 	ArgC0 *arg;
 };
 
-// C0
-class C0 {
+// (label->tail) 
+class LabelC0 {
 public:
-	virtual void execute() = 0;
+	LabelC0(string _name) {
+		this->name = _name;
+	}
+	void emit() {
+		cout << this->name << "\n";
+	}
 private:
+	string name;
 };
 
-// (program (var*) stmt+) <-- C0
-class ProgC0 : public C0 {
-
+// (return arg) | (sequence stmt tail) <-- tail
+class TailC0 {
 public:
-	ProgC0(list<std::unique_ptr<StmtC0>> *stmts_) {
-		this->stmts = stmts_;
+	TailC0(list<std::shared_ptr<StmtC0>> *_stmts) {
+		this->stmts = _stmts;
 	}
-	void execute() {
-		cout << "\nProgram:\n\n";
-		for (std::list<std::unique_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
-			if ((*it)->eval() == 0) {
-				cout << "\t" << (*it)->toString();
+	TailC0(RetC0 *_ret) {
+		this->ret = _ret;
+		is_end = true;
+	}
+	int eval() {
+		if (isEnd() == true) {
+			if (this->ret->eval() == 0) {
+				cout << "\t" << this->ret->toString();
+				return 0;
 			}
 			else {
+				cout << "\n\tError executing return.\n";
+				return 1;
+			}
+		}
+		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
+			if ((*it)->eval() != 0) {
+				// cout << "\t" << (*it)->toString();
 				cout << "\n\tError executing program.\n\tCheck statement: " << (*it)->toString() << "\n";
+				return 1;
 			}
 		}
 		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
-		for (std::list<pair<std::string, int>>::iterator it = variables.begin(); it != variables.end(); ++it) {
+		for (std::list<pair<std::string, int>>::iterator it = Variables.begin(); it != Variables.end(); ++it) {
 			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 		}
 		cout << "\n";
+		return 0;
+	}
+	bool isEnd() {
+		return this->is_end;
+	}
+	void emit() {
+		if (isEnd() == true) {
+			cout << "\t" << this->ret->toString() << "\n";
+			return;
+		}
+		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
+			cout << "\t" << (*it)->toString();
+			
+		}
+		return;
 	}
 private:
-	list<std::unique_ptr<StmtC0>> *stmts;
+	bool is_end = false;
+	list<std::shared_ptr<StmtC0>> *stmts;
+	RetC0 *ret;
+};
+
+// (program info {variables} [label->tail] {list_label_tail}
+class ProgC0 {
+public:
+	// for now okay, eventually program will be in static list
+	// where label points to tail 
+	ProgC0() {
+	}
+	void execute() {
+		cout << "\nProgram:\n\n";
+		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
+		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
+			if (it->second->eval() != 0)
+				cout << "\nError\n";
+			cout << "\n";
+			if ((it->second)->isEnd()) {
+				return;
+			}
+		}
+	}
+	void emit() {
+		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
+		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
+			it->first->emit();
+			it->second->emit();
+		}
+	}
+private:
 };
 
 #endif

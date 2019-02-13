@@ -389,40 +389,41 @@ int main() {
 	//				 ----   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-		// assignment tester
-		StmtC0 *assign_read2var = new AssignC0(new VarC0("x"), new ReadC0());								// read2arg
-		StmtC0 *assign_int2var = new AssignC0(new VarC0("y"), new IntC0(5));								// arg2arg
-		StmtC0 *assign_var2var = new AssignC0(new VarC0("z"), new VarC0("x"));								// arg2arg
-		StmtC0 *assign_negvar2var = new AssignC0(new VarC0("a"), new NegC0(new VarC0("x")));				// neg(var)2arg
-		StmtC0 *assign_negint2var = new AssignC0(new VarC0("b"), new NegC0(new IntC0(5)));					// neg(int)2arg
-		StmtC0 *assign_plus2var = new AssignC0(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x")));	// plus(int,var)2arg
-			
-		// return tester
-		StmtC0 *ret_var = new RetC0(new VarC0("x"));
-		StmtC0 *ret_int = new RetC0(new IntC0(5));
+/*
+		// label tester
+		std::shared_ptr<LabelC0> lbl1_tester(new LabelC0("main:"));
+		std::shared_ptr<LabelC0> lbl2_tester(new LabelC0("end:"));
 	
-		// list of statements tester
-		list<std::unique_ptr<StmtC0>> prog_tester;
+		// initializing program
+		list<std::shared_ptr<StmtC0>> tail1_tester;
 		
-		prog_tester.emplace_back(assign_read2var);
-		prog_tester.emplace_back(assign_int2var);
-		prog_tester.emplace_back(assign_var2var);
-		prog_tester.emplace_back(assign_negvar2var);
-		prog_tester.emplace_back(assign_negint2var);
-		prog_tester.emplace_back(assign_plus2var);
-		prog_tester.emplace_back(ret_var);
-		prog_tester.emplace_back(ret_int);
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("x"), new ReadC0()));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("y"), new IntC0(5)));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("x")));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("x"))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("b"), new NegC0(new IntC0(5))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x"))));
 	
-		variables.push_back(std::make_pair("a", 0));
-		variables.push_back(std::make_pair("b", 0));
-		variables.push_back(std::make_pair("c", 0));
-		variables.push_back(std::make_pair("x", 0));
-		variables.push_back(std::make_pair("y", 0));
-		variables.push_back(std::make_pair("z", 0));
-			
-		ProgC0 *program = new ProgC0(&prog_tester);
+		Variables.push_back(std::make_pair("a", 0));
+		Variables.push_back(std::make_pair("b", 0));
+		Variables.push_back(std::make_pair("c", 0));
+		Variables.push_back(std::make_pair("x", 0));
+		Variables.push_back(std::make_pair("y", 0));
+		Variables.push_back(std::make_pair("z", 0));
+
+		TailC0 *temp_tail1 = new TailC0(&tail1_tester);
+		auto tail_main = std::make_shared<TailC0>(*temp_tail1);
+
+		auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("x")));
+
+		label_tail_list.emplace_back(std::make_pair(lbl1_tester, tail_main));
+		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
+
+		ProgC0 *program = new ProgC0();
 		program->execute();
+		program->emit();
 
 		system("pause");
+*/
 
 }
