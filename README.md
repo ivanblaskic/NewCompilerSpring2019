@@ -28,14 +28,13 @@ Compiler Written in C++ for Jay to Review
 + Write a pretty printer for C0 programs.
 + Build a test suite of a dozen C0 programs.
 + Write an interpreter for C0 programs.
++ Write a few tests for uniquify that predict its output.
++ Implement the uniquify pass for R1 programs.
++ Connect uniquify to your test suite.
 - 
---> February 13th, 7:55pm <--
+--> February 13th, 11:27pm <--
 - F+
 -
-- UNIQUIFY()
-- Write a few tests for uniquify that predict its output.
-- Implement the uniquify pass for R1 programs.
-- Connect uniquify to your test suite.
 - RESOLVE-COMPLEX()
 - Write a half-dozen tests for resolve-complex that predict its output.
 - Implement the resolve-complex pass for R1 programs.
