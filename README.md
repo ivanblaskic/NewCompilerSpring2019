@@ -1,7 +1,7 @@
 # NewCompilerSpring2019
 Compiler Written in C++ for Jay to Review
 
-# ToDoList 26 for Saturday and Sunday
+# ToDoList 
 + Define data types for R0 program ASTs.
 + Write a pretty-printer for R0 programs.
 + Build a test suite of a dozen R0 programs.
