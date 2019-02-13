@@ -24,15 +24,14 @@ Compiler Written in C++ for Jay to Review
 - Build a test suite of a dozen X0 programs. Add 11 more.
 + Write an interpreter for X0 programs.
 + Connect your X0 test suite to your system assembler.
++ Define data types for C0 program ASTs.
++ Write a pretty printer for C0 programs.
++ Build a test suite of a dozen C0 programs.
++ Write an interpreter for C0 programs.
 - 
---> February 10th, 10:10pm <--
+--> February 13th, 7:55pm <--
 - F+
-- 
-- C0 BASICS
-- Define data types for C0 program ASTs.
-- Write a pretty printer for C0 programs.
-- Build a test suite of a dozen C0 programs.
-- Write an interpreter for C0 programs.
+-
 - UNIQUIFY()
 - Write a few tests for uniquify that predict its output.
 - Implement the uniquify pass for R1 programs.
