@@ -307,6 +307,8 @@ public:
 
 	virtual ExpR0* get_me() = 0;
 
+	virtual ExpR0* create_copy() = 0;
+
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
@@ -362,6 +364,9 @@ public:
 	}
 	ExpR0* get_me() {
 		return this;
+	}
+	ExpR0* create_copy() {
+		return new NumR0(this->value);
 	}
 private:
 	int value;
@@ -445,6 +450,9 @@ public:
 	}
 	ExpR0* get_me() {
 		return this;
+	}
+	ExpR0* create_copy() {
+		return new VarR0(this->name);
 	}
 private:
 	int value;
@@ -548,6 +556,9 @@ public:
 	ExpR0* get_me() {
 		return this;
 	}
+	ExpR0* create_copy() {
+		return new AddR0(this->lexp->create_copy(), this->rexp->create_copy());
+	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
@@ -625,6 +636,9 @@ public:
 	}
 	ExpR0* get_me() {
 		return this;
+	}
+	ExpR0* create_copy() {
+		return new NegR0(this->exp->create_copy());
 	}
 private:
 	ExpR0 *exp;
@@ -736,6 +750,9 @@ public:
 	ExpR0* get_me() {
 		return this;
 	}
+	ExpR0* create_copy() {
+		return new LetR0(V(this->variable->toString()), x_exp->create_copy(), b_exp->create_copy());
+	}
 private:
 	VarR0 *variable;
 	ExpR0 *x_exp, *b_exp;
@@ -781,7 +798,6 @@ public:
 	bool isNegExp() {
 		return false;
 	}
-	// road to R1
 	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
 		return this;
 	}
@@ -794,6 +810,9 @@ public:
 	}
 	ExpR0* get_me() {
 		return this;
+	}
+	ExpR0* create_copy() {
+		return R();
 	}
 private:
 	int value;
@@ -843,18 +862,32 @@ public:
 	ExpR0* uniq(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
 		return this->code->uniquify(_mapp);
 	}
-	void resolv() {
-		ExpR0 *result_holder = this->code->resolve_complex();
+	ExpR0* resolv() {
+		result_holder = this->code->resolve_complex();
 		for (std::list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>>::iterator it = var_exp_mapp.begin(); it != var_exp_mapp.end(); ++it) {
-			cout << "\n\tLet (" << it->first->toString() << ") = \t(" << it->second->toString() << ") \tin ";
-			result_holder = V(it->first->toString());
+			cout << "\n\tLet (" << it->first->toString() << ") = \t(" << it->second->toString() << ")";
+			if (it->second->simpleExp())
+				cout << "\t";
+			cout << "\tin ";
+			// result_holder = V(it->first->toString());
 		}
-		cout << "\n\t" << result_holder->toString();
-		return;
+		cout << "\n\t    (" << result_holder->toString() << ")";
+		result_holder = NULL;
+		for (std::list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>>::reverse_iterator it = var_exp_mapp.rbegin(); it != var_exp_mapp.rend(); ++it) {
+			if (!init) {
+				init = true;
+				result_holder = it->first->create_copy();
+			}
+			result_holder = L(V(it->first->toString()), it->second->create_copy(), result_holder);
+		}
+		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>());
+		return result_holder;
 	}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;
+	ExpR0 *result_holder;
+	bool init = false;
 };
 
 /*

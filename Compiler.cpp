@@ -44,7 +44,8 @@ int main() {
 	// -----------------------------------------------------------------------------------------------------------
 
 	mode = Interactive;
-
+	
+	/* R1 uniquify & resolve_complex test_suite
 	// R1 uniquify function test_suite
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 	// let ([x 5] [+(L [(x 6) x]) (x)])
@@ -65,18 +66,19 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 
-	/*
+	// comment these 5 out 
 	if (result == result_uniq)
 		cout << "Compiler works! Bravo :) \n\n";
 	else
 		cout << "Fix compiler! :( \n\n";
 	system("Pause");
-	*/
 
-	//cout << "\nis it -11?\n";
-	tp_uniq->resolv();
+	// R1 resolve_complex function test_suite
+	cout << "\nis it -11?\n";
+	ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
 	cout << "\n\n";
 	system("Pause");
+	*/
 
 	/* 
 	// R1 optimization test_suite
