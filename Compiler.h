@@ -216,6 +216,11 @@
 //				-	 -  -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
 
+/*	R0 on paper
+	R1 about to go on paper
+	R0 + let + var + 
+*/
+
 #pragma once
 
 #ifndef Compiler_H
@@ -234,58 +239,88 @@ using namespace std;
 
 // R0-R1: steps 1-17 + 27-29
 
+
 /*	
 
-27) ! write a few tests for uniquify that predict its output
-	- this is only possible if your unique names are predictable
-	- these tests should be explicitly designed to have multiple occurrences of the same variable in the input
-	  that mean different things
-28) ! implement the uniquify pass for R1 programs
-	- this accepts R1 programs and returns new R1 programs that are guaranteed
-	  to use unique variables in each let expression
-	- I recommend doing something to make the unique names deterministic, so it is possible to write tests
-29) ! connect uniquify to your test suite
-	- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
+	30) ! write a half-dozen tests for resolve-complex that predict its output
+		- write a half-dozen tests for resolve-complex that predict its output
+		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
+	31)	! implement the resolve-complex pass for R1 programs
+		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions
+		- we can express this as a new language
+	32) ! connect resolve-complex to your test suite
+		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter
+		- you could also write a function that checks to see if your result is in the correct form
+		- remember, this pass requires uniquify to have already run
+
+	in:		(+ [+ 2 3] [let x = read in (+ x x)])
+
+	out:	let y	=	(+ 2  3 )	in
+			let x'	=	(read)		in 
+			let z	=	(+ x' x')	in
+			let x	=	(+ y  z )	in
+				x
+
+	in:		let x	8	(+ x x)
+	out:	let z	=	(+ 8 8)		in
+				z
+
 
 */
 
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
 
+class VarR0;
+class ExpR0;
+
 static int variable_counter_R1 = 0;
+static list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>> var_exp_mapp;
 
 enum Operation {Add, Neg, Read, Num};
 
-class VarR0;
-
+// Interface class ExpR0
 class ExpR0 {
 public:
+	// interpreter of the tree-like program
 	int virtual eval(list<pair<string, int>> *_info) = 0;
+
+	// print the tree in the linear form
 	virtual string toString() = 0;
+
+	// is the expression var or int - opt - let specifically
 	bool virtual simpleExp() = 0;
+
+	// simplifying the code - doing all of the possible calculations ahead of interpretation
 	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) = 0;
+
+	// optimizer helpers - is number, addition of number and read, or neg expression
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
+
+	// R1 maker functions
+	// making the program variable set global
 	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) = 0;
+	// making a tree-like code linear
+	virtual ExpR0* resolve_complex() = 0;
+
+	virtual ExpR0* get_me() = 0;
+
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
-
 ExpR0* N(ExpR0* e);
-
 ExpR0* R();
-
 ExpR0* I(int _value);
-
 ExpR0* I();
-
 VarR0* V(string x);
-
+VarR0* V(VarR0 *x);
 ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
+// no reason to worry about
 class NumR0 : public ExpR0 {
 public:
 	NumR0(int _value) {
@@ -322,37 +357,51 @@ public:
 	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
 		return this;
 	}
+	ExpR0* resolve_complex() {
+		return this;
+	}
+	ExpR0* get_me() {
+		return this;
+	}
 private:
 	int value;
 };
 
-class ReadR0 : public ExpR0 {
+// no reason to worry about
+class VarR0 : public ExpR0 {
 public:
-	ReadR0() {
+	VarR0(string _name) {
+		this->name = _name;
 	}
+	VarR0(VarR0 *old_variable) {
+		this->name = old_variable->name + "_" + to_string(variable_counter_R1++);
+	}
+	// given the information on value assigned to the variables return the one assigned to this name
 	int eval(list<pair<std::string, int>> *_info) {
-		if (mode == Interactive) {
-			cout << "Input the value for read: ";
-			cin >> this->value;
-			return this->value;
+		this->info = _info;
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
 		}
-		if (mode == Automated) {
-			this->value = ((rand() % 2049) - 1024);
-			return this->value;
-		}
+		cout << "\n- error_1: Variable " + this->name + " is not initialized yet - \n";
+		return 0;
 	}
 	string toString() {
-		if (mode == Interactive) {
-			return "(read)";
-		}
-		if (mode == Automated) {
-			return to_string(this->value);
-		}
+		return name;
 	}
 	bool simpleExp() {
-		return false;
+		return true;
 	}
 	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
+		std::list<pair<std::string, ExpR0*>>::iterator it;
+		for (it = (*_info).begin(); it != (*_info).end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
+		}
+		cout << "Uninitialized Variable Used: " << this->name << "\n\n";
 		return this;
 	}
 	bool isNum() {
@@ -364,11 +413,44 @@ public:
 	bool isNegExp() {
 		return false;
 	}
+	void setString(string _name) {
+		this->name = _name;
+	}
 	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		mapp = _mapp;
+		std::list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>::iterator it;
+		for (it = (*mapp).begin(); it != (*mapp).end(); ++it) {
+			if ((*it).first->toString() == this->toString()) {
+				this->setString((*it).second->toString());
+				return this;
+			}
+		}
+		cout << "\n\tNo mapping - error occured.\n";
+		return this;
+	}
+	ExpR0* resolve_complex() {
+		for (std::list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>>::iterator it = var_exp_mapp.begin(); it != var_exp_mapp.end(); ++it) {
+			if (it->first->name == this->name) {
+				return it->second->get_me();
+			}
+		}
+		cout << "\n\tERROR: No mapping for variable: " << this->name << "\n";
+		return this;
+	}
+	int getValue() {
+		return this->value;
+	}
+	void setValue(int _value) {
+		this->value = _value;
+	}
+	ExpR0* get_me() {
 		return this;
 	}
 private:
 	int value;
+	string name;
+	list<pair<string, int>> *info;
+	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
 class AddR0 : public ExpR0 {
@@ -456,6 +538,16 @@ public:
 		this->mapp = _mapp;
 		return new AddR0(this->lexp->uniquify(this->mapp), this->rexp->uniquify(this->mapp));
 	}
+	ExpR0* resolve_complex() {
+		VarR0 *new_var = V(V("x"));
+		auto new_variable = std::make_shared<VarR0>(*new_var);
+		auto new_expression = std::shared_ptr<ExpR0>(A(lexp->resolve_complex(), rexp->resolve_complex()));
+		var_exp_mapp.emplace_back(make_pair(new_variable,new_expression));
+		return V(new_var->toString());
+	}
+	ExpR0* get_me() {
+		return this;
+	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
@@ -509,6 +601,7 @@ public:
 			return true;
 		return false;
 	}
+	// helpers in checking if -(-x) = x is possible
 	bool isNegExp() {
 		if (exp->isNegExp())
 			return false;
@@ -522,75 +615,21 @@ public:
 		this->mapp = _mapp;
 		return new NegR0(this->exp->uniquify(mapp));
 	}
+	// da li let ljepimo u mapping ili ga vracamo ili pak vracamo samo variablu
+	ExpR0* resolve_complex() {
+		VarR0 *new_var = V(V("x"));
+		auto new_variable = std::make_shared<VarR0>(*new_var);
+		auto new_expression = std::shared_ptr<ExpR0>(exp->resolve_complex());
+		var_exp_mapp.emplace_back(make_pair(new_variable, new_expression));
+		return V(new_var->toString());
+	}
+	ExpR0* get_me() {
+		return this;
+	}
 private:
 	ExpR0 *exp;
 	list<pair<string, int>> *info;
 	int value;
-	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
-};
-
-class VarR0 : public ExpR0 {
-public:
-	VarR0(string _name) {
-		this->name = _name;
-	}
-	VarR0(VarR0 *old_variable) {
-		this->name = old_variable->name + "_" + to_string(variable_counter_R1++);
-	}
-	int eval(list<pair<std::string, int>> *_info) {
-		this->info = _info;
-		std::list<pair<std::string, int>>::iterator it;
-		for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
-			if ((*it).first == this->name) {
-				return (*it).second;
-			}
-		}
-		cout << "\n- error_1: Variable " + this->name + " is not initialized yet - \n";
-		return 0;
-	}
-	string toString() {
-		return name;
-	}
-	bool simpleExp() {
-		return true;
-	}
-	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
-		std::list<pair<std::string, ExpR0*>>::iterator it;
-		for (it = (*_info).begin(); it != (*_info).end(); ++it) {
-			if ((*it).first == this->name) {
-				return (*it).second;
-			}
-		}
-		cout << "Uninitialized Variable Used: " << this->name << "\n\n";
-		return this;
-	}
-	bool isNum() {
-		return false;
-	}
-	bool isNumRead() {
-		return false;
-	}
-	bool isNegExp() {
-		return false;
-	}
-	void setString(string _name) {
-		this->name = _name;
-	}
-	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
-		mapp = _mapp;
-		std::list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>::iterator it;
-		for (it = (*mapp).begin(); it != (*mapp).end(); ++it) {
-			if ((*it).first->toString() == this->toString()) {
-				this->setString((*it).second->toString());
-				return this;
-			}
-		}
-		cout << "\n\tNo mapping - error occured.\n";
-		return this;
-	}
-private:
-	string name;
-	list<pair<string, int>> *info;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
@@ -646,11 +685,11 @@ public:
 			for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
 				if ((*it).first == this->variable->toString()) {
 					(*it).second = V(this->variable->toString());
-					return L(V(this->variable->toString()), x_expO, b_exp->opt(new_info));
+					return L(dynamic_cast<VarR0*>(V(this->variable->toString())), x_expO, b_exp->opt(new_info));
 				}
 			}
 			(*new_info).push_back(std::make_pair(this->variable->toString(), V(this->variable->toString())));
-			return L(V(this->variable->toString()), x_expO, b_exp->opt(new_info));
+			return L(dynamic_cast<VarR0*>(V(this->variable->toString())), x_expO, b_exp->opt(new_info));
 		}
 	}
 	bool isNum() {
@@ -684,6 +723,19 @@ public:
 		(*mapp).emplace_back(std::make_pair(unique_ptr<VarR0>(new VarR0(this->variable->toString())), unique_ptr<VarR0>(new_variable)));
 		return new LetR0(new VarR0(new_variable->toString()), this->x_exp->uniquify(mapp), this->b_exp->uniquify(mapp));
 	}
+	ExpR0* resolve_complex() {
+		VarR0 *new_var = V(V("x"));
+		auto temp_var = std::make_shared<VarR0>(*variable);
+		auto new_temp_var = std::shared_ptr<ExpR0>(x_exp->resolve_complex());
+		var_exp_mapp.emplace_back(make_pair(temp_var, new_temp_var));
+		auto new_variable = std::make_shared<VarR0>(*new_var);
+		auto new_expression = std::shared_ptr<ExpR0>(b_exp->resolve_complex());
+		var_exp_mapp.emplace_back(make_pair(new_variable, new_expression));
+		return V(new_var->toString());
+	}
+	ExpR0* get_me() {
+		return this;
+	}
 private:
 	VarR0 *variable;
 	ExpR0 *x_exp, *b_exp;
@@ -691,30 +743,83 @@ private:
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp,*new_mapp;
 };
 
+class ReadR0 : public ExpR0 {
+public:
+	ReadR0() {
+	}
+	int eval(list<pair<std::string, int>> *_info) {
+		if (mode == Interactive) {
+			cout << "Input the value for read: ";
+			cin >> this->value;
+			return this->value;
+		}
+		if (mode == Automated) {
+			this->value = ((rand() % 2049) - 1024);
+			return this->value;
+		}
+	}
+	string toString() {
+		if (mode == Interactive) {
+			return "(read)";
+		}
+		if (mode == Automated) {
+			return to_string(this->value);
+		}
+	}
+	bool simpleExp() {
+		return false;
+	}
+	ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {
+		return this;
+	}
+	bool isNum() {
+		return false;
+	}
+	bool isNumRead() {
+		return false;
+	}
+	bool isNegExp() {
+		return false;
+	}
+	// road to R1
+	ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		return this;
+	}
+	ExpR0* resolve_complex() {
+		VarR0 *new_var = V(V("x"));
+		auto new_variable = std::make_shared<VarR0>(*new_var);
+		auto new_expression = std::shared_ptr<ExpR0>(R());
+		var_exp_mapp.emplace_back(make_pair(new_variable, new_expression));
+		return V(new_var->toString());
+	}
+	ExpR0* get_me() {
+		return this;
+	}
+private:
+	int value;
+};
+
 ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be) {
 	return new LetR0(v, ve, be);
 }
-
 VarR0* V(string x) {
 	return new VarR0(x);
 }
-
+VarR0* V(VarR0 *x) {
+	return new VarR0(x);
+}
 ExpR0* A(ExpR0* l, ExpR0* r) {
 	return new AddR0(l, r);
 }
-
 ExpR0* N(ExpR0* e) {
 	return new NegR0(e);
 }
-
 ExpR0* I() {
 	return new NumR0();
 }
-
 ExpR0* R() {
 	return new ReadR0();
 }
-
 ExpR0* I(int _value) {
 	return new NumR0(_value);
 }
@@ -722,7 +827,7 @@ ExpR0* I(int _value) {
 class ProgR0 {
 public:
 	ProgR0(list<pair<string, int>> *_info, ExpR0 *_code) {
-		srand(time(NULL));
+//		srand(time(NULL));
 		code = _code;
 		info = _info;
 	}
@@ -735,11 +840,24 @@ public:
 	ExpR0* optmz(list<pair<std::string, ExpR0*>> *_info) {
 		return code->opt(_info);
 	}
+	ExpR0* uniq(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {
+		return this->code->uniquify(_mapp);
+	}
+	void resolv() {
+		ExpR0 *result_holder = this->code->resolve_complex();
+		for (std::list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>>::iterator it = var_exp_mapp.begin(); it != var_exp_mapp.end(); ++it) {
+			cout << "\n\tLet (" << it->first->toString() << ") = \t(" << it->second->toString() << ") \tin ";
+			result_holder = V(it->first->toString());
+		}
+		cout << "\n\t" << result_holder->toString();
+		return;
+	}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;
 };
 
+/*
 ExpR0* onNth(int m) {
 	if (m == 0) return I(1);
 	if (m > 0) return A(onNth(m - 1), onNth(m - 1));
@@ -772,10 +890,35 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		else {
 			list<pair<string, int>> *new_info = new list<pair<string, int>>();
 			*new_info = *_info;
-			return L(V("x"), randP(new_info, n - 1), randP(new_info, n - 1));
+			return L(dynamic_cast<VarR0*>(V("x")), randP(new_info, n - 1), randP(new_info, n - 1));
 		}
 	}
 }
+*/
+
+// -----------------------------------------------------------------------------------------------------------
+//				-----	---	 -----			-------	----- -   - -----
+//				-	 - -   - -	 -			   ---	-	- --  - -
+//				-----  -	 -	 -	-----	  ---	-	- - - - ----
+//				-	-  -   - -	 -			 ---	-	- -  -- -
+//				-	 -	---	 -----			-------	----- -   - -----
+// -----------------------------------------------------------------------------------------------------------
+
+// R Objects That Fit Following Shape --> is it RC0 argument? is it RC0 complex? ...
+// RCO predicates have to say yes on these questions for specific objects when testing
+
+/*
+	RC0	:=		p	=	(program	info	e)
+				e	=	(arg)	|	(let	x	c	e)
+				c	=	(read)	|	(-	arg)	|	(+	arg	arg)
+				arg	=	(number)|	(var)
+
+	RCO	:		e	x	(x	-->	 e)		-->		list (x * e) x e
+
+	Program has expression where arguments are further expressions as input.
+	Program has list of variables refering to expressions and argument being returned.
+
+*/
 
 // -----------------------------------------------------------------------------------------------------------
 //				-	-	-----			-------	----- -   - -----

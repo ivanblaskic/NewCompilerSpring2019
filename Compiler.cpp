@@ -43,18 +43,18 @@ int main() {
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-	// mode = Interactive;
+	mode = Interactive;
 
-	/*
 	// R1 uniquify function test_suite
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 	// let ([x 5] [+(L [(x 6) x]) (x)])
-	ExpR0 *te = L(V("x"), I(5), A(L(V("x"), I(6), V("x")), V("x")));
+	ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
 
 	ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
 	cout << "\nis it -11?\n";
-	int result = tp->intrp();
-	cout << tp->prnt() << " = " << result;
+	//int result = tp->intrp();
+	cout << tp->prnt() << " = ";
+	//cout << result;
 	cout << "\n\n";
 	system("Pause");
 
@@ -65,12 +65,18 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 
+	/*
 	if (result == result_uniq)
 		cout << "Compiler works! Bravo :) \n\n";
 	else
 		cout << "Fix compiler! :( \n\n";
 	system("Pause");
 	*/
+
+	//cout << "\nis it -11?\n";
+	tp_uniq->resolv();
+	cout << "\n\n";
+	system("Pause");
 
 	/* 
 	// R1 optimization test_suite
