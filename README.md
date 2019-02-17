@@ -31,14 +31,13 @@ Compiler Written in C++ for Jay to Review
 + Write a few tests for uniquify that predict its output.
 + Implement the uniquify pass for R1 programs.
 + Connect uniquify to your test suite.
+- Write a half-dozen tests for resolve-complex that predict its output. Add 5 more.
++ Implement the resolve-complex pass for R1 programs.
++ Connect resolve-complex to your test suite.
 - 
---> February 13th, 11:27pm <--
+--> February 17th, 02:02am <--
 - F+
 -
-- RESOLVE-COMPLEX()
-- Write a half-dozen tests for resolve-complex that predict its output.
-- Implement the resolve-complex pass for R1 programs.
-- Connect resolve-complex to your test suite.
 - EXPLIXATE-CONTROL()
 - Write a half-dozen tests for explicate-control that predict its output.
 - Implement the explicate-control pass for R1 programs.
