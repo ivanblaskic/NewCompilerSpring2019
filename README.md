@@ -34,14 +34,16 @@ Compiler Written in C++ for Jay to Review
 - Write a half-dozen tests for resolve-complex that predict its output. Add 5 more.
 + Implement the resolve-complex pass for R1 programs.
 + Connect resolve-complex to your test suite.
++ Write a half-dozen tests for explicate-control that predict its output. Add 5 more.
++ Implement the explicate-control pass for R1 programs.
++ Connect explicate-control to your test suite.
++ Write a half-dozen tests for explicate-control that predict its output. Add 5 more.
++ Implement the explicate-control pass for R1 programs.
++ Connect explicate-control to your test suite.
 - 
 --> February 17th, 02:02am <--
 - F+
 -
-- EXPLIXATE-CONTROL()
-- Write a half-dozen tests for explicate-control that predict its output.
-- Implement the explicate-control pass for R1 programs.
-- Connect explicate-control to your test suite.
 - UNCOVER-LOCALS()
 - Write a few tests for uncover-locals that predict its output.
 - Implement the uncover-locals pass for C0 programs.
