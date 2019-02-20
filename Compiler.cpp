@@ -45,7 +45,7 @@ int main() {
 
 	mode = Interactive;
 	
-	/* R1 uniquify & resolve_complex test_suite
+	// R1 uniquify & resolve_complex test_suite
 	// R1 uniquify function test_suite
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 	// let ([x 5] [+(L [(x 6) x]) (x)])
@@ -66,19 +66,22 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 
+	/* 
 	// comment these 5 out 
 	if (result == result_uniq)
 		cout << "Compiler works! Bravo :) \n\n";
 	else
 		cout << "Fix compiler! :( \n\n";
 	system("Pause");
+	*/
 
 	// R1 resolve_complex function test_suite
 	cout << "\nis it -11?\n";
 	ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
 	cout << "\n\n";
 	system("Pause");
-	*/
+	
+	tp_res_comp->econ();
 
 	/* 
 	// R1 optimization test_suite
@@ -362,6 +365,51 @@ int main() {
 	*/
 
 	// -----------------------------------------------------------------------------------------------------------
+	//				 ----	-----			-------	----- -   - -----
+	//				-	 -	-	-			   ---	-	- --  - -
+	//				-		-	-	-----	  ---	-	- - - - ----
+	//				-	 -	-	-			 ---	-	- -  -- -
+	//				 ----   -----			-------	----- -   - -----
+	// -----------------------------------------------------------------------------------------------------------
+
+		/*
+		// label tester
+		std::shared_ptr<LabelC0> lbl1_tester(new LabelC0("main:"));
+		std::shared_ptr<LabelC0> lbl2_tester(new LabelC0("end:"));
+
+		// initializing program
+		list<std::shared_ptr<StmtC0>> tail1_tester;
+
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("x"), new ReadC0()));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("y"), new IntC0(5)));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("x")));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("x"))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("b"), new NegC0(new IntC0(5))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x"))));
+
+		Variables.push_back(std::make_pair("a", 0));
+		Variables.push_back(std::make_pair("b", 0));
+		Variables.push_back(std::make_pair("c", 0));
+		Variables.push_back(std::make_pair("x", 0));
+		Variables.push_back(std::make_pair("y", 0));
+		Variables.push_back(std::make_pair("z", 0));
+
+		TailC0 *temp_tail1 = new TailC0(&tail1_tester);
+		auto tail_main = std::make_shared<TailC0>(*temp_tail1);
+
+		auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("x")));
+
+		label_tail_list.emplace_back(std::make_pair(lbl1_tester, tail_main));
+		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
+		*/
+
+		ProgC0 *program = new ProgC0();
+		program->execute();
+		program->emit();
+		cout << "\n\n";
+		system("pause");
+
+	// -----------------------------------------------------------------------------------------------------------
 	//				-	-	-----			-------	----- -   - -----
 	//				 - -	-	-			   ---	-	- --  - -
 	//				  -		-	-	-----	  ---	-	- - - - ----
@@ -415,50 +463,5 @@ int main() {
 	print_stack_x0();
 
 	*/
-
-	// -----------------------------------------------------------------------------------------------------------
-	//				 ----	-----			-------	----- -   - -----
-	//				-	 -	-	-			   ---	-	- --  - -
-	//				-		-	-	-----	  ---	-	- - - - ----
-	//				-	 -	-	-			 ---	-	- -  -- -
-	//				 ----   -----			-------	----- -   - -----
-	// -----------------------------------------------------------------------------------------------------------
-
-/*
-		// label tester
-		std::shared_ptr<LabelC0> lbl1_tester(new LabelC0("main:"));
-		std::shared_ptr<LabelC0> lbl2_tester(new LabelC0("end:"));
-	
-		// initializing program
-		list<std::shared_ptr<StmtC0>> tail1_tester;
-		
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("x"), new ReadC0()));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("y"), new IntC0(5)));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("x")));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("x"))));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("b"), new NegC0(new IntC0(5))));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x"))));
-	
-		Variables.push_back(std::make_pair("a", 0));
-		Variables.push_back(std::make_pair("b", 0));
-		Variables.push_back(std::make_pair("c", 0));
-		Variables.push_back(std::make_pair("x", 0));
-		Variables.push_back(std::make_pair("y", 0));
-		Variables.push_back(std::make_pair("z", 0));
-
-		TailC0 *temp_tail1 = new TailC0(&tail1_tester);
-		auto tail_main = std::make_shared<TailC0>(*temp_tail1);
-
-		auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("x")));
-
-		label_tail_list.emplace_back(std::make_pair(lbl1_tester, tail_main));
-		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
-
-		ProgC0 *program = new ProgC0();
-		program->execute();
-		program->emit();
-
-		system("pause");
-*/
 
 }

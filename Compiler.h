@@ -107,28 +107,27 @@
 		- I recommend doing something to make the unique names deterministic, so it is possible to write tests
 	29) 1/12 connect uniquify to your test suite
 		- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
-
-	30) ! write a half-dozen tests for resolve-complex that predict its output
+	30) 1/6 write a half-dozen tests for resolve-complex that predict its output
 		- write a half-dozen tests for resolve-complex that predict its output
 		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
-	31)	! implement the resolve-complex pass for R1 programs
+	31)	+ implement the resolve-complex pass for R1 programs
 		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions 
 		- we can express this as a new language
-	32) ! connect resolve-complex to your test suite
+	32) + connect resolve-complex to your test suite
 		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter 
 		- you could also write a function that checks to see if your result is in the correct form 
 		- remember, this pass requires uniquify to have already run
-
-	33) ! write a half-dozen tests for explicate-control that predict its output
+	33) 1/6 write a half-dozen tests for explicate-control that predict its output
 		- work through the complicated examples and especially ensure that the order of operations (especially read calls) 
 		  is preserved
-	34) ! implement the explicate-control pass for R1 programs
+	34) + implement the explicate-control pass for R1 programs
 		- this accepts R1 programs and returns new C0 programs by lifting variables definitions 
 		  outside of the bound expression position of let forms 
 		- remember to use the mutually recursive functions explicate-control-tail and explicate-control-assign
-	35) ! connect explicate-control to your test suite
+	35) + connect explicate-control to your test suite
 		- ensure that every test program behaves the same before and after explicate-control by using the C0 interpreter 
 		- remember, this pass requires resolve-complex to have already run
+
 
 	36) ! write a few tests for uncover-locals that predict its output
 		- this should be very easy to do!
@@ -194,7 +193,20 @@
 */
 
 /*
-	OPTIMIZER's JOB:
+	RC0	:=		p	=	(program	info	e)
+				e	=	(arg)	|	(let	x	c	e)
+				c	=	(read)	|	(-	arg)	|	(+	arg	arg)
+				arg	=	(number)|	(var)
+
+	RCO	:		e	x	(x	-->	 e)		-->		list (x * e) x e
+
+	Program has expression where arguments are further expressions as input.
+	Program has list of variables refering to expressions and argument being returned.
+
+*/
+
+/*
+	OPTIMIZER's JOB example:
 
 		(+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
 		opt (+ [+ (+ [5] [read]) (+ [10] [12])] [+(+ [read] [read]) (+ [12] [read])])
@@ -208,17 +220,29 @@
 		opt [+ (12) (read)] = (+ [12] [read])
 */
 
-// -----------------------------------------------------------------------------------------------------------
-//				-----	-----			-------	----- -   - -----
-//				-	 -	-	-			   ---	-	- --  - -
-//				-----	-	-	-----	  ---	-	- - - - ----
-//				-	-	-	-			 ---	-	- -  -- -
-//				-	 -  -----			-------	----- -   - -----
-// -----------------------------------------------------------------------------------------------------------
+/*
+	30) ! write a half-dozen tests for resolve-complex that predict its output
+		- write a half-dozen tests for resolve-complex that predict its output
+		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
+	31)	! implement the resolve-complex pass for R1 programs
+		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions
+		- we can express this as a new language
+	32) ! connect resolve-complex to your test suite
+		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter
+		- you could also write a function that checks to see if your result is in the correct form
+		- remember, this pass requires uniquify to have already run
 
-/*	R0 on paper
-	R1 about to go on paper
-	R0 + let + var + 
+	in:		(+ [+ 2 3] [let x = read in (+ x x)])
+
+	out:	let y	=	(+ 2  3 )	in
+			let x'	=	(read)		in
+			let z	=	(+ x' x')	in
+			let x	=	(+ y  z )	in
+				x
+
+	in:		let x	8	(+ x x)
+	out:	let z	=	(+ 8 8)		in
+				z
 */
 
 #pragma once
@@ -236,37 +260,1131 @@
 
 using namespace std;
 
+// -----------------------------------------------------------------------------------------------------------
+//				-	-	-----			-------	----- -   - -----
+//				 - -	-	-			   ---	-	- --  - -
+//				  -		-	-	-----	  ---	-	- - - - ----
+//				 - -	-	-			 ---	-	- -  -- -
+//				-	-   -----			-------	----- -   - -----
+// -----------------------------------------------------------------------------------------------------------
 
-// R0-R1: steps 1-17 + 27-29
+// X0: steps 18-22 --> compiling C0 into X0
 
+/*
+	18) + define data types for X0 program ASTs
+	19) + write an emitter for X0 programs - obicni toString jel...
+		- should emit in the syntax of the assembler you will use
+		- takes a parameter whether variables should be allowed in the output
+		- only makes sense for debugging
+	20) 1/12 build a test suite of a dozen X0 programs - jasno trivijalno
+		- intrp should ony ret value of rax on retq rather than entire state of machine
+		- ideally these programs are manually compiled versions of your R1 test programs
+	21) + write an interpreter for X0 programs - interpretator jasno
+		- register file is simple fixed vector where registers are indices and the stack is stack
+		- have to have special case for when you callq to system function like read or print
+	22) ? connect your X0 test suite to system assembler --> google the shit out of it
+		- create intermediate file containing the assembly on disk - you can look at assembly
+		  you producing during compilation in the future
+		- automatically compare results of assembled program and your interpreter
+*/
 
-/*	
+/*
+	main:	movq $10, %rax
+			addq $32, %rax
+			movq %rax, %rdi
+			callq print_int
+			movq $0, %rax retq
 
-	30) ! write a half-dozen tests for resolve-complex that predict its output
-		- write a half-dozen tests for resolve-complex that predict its output
-		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
-	31)	! implement the resolve-complex pass for R1 programs
-		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions
-		- we can express this as a new language
-	32) ! connect resolve-complex to your test suite
-		- ensure that every test program behaves the same before and after resolve-complex by using the R1 interpreter
-		- you could also write a function that checks to see if your result is in the correct form
-		- remember, this pass requires uniquify to have already run
+	- p		::=		program		info	[label->block]	...
+	- blk	::=		block		info	instr			...
+	+ instr	::=		  (addq arg arg)					{[q = quad = 4*normal size of number = 4*16b]}
+					| (subq arg arg)
+					| (movq arg arg)
+					| (retq)			{[escape & say what's rax]}
+					| (negq arg)
+					| (callq label)		{[callq _read_int]}
+					| (pushq arg)		{[(%rsp)->ms(%rsp)-8] [%rsp(0)->ms(src)]}
+					| (popq arg)		{[(%rsp)->ms(dst)] [%rsp->ms(%rsp)+8]}
+					| (jmp label)		{[xbi ms label]}
+	+ arg	::=		  $int					-> number
+					| %reg					-> registar
+					| %reg(offset)			-> memory
+					| var(x)				-> variable
+	+ reg	::=		  rsp
+					| rbp
+					| rax
+					| rbx
+					| rcx
+					| rdx
+					| rsi
+					| rdi
+					| r8
+					| r9
+					| r10
+					| r11
+					| r12
+					| r13
+					| r14
+					| r15
+	- label	::=		string
+	- var	::=		not_otherwise_mentioned_variable
+	+ X860	::=		(instr+)
+*/
 
-	in:		(+ [+ 2 3] [let x = read in (+ x x)])
+/*
 
-	out:	let y	=	(+ 2  3 )	in
-			let x'	=	(read)		in 
-			let z	=	(+ x' x')	in
-			let x	=	(+ y  z )	in
-				x
+class LabelX0;
+class BlockX0;
 
-	in:		let x	8	(+ x x)
-	out:	let z	=	(+ 8 8)		in
-				z
+// label --> block	LIST
+static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
+static list<pair<std::string, int>> init_variables_list;
 
+// stack implementation for registers: rsp | rbp
+static struct Node {
+	int data;
+	Node *link;
+};
+
+//static Node *rbp = new Node();
+//static Node *rsp = new Node();
+static Node *top = NULL;
+
+// register ::= rax | rbx | rcx | rdx | rsi | rdi | r8 | r9 | r10 | r11 | r12 | r13 | r14 | r15
+static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int>> {
+	std::make_pair("rax", 0),
+	std::make_pair("rbx", 0),
+	std::make_pair("rcx", 0),
+	std::make_pair("rdx", 0),
+	std::make_pair("rsi", 0),
+	std::make_pair("rdi", 0),
+	std::make_pair("r8", 0),
+	std::make_pair("r9", 0),
+	std::make_pair("r10", 0),
+	std::make_pair("r11", 0),
+	std::make_pair("r12", 0),
+	std::make_pair("r13", 0),
+	std::make_pair("r14", 0),
+	std::make_pair("r15", 0),
+	std::make_pair("rsp", 0),
+	std::make_pair("rbp", 0)
+};
+
+// program counter
+static int pcnt;
+
+// arg ::= $int | %reg | int(%reg) + var(x)
+class ArgX0 {
+public:
+	int virtual eval() = 0;
+	void virtual setValue(int _value) = 0;
+	string virtual getName(void) = 0;
+	string virtual toString(void) = 0;
+private:
+};
+
+// $int <-- arg - BRAVO
+class IntX0 : public ArgX0 {
+public:
+	void setValue(int _value) {
+		this->value = _value;
+	}
+	string getName(void) {
+		return "Integer type has no name.";
+	};
+	IntX0(int _value) {
+		this->value = _value;
+	}
+	int eval() {
+		return this->value;
+	}
+	string toString() {
+		return "$" + to_string(this->value);
+	}
+private:
+	int value;
+};
+IntX0* IX(int _value) {
+	return new IntX0(_value);
+}
+
+// %reg <-- arg
+class RegX0 : public ArgX0 {
+public:
+	RegX0(string _name) {
+		this->name = _name;
+	}
+	int eval() {
+		// variables_list = _variables_list;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->name) {
+				this->setValue((*it).second);
+				return this->value;
+			}
+		}
+		return 1;
+	}
+	// set value is just setting local variable of that instance of class
+	// is that what's expected?
+	void setValue(int _value) {
+		this->value = _value;
+	}
+	string getName() {
+		return this->name;
+	}
+	string toString() {
+		return "%" + this->name;
+	}
+private:
+	int value;
+	string name;
+};
+RegX0* RX(string _name) {
+	return new RegX0(_name);
+}
+
+// %reg (offset) <-- arg
+class IntRegX0 : public ArgX0 {
+public:
+	IntRegX0(int _offset, RegX0 *_reg) {
+		this->reg = _reg;
+		this->offset = _offset;
+		// this->value = getVal(lookupList(this->name));
+	}
+	int eval() {
+		// this->variables_list = _variables_list;
+		return (this->offset + this->reg->eval());
+	}
+	void setValue(int _value) {
+		this->value = _value;
+	}
+	string toString() {
+		return "%" + this->reg->toString() + "(" + to_string(this->offset) + ")";
+	}
+	string getName() {
+		return "Register type has no name.";
+	}
+private:
+	RegX0 *reg;
+	int value, offset;
+};
+IntRegX0* IRX(int _offset,RegX0 *_reg) {
+	return new IntRegX0(_offset, _reg);
+}
+
+// var (x) <-- arg
+class VarX0 : public ArgX0 {
+public:
+	VarX0(string _name) {
+		this->name = _name;
+	}
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
+		}
+		cout << "Uninitialized Variable is Being Used Under Following name: " + this->name + "!\n";
+		return this->value;
+	}
+	void setValue(int _value) {
+		// imagining this would be updated
+		this->value = _value;
+	}
+	string getName() {
+		return this->name;
+	}
+	string toString() {
+		return "var(" + this->name + ")";
+	}
+private:
+	string name;
+	int value;
+};
+VarX0* VX(string _name) {
+	return new VarX0(_name);
+}
+
+//instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg) | (jump label)
+class InstrX0 {
+public:
+	virtual ~InstrX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	virtual int eval() = 0;
+	virtual string toString() = 0;
+	virtual bool isEnd() = 0;
+	virtual bool isJump() = 0;
+private:
+};
+
+// (popq arg) <-- instruction
+class PopqX0 : public InstrX0 {
+public:
+	~PopqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	PopqX0(ArgX0* _dest) {
+		this->dest = _dest;
+	}
+	bool isEmpty() {
+		if (top == NULL)
+			return true;
+		return false;
+	}
+	int pop(void) {
+		Node *tmp = top;
+		int value = top->data;
+		top = top->link;
+		delete (tmp);
+		return value;
+	}
+	int eval() {
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				if (!isEmpty()) {
+					((*it).second = pop());
+				}
+				else {
+					cout << "\tStack is empty, there is nothing there to pop.\n";
+					return 8;
+				}
+				return 0;
+			}
+		}
+		cout << "\tError register name for arg in pop command:" << this->dest->getName() << "\n";
+		return 8;
+	}
+	string toString() {
+		return "\tpopq\t\t" + this->dest->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	ArgX0 *dest;
+};
+PopqX0* PopX(ArgX0 *_arg) {
+	return new PopqX0(_arg);
+}
+
+// (pushq arg) <-- instruction
+class PushqX0 : public InstrX0 {
+public:
+	~PushqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	PushqX0(ArgX0* _src) {
+		this->src = _src;
+	}
+	void push(int _value) {
+		Node *rsp = new Node();
+		rsp->data = _value;
+		rsp->link = top;
+		top = rsp;
+	}
+	int eval() {
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->src->getName()) {
+				(push((*it).second));
+				return 0;
+			}
+		}
+		cout << "\tError register name for arg in push command:" << this->src->getName() << "\n";
+		return 7;
+	}
+	string toString() {
+		return "\tpushq\t\t" + this->src->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	ArgX0 *src;
+};
+PushqX0* PshX(ArgX0 *_arg) {
+	return new PushqX0(_arg);
+}
+
+// (retq) <-- instruction (function marking success with storing 0 in %rax)
+class RetqX0 : public InstrX0 {
+public:
+	~RetqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	RetqX0() {}
+	int eval() {
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == "rax") {
+				// (*it).second = 0;
+				cout << "\tValue at %rax is : " << (*it).second << "\n\n";
+				success = true;
+				return 0;
+			}
+		}
+		success = false;
+		return 6;
+	}
+	string toString() {
+		if (success) {
+			return "\tretq\n\n\t\t('The code was executed successfully')\n\n";
+		}
+		else {
+			return "\tretq\n";
+		}
+	}
+	bool isEnd() {
+		return true;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	bool success = false;
+};
+RetqX0* RtX() {
+	return new RetqX0();
+};
+
+// (callq read_int) <-- instruction (function printing out %rdi)
+class CallqX0 : public InstrX0 {
+public:
+	~CallqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	CallqX0() {
+	}
+	int eval() {
+		cout << "\nType the input value -> ";
+		cin >> this->value;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == "rax") {
+				(*it).second = this->value;
+				cout << "\nInfo:\n\tValue at %rax is now: " << this->value << "\n\n";
+				return 0;
+			}
+		}
+		return 5;
+	}
+	string toString() {
+		return "\tcallq\t\tread_int\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	int value;
+};
+CallqX0* CllX() {
+	return new CallqX0();
+}
+
+// (negq arg) <-- instruction
+class NegqX0 : public InstrX0 {
+public:
+	~NegqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	NegqX0(ArgX0* _dest) {
+		this->dest = _dest;
+	}
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = -this->dest->eval());
+				return 0;
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = -this->dest->eval());
+				return 0;
+			}
+		}
+		return 4;
+	}
+	string toString() {
+		return "\tnegq\t\t" + this->dest->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	ArgX0 *dest;
+};
+NegqX0* NgX(ArgX0* _dest) {
+	return new NegqX0(_dest);
+}
+
+// (subq arg, arg) <-- instruction
+class SubqX0 : public InstrX0 {
+public:
+	~SubqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	SubqX0(ArgX0* _src, ArgX0* _dest) {
+		this->src = _src;
+		this->dest = _dest;
+	}
+	int eval() {
+		if (readValue(&rd_dst, this->dest->getName()) == 1)
+			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
+		writeValue(this->rd_dst - this->rd_src);
+		return 0;
+	}
+	string toString() {
+		return "\tsubq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	int readValue(int *_val, string _name) {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	void writeValue(int _value) {
+		this->dest->setValue(_value);
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	int src_rd = 0;
+	int rd_src, rd_dst;
+	ArgX0 *src, *dest;
+};
+SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
+	return new SubqX0(_src, _dest);
+}
+
+// (addq arg, arg) <-- instruction
+class AddqX0 : public InstrX0 {
+public:
+	~AddqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	AddqX0(ArgX0* _src, ArgX0* _dest) {
+		this->src = _src;
+		this->dest = _dest;
+	}
+	int eval() {
+		if (readValue(&rd_dst, this->dest->getName()) == 1)
+			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
+writeValue(this->rd_dst + this->rd_src);
+return 0;
+	}
+	int readValue(int *_val, string _name) {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == _name) {
+				*_val = (*it).second;
+				src_rd++;
+				if (src_rd == 1) {
+					readValue(&this->rd_src, this->src->getName());
+					return 0;
+				}
+				else {
+					src_rd = 0;
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	void writeValue(int _value) {
+		this->dest->setValue(_value);
+	}
+	string toString() {
+		return "\taddq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	int src_rd = 0;
+	ArgX0 *src, *dest;
+	int rd_src, rd_dst;
+};
+AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
+	return new AddqX0(_src, _dest);
+}
+
+// (movq arg arg) <-- instruction
+class MovqX0 : public InstrX0 {
+public:
+	~MovqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	MovqX0(ArgX0* _src, ArgX0* _dest) {
+		this->src = _src;
+		this->dest = _dest;
+	}
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = this->src->eval());
+				return 0;
+			}
+		}
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->dest->getName()) {
+				((*it).second = this->src->eval());
+				return 0;
+			}
+		}
+		return 1;
+	}
+	string toString() {
+		return "\tmovq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+private:
+	ArgX0 *src;
+	ArgX0 *dest;
+};
+MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
+	return new MovqX0(_src, _dest);
+}
+
+// block info instructions
+class BlockX0 {
+public:
+	BlockX0 (list<std::shared_ptr<InstrX0>> *_instructions_list) {
+		this->instructions_list = _instructions_list;
+	}
+	int instructions_cnt() {
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		instr_cnt = 0;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			instr_cnt++;
+		}
+		return instr_cnt;
+	}
+	int eval() {
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		instr_cnt = 0;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			instr_cnt++;
+			(*it)->eval();
+			if ((*it)->isEnd()) {
+				end = true;
+				return 0;
+			}
+			if ((*it)->isJump() == true) {
+				jump = true;
+				return 0;
+			}
+		}
+		return 0;
+	}
+	// output to terminal for now
+	void emit() {
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			cout << (*it)->toString() << "\t";
+		}
+	}
+	bool isEnd() {
+		return end;
+	}
+	bool isJump() {
+		return jump;
+	}
+private:
+	bool end = false;
+	bool jump = false;
+	list<std::shared_ptr<InstrX0>> *instructions_list;
+	int instr_cnt;
+	LabelX0 *label;
+};
+
+// label instruction
+class LabelX0 {
+public:
+	LabelX0(string _name) {
+		this->name = _name;
+	}
+	void emit() {
+		cout << name << "\t";
+	}
+	string getName() {
+		return this->name;
+	}
+private:
+	string name;
+};
+LabelX0* LbX(string _name) {
+	return new LabelX0(_name);
+}
+
+// (jmp label) <-- instruction
+class JumpX0 : public InstrX0 {
+public:
+	~JumpX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	JumpX0(LabelX0 *_label) {
+		this->label = _label;
+	}
+	int eval() {
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			if ((it->first->getName()) == (this->label->getName())) {
+				it->second->eval();
+				if ((it->second)->isEnd()) {
+					return 0;
+				}
+				if ((it->second)->isJump() == true) {
+					return 0;
+				}
+			}
+		}
+	}
+	string toString() {
+		return "\tjmp\t\t" + label->getName() + "\n";
+	};
+	bool isEnd() {
+		return false;
+	};
+	bool isJump() {
+		return true;
+	};
+private:
+	LabelX0 *label;
+};
+
+// program info [label->block]
+class ProgramX0 {
+public:
+	ProgramX0() {
+		pcnt = 0;
+	}
+	void execute() {
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			if(it->second->eval()==0)
+				cout << "\tSuccessful Run\n\n";
+			if ((it->second)->isEnd()) {
+				return;
+			}
+		}
+	}
+	void emit() {
+		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
+		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
+			it->first->emit();
+			it->second->emit();
+		}
+	}
+private:
+};
+ProgramX0* PX(){
+	return new ProgramX0();
+}
 
 */
+
+// -----------------------------------------------------------------------------------------------------------
+//				 ----	-----			-------	----- -   - -----
+//				-	 -	-	-			   ---	-	- --  - -
+//				-		-	-	-----	  ---	-	- - - - ----
+//				-	 -	-	-			 ---	-	- -  -- -
+//				 ----   -----			-------	----- -   - -----
+// -----------------------------------------------------------------------------------------------------------
+
+// C0: steps 23-26 --> compiled R0 into C0
+
+/*
+	Ivan Blaskic [ @UML 4Jay's-CC-class ]
+	C0Language.hpp
+
+	arg		::= int
+			  | var
+
+	exp		::= arg
+			  | (read)
+			  | (- arg)
+			  | (+ arg arg)
+
+	stmt	::= (assign var exp)
+
+	tail	::= (return arg) | (seq stmt tail)
+
+	C0   ::= (program info + [label->tail]) <-- {label->tail refers to instruction set}
+
+	C Code: progC0
+		- receives list of stmts initialized in main
+		- executes in a way that it receives all variables necessary for execution
+			- goes statement by statement
+				- evaluates sharing list of variables
+
+	R --> C:	flatten in the deepest node
+					--> creates new list of statements and variables when returning
+				flatten in operation node
+					--> adds new statement to existing set of statements received from arguments
+*/
+
+class LabelC0;
+class TailC0;
+
+static list<pair<string, int>> Variables;
+static list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>> label_tail_list;
+
+// (exp)
+class ExpC0 {
+public:
+	virtual int eval() = 0;
+	string virtual toString() = 0;
+private:
+};
+
+// (argument) <-- exp
+class ArgC0 : public ExpC0 {
+public:
+	virtual int eval() = 0;
+	string virtual toString() = 0;
+private:
+};
+
+// (int) <-- argument
+class IntC0 : public ArgC0 {
+public:
+	IntC0(int _value) {
+		this->value = _value;
+	}
+	int eval() {
+		return this->value;
+	}
+	string toString() {
+		return "\t(" + to_string(this->value) + ")";
+	}
+private:
+	int value;
+};
+
+// (var) <-- argument
+class VarC0 : public ArgC0 {
+public:
+	VarC0(string _name) {
+		this->name = _name;
+	}
+	int setVal(int _value) {
+		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
+			if ((*it).first == this->name) {
+				(*it).second = _value;
+				return 0;
+			}
+		}
+		cout << "\tError: Variable: " << this->name << " is not found.\n";
+		return 1;
+	}
+	int eval() {
+		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
+		}
+		cout << "\tVariable: " << this->name << " is not found.\n";
+		return 1;
+	}
+	string toString() {
+		return "\t(" + this->name + ")";
+	}
+private:
+	string name;
+};
+
+// (read) <-- exp
+class ReadC0 : public ExpC0 {
+public:
+	ReadC0() {}
+	int eval() {
+		cout << "Enter the integer value for (read): ";
+		cin >> this->value;
+		cout << "\n";
+		return this->value;
+	}
+	string toString() {
+		return "\t(read)";
+	}
+private:
+	int value;
+};
+
+// (- arg) <-- exp
+class NegC0 : public ExpC0 {
+public:
+	NegC0(ArgC0 *_arg) {
+		this->arg = _arg;
+	}
+	int eval() {
+		return (-this->arg->eval());
+	}
+	string toString() {
+		return "\t(- " + this->arg->toString() + ")";
+	}
+private:
+	ArgC0 *arg;
+};
+
+// (+ arg arg) <-- exp
+class AddC0 : public ExpC0 {
+public:
+	AddC0(ArgC0 *_left, ArgC0 *_right) {
+		this->left = _left;
+		this->right = _right;
+	}
+	int eval() {
+		return (this->left->eval() + this->right->eval());
+	}
+	string toString() {
+		return "\t(+ " + this->left->toString() + " " + this->right->toString() + ")";
+	}
+private:
+	ArgC0 *left, *right;
+};
+
+// (stmt)
+class StmtC0 {
+public:
+	virtual int eval() = 0;
+	virtual string toString() = 0;
+private:
+};
+
+// (assign var exp) <-- stmt
+class AssignC0 : public StmtC0 {
+public:
+	AssignC0(VarC0 *_var, ExpC0 *_exp) {
+		this->var = _var;
+		this->exp = _exp;
+	}
+	int eval() {
+		if (this->var->setVal(this->exp->eval()) == 0) {
+			return 0;
+		}
+		else {
+			cout << "\tError setting value for: " << this->var->toString() << "\n";
+			return 1;
+		}
+	}
+	string toString() {
+		return "\t(assign\t" + this->var->toString() + this->exp->toString() + ")\n";
+	}
+private:
+	VarC0 *var;
+	ExpC0 *exp;
+};
+
+// (return arg)
+class RetC0 : public StmtC0 {
+public:
+	RetC0(ArgC0 *_arg) {
+		this->arg = _arg;
+	}
+	int eval() {
+		cout << "\t\t>> Return Value is " << this->arg->eval() << " for following return statement <<\n";
+		return 0;
+	}
+	string toString() {
+		return "\t(return " + this->arg->toString() + ")\n";
+	}
+	ArgC0* get_arg() {
+		return this->arg;
+	}
+private:
+	ArgC0 *arg;
+};
+
+// (label->tail)
+class LabelC0 {
+public:
+	LabelC0(string _name) {
+		this->name = _name;
+	}
+	void emit() {
+		cout << this->name << "\n";
+	}
+private:
+	string name;
+};
+
+// (return arg) | (sequence stmt tail) <-- tail
+class TailC0 {
+public:
+	TailC0(list<std::shared_ptr<StmtC0>> *_stmts) {
+		this->stmts = _stmts;
+	}
+	TailC0(RetC0 *_ret) {
+		this->ret = _ret;
+		is_end = true;
+	}
+	int eval() {
+		if (isEnd() == true) {
+			if (this->ret->eval() == 0) {
+				cout << "\t" << this->ret->toString();
+				return 0;
+			}
+			else {
+				cout << "\n\tError executing return.\n";
+				return 1;
+			}
+		}
+		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
+			if ((*it)->eval() != 0) {
+				// cout << "\t" << (*it)->toString();
+				cout << "\n\tError executing program.\n\tCheck statement: " << (*it)->toString() << "\n";
+				return 1;
+			}
+		}
+		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
+		for (std::list<pair<std::string, int>>::iterator it = Variables.begin(); it != Variables.end(); ++it) {
+			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
+		}
+		cout << "\n";
+		return 0;
+	}
+	bool isEnd() {
+		return this->is_end;
+	}
+	void emit() {
+		if (isEnd() == true) {
+			cout << "\t" << this->ret->toString() << "\n";
+			return;
+		}
+		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
+			cout << "\t" << (*it)->toString();
+
+		}
+		return;
+	}
+private:
+	bool is_end = false;
+	list<std::shared_ptr<StmtC0>> *stmts;
+	RetC0 *ret;
+};
+
+// (program info {variables} [label->tail] {list_label_tail}
+class ProgC0 {
+public:
+	// for now okay, eventually program will be in static list
+	// where label points to tail
+	ProgC0() {
+	}
+	void execute() {
+		cout << "\nProgram:\n\n";
+		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
+		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
+			if (it->second->eval() != 0)
+				cout << "\nError\n";
+			cout << "\n";
+			if ((it->second)->isEnd()) {
+				return;
+			}
+		}
+	}
+	void emit() {
+		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
+		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
+			it->first->emit();
+			it->second->emit();
+		}
+	}
+private:
+};
+
+
+// -----------------------------------------------------------------------------------------------------------
+//				-----	-----			-------	----- -   - -----
+//				-	 -	-	-			   ---	-	- --  - -
+//				-----	-	-	-----	  ---	-	- - - - ----
+//				-	-	-	-			 ---	-	- -  -- -
+//				-	 -  -----			-------	----- -   - -----
+// -----------------------------------------------------------------------------------------------------------
+
+/*
+	R0 on paper
+	R1 about to go on paper
+	R0 + let + var + 
+*/
+
+/*
+
+	RC0:	p	=	(program	info	e)
+			e	=	arg		|	(let	x	=	c	in	e)
+			c	=	read	|	(- arg)	|	(+	arg	arg)
+			arg =	number	|	var
+
+	RC0 --> C0
+
+	econ (programR	info  exp)	=	(programC  info  [Label("BODY")-->t]
+				t	=	econE	exp
+
+	econE: expRc0 --> Ct
+	econA: argRc0 --> argC0
+	econC: complexRc0 --> expC0
+
+	- for (arg) | (let x = c in e)
+	econE arg = return (econA arg)
+	econE (let x = ex in eb) = seq (set! x (econC ex)) (econE eb)
+
+	- for (read) | (- arg) | (+ arg arg)
+	econC (readR) = (readC)
+	econC (-a) = (-(econA a))
+	econC (+ l r) = (+ (econA l) (econA r))
+
+	- for (number) | (var) 
+	econA (numR n) = (numC n)
+	econA (varR x) = (varC x)
+
+*/
+
+// R0-R1: steps 1-17 + 27-35 --> compiled R0 into C0
 
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
@@ -305,9 +1423,13 @@ public:
 	// making a tree-like code linear
 	virtual ExpR0* resolve_complex() = 0;
 
+	// identity maker 
 	virtual ExpR0* get_me() = 0;
-
+	// copy maker
 	virtual ExpR0* create_copy() = 0;
+
+	// Rc0 --> C0 compiler
+	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester,std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) = 0;
 
 };
 
@@ -322,7 +1444,6 @@ ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
-// no reason to worry about
 class NumR0 : public ExpR0 {
 public:
 	NumR0(int _value) {
@@ -368,11 +1489,14 @@ public:
 	ExpR0* create_copy() {
 		return new NumR0(this->value);
 	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new IntC0(this->value)));
+		return;
+	}
 private:
 	int value;
 };
 
-// no reason to worry about
 class VarR0 : public ExpR0 {
 public:
 	VarR0(string _name) {
@@ -453,6 +1577,20 @@ public:
 	}
 	ExpR0* create_copy() {
 		return new VarR0(this->name);
+	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		if (_is_end) {
+			ArgC0 *new_arg = new VarC0(this->name);
+			_tail_tester->push_back(std::make_shared<RetC0>(new_arg));
+			TailC0 *temp_tail = new TailC0(_tail_tester);
+			auto tail_body = std::make_shared<TailC0>(*temp_tail);
+			label_tail_list.emplace_back(std::make_pair(_lbl_tester, tail_body));
+			return;
+		}
+		else {
+			_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new VarC0(this->name)));
+			return;
+		}
 	}
 private:
 	int value;
@@ -547,7 +1685,7 @@ public:
 		return new AddR0(this->lexp->uniquify(this->mapp), this->rexp->uniquify(this->mapp));
 	}
 	ExpR0* resolve_complex() {
-		VarR0 *new_var = V(V("x"));
+		VarR0 *new_var = V(V("A_x"));
 		auto new_variable = std::make_shared<VarR0>(*new_var);
 		auto new_expression = std::shared_ptr<ExpR0>(A(lexp->resolve_complex(), rexp->resolve_complex()));
 		var_exp_mapp.emplace_back(make_pair(new_variable,new_expression));
@@ -558,6 +1696,46 @@ public:
 	}
 	ExpR0* create_copy() {
 		return new AddR0(this->lexp->create_copy(), this->rexp->create_copy());
+	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		if (this->lexp->isNum()) {
+			NumR0 *new_num_l = dynamic_cast<NumR0*>(this->lexp);
+			IntC0 *new_arg_l_c = new IntC0(new_num_l->retVal());
+			if (this->rexp->isNum()) {
+				NumR0 *new_num_r = dynamic_cast<NumR0*>(this->rexp);
+				IntC0 *new_arg_r_c = new IntC0(new_num_r->retVal());
+				AddC0 *new_add = new AddC0(new_arg_l_c, new_arg_r_c);
+				_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_add));
+				return;
+			}
+			else {
+				VarR0 *new_var_r = dynamic_cast<VarR0*>(this->rexp);
+				VarC0 *new_arg_r_c = new VarC0(new_var_r->toString());
+				AddC0 *new_add = new AddC0(new_arg_l_c, new_arg_r_c);
+				_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_add));
+				return;
+			}
+		}
+		else {
+			VarR0 *new_var_l = dynamic_cast<VarR0*>(this->lexp);
+			VarC0 *new_arg_l_c = new VarC0(new_var_l->toString());
+			if (this->rexp->isNum()) {
+				NumR0 *new_num_r = dynamic_cast<NumR0*>(this->rexp);
+				IntC0 *new_arg_r_c = new IntC0(new_num_r->retVal());
+				AddC0 *new_add = new AddC0(new_arg_l_c, new_arg_r_c);
+				_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_add));
+				return;
+			}
+			else {
+				VarR0 *new_var_r = dynamic_cast<VarR0*>(this->rexp);
+				VarC0 *new_arg_r_c = new VarC0(new_var_r->toString());
+				AddC0 *new_add = new AddC0(new_arg_l_c, new_arg_r_c);
+				_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_add));
+				return;
+			}
+		}
+		cout << "Error in econ for addition for: " << _name << "\n\n";
+		return;
 	}
 private:
 	ExpR0 *lexp, *rexp;
@@ -628,7 +1806,7 @@ public:
 	}
 	// da li let ljepimo u mapping ili ga vracamo ili pak vracamo samo variablu
 	ExpR0* resolve_complex() {
-		VarR0 *new_var = V(V("x"));
+		VarR0 *new_var = V(V("N_x"));
 		auto new_variable = std::make_shared<VarR0>(*new_var);
 		auto new_expression = std::shared_ptr<ExpR0>(exp->resolve_complex());
 		var_exp_mapp.emplace_back(make_pair(new_variable, new_expression));
@@ -639,6 +1817,25 @@ public:
 	}
 	ExpR0* create_copy() {
 		return new NegR0(this->exp->create_copy());
+	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		ArgC0 *new_arg_c;
+		if (this->exp->isNum()) {
+			NumR0 *new_num = dynamic_cast<NumR0*>(this->exp);
+			IntC0 *new_arg_c = new IntC0(new_num->retVal());
+			NegC0 *new_neg = new NegC0(new_arg_c);
+			_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_neg));
+			return;
+		}
+		else {
+			VarR0 *new_var = dynamic_cast<VarR0*>(this->exp);
+			VarC0 *new_arg_c = new VarC0(new_var->toString());
+			NegC0 *new_neg = new NegC0(new_arg_c);
+			_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new_neg));
+			return;
+		}
+		cout << "Error in econ for negation for: " << _name << "\n\n";
+		return;
 	}
 private:
 	ExpR0 *exp;
@@ -738,7 +1935,7 @@ public:
 		return new LetR0(new VarR0(new_variable->toString()), this->x_exp->uniquify(mapp), this->b_exp->uniquify(mapp));
 	}
 	ExpR0* resolve_complex() {
-		VarR0 *new_var = V(V("x"));
+		VarR0 *new_var = V(V("L_x"));
 		auto temp_var = std::make_shared<VarR0>(*variable);
 		auto new_temp_var = std::shared_ptr<ExpR0>(x_exp->resolve_complex());
 		var_exp_mapp.emplace_back(make_pair(temp_var, new_temp_var));
@@ -752,6 +1949,12 @@ public:
 	}
 	ExpR0* create_copy() {
 		return new LetR0(V(this->variable->toString()), x_exp->create_copy(), b_exp->create_copy());
+	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		Variables.push_back(std::make_pair(this->variable->toString(), 0));
+		x_exp->econ(_tail_tester, NULL, this->variable->toString(), false);
+		b_exp->econ(_tail_tester, _lbl_tester, " ", true);
+		return;
 	}
 private:
 	VarR0 *variable;
@@ -802,7 +2005,7 @@ public:
 		return this;
 	}
 	ExpR0* resolve_complex() {
-		VarR0 *new_var = V(V("x"));
+		VarR0 *new_var = V(V("read_x"));
 		auto new_variable = std::make_shared<VarR0>(*new_var);
 		auto new_expression = std::shared_ptr<ExpR0>(R());
 		var_exp_mapp.emplace_back(make_pair(new_variable, new_expression));
@@ -813,6 +2016,10 @@ public:
 	}
 	ExpR0* create_copy() {
 		return R();
+	}
+	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
+		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new ReadC0()));
+		return;
 	}
 private:
 	int value;
@@ -865,7 +2072,8 @@ public:
 	ExpR0* resolv() {
 		result_holder = this->code->resolve_complex();
 		for (std::list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>>::iterator it = var_exp_mapp.begin(); it != var_exp_mapp.end(); ++it) {
-			cout << "\n\tLet (" << it->first->toString() << ") = \t(" << it->second->toString() << ")";
+			cout << "\n\tLet (" << it->first->toString() << ")";
+			cout << "= \t(" << it->second->toString() << ")";
 			if (it->second->simpleExp())
 				cout << "\t";
 			cout << "\tin ";
@@ -883,6 +2091,32 @@ public:
 		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>());
 		return result_holder;
 	}
+	void econ() {
+		
+		// label tester
+		std::shared_ptr<LabelC0> lbl_tester(new LabelC0("body:"));
+		// initializing program
+		list<std::shared_ptr<StmtC0>> tail_tester;
+
+		/*
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("x"), new ReadC0()));
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("y"), new IntC0(5)));
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("x")));
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("x"))));
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("b"), new NegC0(new IntC0(5))));
+		tail_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x"))));
+
+		Variables.push_back(std::make_pair("a", 0));
+		Variables.push_back(std::make_pair("b", 0));
+		Variables.push_back(std::make_pair("c", 0));
+		Variables.push_back(std::make_pair("x", 0));
+		Variables.push_back(std::make_pair("y", 0));
+		Variables.push_back(std::make_pair("z", 0));
+		*/
+
+		this->code->econ(new list<shared_ptr<StmtC0>>(), lbl_tester, " ", true);
+
+}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;
@@ -930,36 +2164,14 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 */
 
 // -----------------------------------------------------------------------------------------------------------
-//				-----	---	 -----			-------	----- -   - -----
-//				-	 - -   - -	 -			   ---	-	- --  - -
-//				-----  -	 -	 -	-----	  ---	-	- - - - ----
-//				-	-  -   - -	 -			 ---	-	- -  -- -
-//				-	 -	---	 -----			-------	----- -   - -----
-// -----------------------------------------------------------------------------------------------------------
-
-// R Objects That Fit Following Shape --> is it RC0 argument? is it RC0 complex? ...
-// RCO predicates have to say yes on these questions for specific objects when testing
-
-/*
-	RC0	:=		p	=	(program	info	e)
-				e	=	(arg)	|	(let	x	c	e)
-				c	=	(read)	|	(-	arg)	|	(+	arg	arg)
-				arg	=	(number)|	(var)
-
-	RCO	:		e	x	(x	-->	 e)		-->		list (x * e) x e
-
-	Program has expression where arguments are further expressions as input.
-	Program has list of variables refering to expressions and argument being returned.
-
-*/
-
-// -----------------------------------------------------------------------------------------------------------
 //				-	-	-----			-------	----- -   - -----
 //				 - -	-	-			   ---	-	- --  - -
 //				  -		-	-	-----	  ---	-	- - - - ----
 //				 - -	-	-			 ---	-	- -  -- -
 //				-	-   -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
+
+// X0: steps 18-22 --> compiling C0 into X0
 
 /*
 	18) + define data types for X0 program ASTs
@@ -1023,6 +2235,7 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 */
 
 /*
+
 class LabelX0;
 class BlockX0;
 
@@ -1716,334 +2929,6 @@ private:
 ProgramX0* PX(){
 	return new ProgramX0();
 }
-*/
-
-// -----------------------------------------------------------------------------------------------------------
-//				 ----	-----			-------	----- -   - -----
-//				-	 -	-	-			   ---	-	- --  - -
-//				-		-	-	-----	  ---	-	- - - - ----
-//				-	 -	-	-			 ---	-	- -  -- -
-//				 ----   -----			-------	----- -   - -----
-// -----------------------------------------------------------------------------------------------------------
-
-/*
-	23) + define data types for C0 program ASTs
-		- var = ...
-		- label = ...
-		- arg = ...
-		- exp = ...
-		- stmt = ...
-		- tail = ...
-		- p = ...
-	24) + write a pretty printer for C0 programs
-		- purely debugging tool
-	25) 1/12 build a test suite of a dozen C0 programs
-		- manually compiled versions of R1 test programs
-	26) + write an interpreter for C0 programs
-		- should use global environment for variables values and should error
-		  when undefined variables are referenced
-*/
-
-/*
-	Ivan Blaskic [ @UML 4Jay's-CC-class ]
-	C0Language.hpp
-
-	arg		::= int
-			  | var
-
-	exp		::= arg
-			  | (read)
-			  | (- arg)
-			  | (+ arg arg)
-
-	stmt	::= (assign var exp)
-
-	tail	::= (return arg) | (seq stmt tail)
-
-	C0   ::= (program info + [label->tail]) <-- {label->tail refers to instruction set}
-	
-	C Code: progC0
-		- receives list of stmts initialized in main
-		- executes in a way that it receives all variables necessary for execution
-			- goes statement by statement
-				- evaluates sharing list of variables
-
-	R --> C:	flatten in the deepest node
-					--> creates new list of statements and variables when returning
-				flatten in operation node
-					--> adds new statement to existing set of statements received from arguments
-*/
-
-/*
-
-class LabelC0;
-class TailC0;
-
-static list<pair<string, int>> Variables;
-static list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>> label_tail_list;
-
-// (exp)
-class ExpC0 {
-public:
-	virtual int eval() = 0;
-	string virtual toString() = 0;
-private:
-};
-
-// (argument) <-- exp
-class ArgC0 : public ExpC0{
-public:
-	virtual int eval() = 0;
-	string virtual toString() = 0;
-private:
-};
-
-// (int) <-- argument
-class IntC0 : public ArgC0 {
-public:
-	IntC0(int _value) {
-		this->value = _value;
-	}
-	int eval() {
-		return this->value;
-	}
-	string toString() {
-		return "\t(" + to_string(this->value) + ")";
-	}
-private:
-	int value;
-};
-
-// (var) <-- argument
-class VarC0 : public ArgC0 {
-public:
-	VarC0(string _name) {
-		this->name = _name;
-	}
-	int setVal(int _value) {
-		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
-			if ((*it).first == this->name) {
-				(*it).second = _value;
-				return 0;
-			}
-		}
-		cout << "\tError: Variable: " << this->name << " is not found.\n";
-		return 1;
-	}
-	int eval() {
-		for (list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); it++) {
-			if ((*it).first == this->name) {
-				return (*it).second;
-			}
-		}
-		cout << "\tVariable: " << this->name << " is not found.\n";
-		return 1;
-	}
-	string toString() {
-		return "\t(" + this->name + ")";
-	}
-private:
-	string name;
-};
-
-// (read) <-- exp
-class ReadC0 : public ExpC0 {
-public:
-	ReadC0() {}
-	int eval() {
-		cout << "Enter the integer value for (read): ";
-		cin >> this->value;
-		cout << "\n";
-		return this->value;
-	}
-	string toString() {
-		return "\t(read)";
-	}
-private:
-	int value;
-};
-
-// (- arg) <-- exp
-class NegC0 : public ExpC0 {
-public:
-	NegC0(ArgC0 *_arg) {
-		this->arg = _arg;
-	}
-	int eval() {
-		return (-this->arg->eval());
-	}
-	string toString() {
-		return "\t(- " + this->arg->toString() + ")";
-	}
-private:
-	ArgC0 *arg;
-};
-
-// (+ arg arg) <-- exp
-class AddC0 : public ExpC0 {
-public:
-	AddC0(ArgC0 *_left, ArgC0 *_right) {
-		this->left = _left;
-		this->right = _right;
-	}
-	int eval() {
-		return (this->left->eval() + this->right->eval());
-	}
-	string toString() {
-		return "\t(+ " + this->left->toString() + " " + this->right->toString() + ")";
-	}
-private:
-	ArgC0 *left, *right;
-};
-
-// (stmt)
-class StmtC0 {
-public:
-	virtual int eval() = 0;
-	virtual string toString() = 0;
-private:
-};
-
-// (assign var exp) <-- stmt
-class AssignC0 : public StmtC0 {
-public:
-	AssignC0(VarC0 *_var, ExpC0 *_exp) {
-		this->var = _var;
-		this->exp = _exp;
-	}
-	int eval() {
-		if (this->var->setVal(this->exp->eval()) == 0) {
-			return 0;
-		}
-		else {
-			cout << "\tError setting value for: " << this->var->toString() << "\n";
-			return 1;
-		}
-	}
-	string toString() {
-		return "\t(assign\t" + this->var->toString() + this->exp->toString() + ")\n";
-	}
-private:
-	VarC0 *var;
-	ExpC0 *exp;
-};
-
-// (return arg) 
-class RetC0 {
-public:
-	RetC0(ArgC0 *_arg) {
-		this->arg = _arg;
-	}
-	int eval() {
-		cout << "\t\t>> Return Value is " << this->arg->eval() << " for following return statement <<\n";
-		return 0;
-	}
-	string toString() {
-		return "\t(return " + this->arg->toString() + ")\n";
-	}
-	ArgC0* get_arg() {
-		return this->arg;
-	}
-private:
-	ArgC0 *arg;
-};
-
-// (label->tail) 
-class LabelC0 {
-public:
-	LabelC0(string _name) {
-		this->name = _name;
-	}
-	void emit() {
-		cout << this->name << "\n";
-	}
-private:
-	string name;
-};
-
-// (return arg) | (sequence stmt tail) <-- tail
-class TailC0 {
-public:
-	TailC0(list<std::shared_ptr<StmtC0>> *_stmts) {
-		this->stmts = _stmts;
-	}
-	TailC0(RetC0 *_ret) {
-		this->ret = _ret;
-		is_end = true;
-	}
-	int eval() {
-		if (isEnd() == true) {
-			if (this->ret->eval() == 0) {
-				cout << "\t" << this->ret->toString();
-				return 0;
-			}
-			else {
-				cout << "\n\tError executing return.\n";
-				return 1;
-			}
-		}
-		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
-			if ((*it)->eval() != 0) {
-				// cout << "\t" << (*it)->toString();
-				cout << "\n\tError executing program.\n\tCheck statement: " << (*it)->toString() << "\n";
-				return 1;
-			}
-		}
-		cout << "\n\tExecution is done.\n\n" << "\nMemory:\n\n" << "\tVariable\tValue\n";
-		for (std::list<pair<std::string, int>>::iterator it = Variables.begin(); it != Variables.end(); ++it) {
-			cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
-		}
-		cout << "\n";
-		return 0;
-	}
-	bool isEnd() {
-		return this->is_end;
-	}
-	void emit() {
-		if (isEnd() == true) {
-			cout << "\t" << this->ret->toString() << "\n";
-			return;
-		}
-		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
-			cout << "\t" << (*it)->toString();
-			
-		}
-		return;
-	}
-private:
-	bool is_end = false;
-	list<std::shared_ptr<StmtC0>> *stmts;
-	RetC0 *ret;
-};
-
-// (program info {variables} [label->tail] {list_label_tail}
-class ProgC0 {
-public:
-	// for now okay, eventually program will be in static list
-	// where label points to tail 
-	ProgC0() {
-	}
-	void execute() {
-		cout << "\nProgram:\n\n";
-		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
-		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
-			if (it->second->eval() != 0)
-				cout << "\nError\n";
-			cout << "\n";
-			if ((it->second)->isEnd()) {
-				return;
-			}
-		}
-	}
-	void emit() {
-		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
-		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
-			it->first->emit();
-			it->second->emit();
-		}
-	}
-private:
-};
 
 */
 
