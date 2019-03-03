@@ -127,28 +127,26 @@
 	35) + connect explicate-control to your test suite
 		- ensure that every test program behaves the same before and after explicate-control by using the C0 interpreter 
 		- remember, this pass requires resolve-complex to have already run
-
-
-	36) ! write a few tests for uncover-locals that predict its output
+	36) + write a few tests for uncover-locals that predict its output
 		- this should be very easy to do!
-	37) ! implement the uncover-locals pass for C0 programs
+	37) + implement the uncover-locals pass for C0 programs
 		- this pass collects the set of variables used in the program 
 		  and stores them for later passes in the auxiliary field of C0 programs
-	38)	! connect uncover-locals to your test suite
+	38)	+ connect uncover-locals to your test suite
 		- ensure that every test program behaves the same before and after uncover-locals by using the C0 interpter 
 		- this is trivial because uncover-locals shouldn’t effect the behavior of programs 
 		- you’re just doing this to make sure you call it and to make you didn’t accidentally change anything important 
 		  during this pass
-
-	39) ! write a half-dozen tests for select-instr that predict its output
+	39) 1/6 write a half-dozen tests for select-instr that predict its output
 		- you’ll want to make sure that you maintain the correct order and select the write assembly instructions
-	40) ! implement the select-instr pass for C0 programs
+	40) + implement the select-instr pass for C0 programs
 		- this pass takes C0 programs and returns X0 programs 
 		- it should preserve the set of variables used in the program
 		- remember to use helper functions for each kind of C0 AST
-	41) ! connect select-instr to your test suite
+	41) + connect select-instr to your test suite
 		- ensure that every test program behaves the same before and after select-instr by using the X0 interpreter
 
+		  ASSIGN()
 	42) ! write a few tests for assign-homes that predict its output
 		- you’ll want to make sure that the output program contains no variables 
 		  and that variables are assigned homes consistently
@@ -160,7 +158,8 @@
 		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter 
 		- you may want to also include a check that guarantees the result contains no variable references
 
-	45) ! write a half-dozen tests for patch-instructions that predict its output
+		  PATCH()
+	45) 0/6 write a half-dozen tests for patch-instructions that predict its output
 		- you’ll want to make sure memory references are legal
 	46) ! implement the patch-instructions pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which mention memory 
@@ -170,6 +169,7 @@
 		  by using the X0 interpreter
 		- remember, this pass assumes that assign-homes has run
 
+		  TOUCHDOWN(:
 	48) ! implement your language runtime
 		- initially, this is just two functions: read_int and print_int 
 		- the first corresponds to the read call and the second is automatically used at the end of programs
@@ -180,6 +180,8 @@
 		- close the final knot and get an actual compiler by having your final X0 programs 
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
 		- you finally have a working compiler! Aren’t you proud? 
+
+		  UNCOVER-LIVE()
 	51) ! write a dozen tests for uncover-live that predict its output
 		- I don’t remember using examples from real programs, because they are likely to be too complicated
 		- instead, use simple ones that you come up with by hand
@@ -331,14 +333,14 @@ using namespace std;
 	+ X860	::=		(instr+)
 */
 
-/*
-
 class LabelX0;
 class BlockX0;
+class InstrX0;
 
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
+static list<std::shared_ptr<InstrX0>> blk_main_list;
 
 // stack implementation for registers: rsp | rbp
 static struct Node {
@@ -428,6 +430,15 @@ public:
 	// is that what's expected?
 	void setValue(int _value) {
 		this->value = _value;
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->getName()) {
+				((*it).second = this->value);
+				return;
+			}
+		}
+		cout << "\n\tError setting value for: " << this->getName() << "\n\n";
+		return;
 	}
 	string getName() {
 		return this->name;
@@ -489,14 +500,22 @@ public:
 		return this->value;
 	}
 	void setValue(int _value) {
-		// imagining this would be updated
 		this->value = _value;
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+			if ((*it).first == this->getName()) {
+				((*it).second = this->value);
+				return;
+			}
+		}
+		cout << "\n\tError setting value for: " << this->getName() << "\n\n";
+		return;
 	}
 	string getName() {
 		return this->name;
 	}
 	string toString() {
-		return "var(" + this->name + ")";
+		return this->name;
 	}
 private:
 	string name;
@@ -796,8 +815,9 @@ public:
 	int eval() {
 		if (readValue(&rd_dst, this->dest->getName()) == 1)
 			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
-writeValue(this->rd_dst + this->rd_src);
-return 0;
+		cout << "\n VAR BEING ADDED: " << this->rd_dst << "-->" << this->dest->toString() << "\t" << this->rd_src << "-->" << this->src->toString() << "\n\n";
+		writeValue(this->rd_dst + this->rd_src);
+		return 0;
 	}
 	int readValue(int *_val, string _name) {
 		std::list<pair<std::string, int>>::iterator it;
@@ -1027,8 +1047,6 @@ ProgramX0* PX(){
 	return new ProgramX0();
 }
 
-*/
-
 // -----------------------------------------------------------------------------------------------------------
 //				 ----	-----			-------	----- -   - -----
 //				-	 -	-	-			   ---	-	- --  - -
@@ -1038,6 +1056,11 @@ ProgramX0* PX(){
 // -----------------------------------------------------------------------------------------------------------
 
 // C0: steps 23-26 --> compiled R0 into C0
+
+/*
+
+
+*/
 
 /*
 	Ivan Blaskic [ @UML 4Jay's-CC-class ]
@@ -1071,6 +1094,7 @@ ProgramX0* PX(){
 
 class LabelC0;
 class TailC0;
+class VarC0;
 
 static list<pair<string, int>> Variables;
 static list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>> label_tail_list;
@@ -1080,6 +1104,10 @@ class ExpC0 {
 public:
 	virtual int eval() = 0;
 	string virtual toString() = 0;
+	virtual ArgX0* select(VarC0* _dst) = 0;
+	bool virtual isAdd() = 0;
+	bool virtual isRead() = 0;
+	bool virtual isNeg() = 0;
 private:
 };
 
@@ -1088,9 +1116,14 @@ class ArgC0 : public ExpC0 {
 public:
 	virtual int eval() = 0;
 	string virtual toString() = 0;
+	virtual ArgX0* select(VarC0* _dst) = 0;
+	bool virtual isAdd() = 0;
+	bool virtual isRead() = 0;
+	bool virtual isNeg() = 0;
 private:
 };
 
+// selectA  (num n)C			= (num n)X				
 // (int) <-- argument
 class IntC0 : public ArgC0 {
 public:
@@ -1103,10 +1136,23 @@ public:
 	string toString() {
 		return "\t(" + to_string(this->value) + ")";
 	}
+	ArgX0* select(VarC0* _dst) {
+		return IX(this->value);
+	}
+	bool isAdd() {
+		return false;
+	}
+	bool isRead() {
+		return false;
+	}
+	bool isNeg() {
+		return false;
+	}
 private:
 	int value;
 };
 
+// selectA	(var x)C			= (var x)X
 // (var) <-- argument
 class VarC0 : public ArgC0 {
 public:
@@ -1135,6 +1181,21 @@ public:
 	string toString() {
 		return "\t(" + this->name + ")";
 	}
+	ArgX0* select(VarC0* _dst) {
+		return VX(this->name);
+	}
+	bool isAdd() {
+		return false;
+	}
+	bool isRead() {
+		return false;
+	}
+	bool isNeg() {
+		return false;
+	}
+	string getName() {
+		return this->name;
+	}
 private:
 	string name;
 };
@@ -1152,6 +1213,20 @@ public:
 	string toString() {
 		return "\t(read)";
 	}
+	bool isAdd() {
+		return false;
+	}
+	bool isRead() {
+		return true;
+	}
+	bool isNeg() {
+		return false;
+	}
+	ArgX0* select(VarC0* _dst) {
+		blk_main_list.push_back(std::make_shared<CallqX0>());
+		blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX(_dst->getName())));
+		return NULL;
+	}
 private:
 	int value;
 };
@@ -1167,6 +1242,20 @@ public:
 	}
 	string toString() {
 		return "\t(- " + this->arg->toString() + ")";
+	}
+	bool isAdd() {
+		return false;
+	}
+	bool isRead() {
+		return false;
+	}
+	bool isNeg() {
+		return true;
+	}
+	ArgX0* select(VarC0* _dst) {
+		blk_main_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), VX(_dst->getName())));
+		blk_main_list.push_back(std::make_shared<NegqX0>(VX(_dst->getName())));
+		return NULL;
 	}
 private:
 	ArgC0 *arg;
@@ -1185,6 +1274,20 @@ public:
 	string toString() {
 		return "\t(+ " + this->left->toString() + " " + this->right->toString() + ")";
 	}
+	bool isAdd() {
+		return true;
+	}
+	bool isRead() {
+		return false;
+	}
+	bool isNeg() {
+		return false;
+	}
+	ArgX0* select(VarC0* _dst) {
+		blk_main_list.push_back(std::make_shared<MovqX0>(this->right->select(NULL), VX(_dst->getName())));
+		blk_main_list.push_back(std::make_shared<AddqX0>(this->left->select(NULL), VX(_dst->getName())));
+		return NULL;
+	}
 private:
 	ArgC0 *left, *right;
 };
@@ -1194,6 +1297,7 @@ class StmtC0 {
 public:
 	virtual int eval() = 0;
 	virtual string toString() = 0;
+	void virtual select() = 0;
 private:
 };
 
@@ -1216,6 +1320,31 @@ public:
 	string toString() {
 		return "\t(assign\t" + this->var->toString() + this->exp->toString() + ")\n";
 	}
+	void select() {
+		// selectE (selectA x) e 
+		//		for exp = arg:		selectE dst (a)			=	[movq (selectA a) dst;]
+		//		for exp = read:		selectE dst (read)		=	[callq		_read_int;]
+		//														[movq RAX		  dst;]
+		//		for exp = neg:		selectE dst (-a)		=	[movq (selectA a) dst;]
+		//														[negq			  dst;]
+		//		for exp = add:		selectE dst (+ aL aR)	=	[movq (selectA aR)dst;]
+		//														[addq (selectA aL)dst;]
+		if (this->exp->isAdd()) {
+			this->exp->select(var);
+			return;
+		}
+		else if (this->exp->isNeg()) {
+			this->exp->select(var);
+			return;
+		}
+		else if (this->exp->isRead()) {
+			this->exp->select(var);
+		}
+		else {
+			blk_main_list.push_back(std::make_shared<MovqX0>(this->exp->select(NULL), VX(this->var->getName())));
+			return;
+		}
+	}
 private:
 	VarC0 *var;
 	ExpC0 *exp;
@@ -1236,6 +1365,11 @@ public:
 	}
 	ArgC0* get_arg() {
 		return this->arg;
+	}
+	void select() {
+		// [(movq (selectA a) RAX)	(jmp END)] 
+		blk_main_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), RX("rax")));
+		blk_main_list.push_back(std::make_shared<JumpX0>(LbX("end:")));
 	}
 private:
 	ArgC0 *arg;
@@ -1303,6 +1437,12 @@ public:
 		}
 		return;
 	}
+	void select() {
+		for (std::list<std::shared_ptr<StmtC0>>::iterator it = this->stmts->begin(); it != this->stmts->end(); ++it) {
+			(*it)->select();
+		}
+		return;
+	}
 private:
 	bool is_end = false;
 	list<std::shared_ptr<StmtC0>> *stmts;
@@ -1312,8 +1452,6 @@ private:
 // (program info {variables} [label->tail] {list_label_tail}
 class ProgC0 {
 public:
-	// for now okay, eventually program will be in static list
-	// where label points to tail
 	ProgC0() {
 	}
 	void execute() {
@@ -1335,6 +1473,38 @@ public:
 			it->second->emit();
 		}
 	}
+	void select() {
+		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
+		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
+			(it->second->select());
+			if ((it->second)->isEnd()) {
+				std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
+				std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
+				BlockX0 *temp_blk = new BlockX0(&blk_main_list);
+				auto blk_main = std::make_shared<BlockX0>(*temp_blk);
+				pcnt = 0;
+				label_block_list.emplace_back(make_pair(lbl_main, blk_main));
+				// label_block_list.emplace_back(make_pair(lbl_end, NULL));
+				// init_variables_list.push_back(std::make_pair("x", 36));
+				return;
+			}
+		}
+		cout << "\n\tNo return statement in code.\n\n\t~ your select()\n\n";
+		std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
+		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
+		BlockX0 *temp_blk = new BlockX0(&blk_main_list);
+		auto blk_main = std::make_shared<BlockX0>(*temp_blk);
+		pcnt = 0;
+		label_block_list.emplace_back(make_pair(lbl_main, blk_main));
+		// label_block_list.emplace_back(make_pair(lbl_end, NULL));
+		init_variables_list.push_back(std::make_pair("x_0", 0));
+		init_variables_list.push_back(std::make_pair("x_1", 0));
+		init_variables_list.push_back(std::make_pair("L_x_4", 0));
+		init_variables_list.push_back(std::make_pair("A_x_3", 0));
+		init_variables_list.push_back(std::make_pair("L_x_2", 0));
+		return;
+	}
+
 private:
 };
 

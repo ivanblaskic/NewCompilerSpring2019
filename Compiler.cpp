@@ -1,6 +1,6 @@
 #include "Compiler.h"
 
-/*
+
 void print_variables_x0() {
 	cout << "\nVariables:\n";
 	cout << "\tName\tValue\n";
@@ -31,7 +31,7 @@ void print_stack_x0() {
 	cout << "\n";
 	system("Pause");
 }
-*/
+
 
 int main() {
 
@@ -396,7 +396,6 @@ int main() {
 
 		TailC0 *temp_tail1 = new TailC0(&tail1_tester);
 		auto tail_main = std::make_shared<TailC0>(*temp_tail1);
-
 		auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("x")));
 
 		label_tail_list.emplace_back(std::make_pair(lbl1_tester, tail_main));
@@ -416,6 +415,18 @@ int main() {
 	//				 - -	-	-			 ---	-	- -  -- -
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
+
+		program->select();
+		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
+		ProgramX0 *program_test = PX();
+		program_test->emit();
+		program_test->execute();
+		system("Pause");
+
+		print_variables_x0();
+		print_registers_x0();
+		print_stack_x0();
+
 
 	/*
 
