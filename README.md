@@ -40,21 +40,15 @@ Compiler Written in C++ for Jay to Review
 + Write a half-dozen tests for explicate-control that predict its output. Add 5 more.
 + Implement the explicate-control pass for R1 programs.
 + Connect explicate-control to your test suite.
++ Write a few tests for uncover-locals that predict its output.
++ Implement the uncover-locals pass for C0 programs.
++ Connect uncover-locals to your test suite.
+1/6 Write a half-dozen tests for select-instr that predict its output.
++ Implement the select-instr pass for C0 programs.
++ Connect select-instr to your test suite.
 - 
---> February 17th, 02:02am <--
+--> March 3rd, 4:43pm <--
 - F+
--
-- UNCOVER-LOCALS()
-- Write a few tests for uncover-locals that predict its output.
-- Implement the uncover-locals pass for C0 programs.
-- Connect uncover-locals to your test suite.
-- SELECT-INSTR()
-- Write a half-dozen tests for select-instr that predict its output.
-- Implement the select-instr pass for C0 programs.
-- Connect select-instr to your test suite.
-- 
---> February 17th, 23:59pm <--
-- D-
 - 
 - Write a few tests for assign-homes that predict its output.
 - Implement the assign-homes pass for X0 programs.
