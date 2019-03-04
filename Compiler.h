@@ -815,7 +815,6 @@ public:
 	int eval() {
 		if (readValue(&rd_dst, this->dest->getName()) == 1)
 			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
-		cout << "\n VAR BEING ADDED: " << this->rd_dst << "-->" << this->dest->toString() << "\t" << this->rd_src << "-->" << this->src->toString() << "\n\n";
 		writeValue(this->rd_dst + this->rd_src);
 		return 0;
 	}
@@ -997,8 +996,10 @@ public:
 			if ((it->first->getName()) == (this->label->getName())) {
 				it->second->eval();
 				if ((it->second)->isEnd()) {
+					end_label = true;
 					return 0;
 				}
+				end_label = false;
 				if ((it->second)->isJump() == true) {
 					return 0;
 				}
@@ -1009,13 +1010,14 @@ public:
 		return "\tjmp\t\t" + label->getName() + "\n";
 	};
 	bool isEnd() {
-		return false;
+		return end_label;
 	};
 	bool isJump() {
 		return true;
 	};
 private:
 	LabelX0 *label;
+	bool end_label;
 };
 
 // program info [label->block]
@@ -1027,10 +1029,11 @@ public:
 	void execute() {
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
-			if(it->second->eval()==0)
-				cout << "\tSuccessful Run\n\n";
-			if ((it->second)->isEnd()) {
-				return;
+			if (it->second->eval() == 0) {
+				if ((it->second)->isEnd()) {
+					cout << "\tSuccessful Run\n\n";
+					return;
+				}
 			}
 		}
 	}
@@ -1039,6 +1042,7 @@ public:
 		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
 			it->first->emit();
 			it->second->emit();
+			cout << "\n";
 		}
 	}
 private:
@@ -1477,6 +1481,7 @@ public:
 		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
 		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
 			(it->second->select());
+			/*
 			if ((it->second)->isEnd()) {
 				std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
 				std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
@@ -1488,15 +1493,19 @@ public:
 				// init_variables_list.push_back(std::make_pair("x", 36));
 				return;
 			}
+			*/
 		}
-		cout << "\n\tNo return statement in code.\n\n\t~ your select()\n\n";
 		std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
 		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
-		BlockX0 *temp_blk = new BlockX0(&blk_main_list);
-		auto blk_main = std::make_shared<BlockX0>(*temp_blk);
+		static list<std::shared_ptr<InstrX0>> blk_end_list;
+		blk_end_list.push_back(std::make_shared<RetqX0>());
+		BlockX0 *temp_blk_main = new BlockX0(&blk_main_list);
+		BlockX0 *temp_blk_end = new BlockX0(&blk_end_list);
+		auto blk_main = std::make_shared<BlockX0>(*temp_blk_main);
+		auto blk_end = std::make_shared<BlockX0>(*temp_blk_end);
 		pcnt = 0;
 		label_block_list.emplace_back(make_pair(lbl_main, blk_main));
-		// label_block_list.emplace_back(make_pair(lbl_end, NULL));
+		label_block_list.emplace_back(make_pair(lbl_end, blk_end));
 		init_variables_list.push_back(std::make_pair("x_0", 0));
 		init_variables_list.push_back(std::make_pair("x_1", 0));
 		init_variables_list.push_back(std::make_pair("L_x_4", 0));
