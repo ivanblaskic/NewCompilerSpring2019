@@ -75,6 +75,11 @@ Compiler Written in C++ for Jay to Review
 - Extend your build-interferences pass to construct a move-graph.
 - Extend your color-graph function to incorporate move-biasing with an optional input argument.
 - Update your allocate-registers pass to make use of the move-biasing feature of color-graph.
+- 
+- < Objective >
+--> March 13th, 11:59pm <--
+- C- 
+- 
 - Extend your data types from R1 to R2.
 - Extend your pretty printer from R1 to R2.
 - Write a dozen test R2 programs.
