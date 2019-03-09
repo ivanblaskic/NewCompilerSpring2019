@@ -24,6 +24,7 @@
 				if (n == 0) 
 					mode = Interactive;
 				else if (n == 1) 
+
 					mode = Automated;
 				return R();
 			}
@@ -271,6 +272,7 @@ using namespace std;
 // -----------------------------------------------------------------------------------------------------------
 
 // X0: steps 18-22 --> compiling C0 into X0
+//	   steps 42-44 --> assign-homes for putting vars in place --> from X0 w vars in2 X0 w/o vars
 
 /*
 	18) + define data types for X0 program ASTs
@@ -288,6 +290,60 @@ using namespace std;
 		- create intermediate file containing the assembly on disk - you can look at assembly
 		  you producing during compilation in the future
 		- automatically compare results of assembled program and your interpreter
+
+	ASSIGN() - 1st step of "Register Allocation" problem
+	42) ! write a few tests for assign-homes that predict its output
+		- you’ll want to make sure that the output program contains no variables
+		  and that variables are assigned homes consistently
+	43) ! implement the assign-homes pass for X0 programs
+		- this pass takes X0 programs and returns new X0 programs which do not mention variables
+		- for now, it should just assign everything to consistent stack locations in an arbitrary way
+		  based on the set of variables used in the program
+	44) ! connect assign-homes to your test suite
+		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter
+		- you may want to also include a check that guarantees the result contains no variable references
+
+input:	assign (program info_for_the_program [BODY -> (block info_for_the_block) Instruction_Set])
+			--> in info_for_the_program we have local variables = set of variables --> need spots
+			--> local-vars = (x1, ..., xN)
+			--> stack will be increased by N spots
+			--> find all of the variables and replace them with corresponding stack location
+
+output:	program (ip w/o local-vars) [
+			BEGIN -> (block 0 [pushq RBP;	movq RSP, RBP;	subq VC, RSP;	jmp BODY;])
+			END	  -> (block 0 [addq VC,RSP;	popq RBP;		retq])
+			BODY  -> (block ib (assign o Instruction_Set))
+		])
+		
+		o[rou] = [x1 --> %RSP(8x1), ..., xN --> %RSP(8xN)]
+			--> you go through instruction set and look at the arguments 
+			--> if argument is a variable then replace it with the given mapping
+
+		VC = 8 x (N or N+1) --> must be divisible by 16 --> e.g. if N=5 then N+1=6 * 8 
+			--> floating point vector registers want to be pushed on stack
+			--> 256b --> you cannot look at the individual pieces of it
+			--> at the bottom of the address those numbers are garantied to be 0s
+			--> if we push FP values on top of stack --> has to be div by 16 bc we have to count on those 0s being there
+			--> check if N is even and if not then add 1 to it o.w. it's all good
+
+		RBP --> pointer to the top of the last function_call's frame --> Callee's save register
+			--> add something to it and then subtract it later
+		
+		Caller Frame is calling function frame
+		Callee Frame is being called frame
+
+		assignIS o[rou] [empty_list]	=	[empty_list]
+						(i: is)			=	(assign o[rou] i): (assign o[rou] is) --> assign on 1 intruction and then the rest
+
+		assignI o[rou]	(addq aL,aR) = addq (assign o[rou] aL) (assign o[rou] aR)
+						(negq aR)	 = negq (assign o[rou] aR)
+						(movq aS,aD) = movq (assign o[rou] aS) (assign o[rou] aD)
+						(jmp LAB)	 = jmp LAB
+						(callq LAB)	 = callq LAB
+
+		assignA o[rou] (num n) = (num n)
+		assignA o[rou] (var x) = o[rou](x)
+		
 */
 
 /*
@@ -297,8 +353,8 @@ using namespace std;
 			callq print_int
 			movq $0, %rax retq
 
-	- p		::=		program		info	[label->block]	...
-	- blk	::=		block		info	instr			...
+	+ p		::=		program		info	[label->block]	...
+	+ blk	::=		block		info	instr			...
 	+ instr	::=		  (addq arg arg)					{[q = quad = 4*normal size of number = 4*16b]}
 					| (subq arg arg)
 					| (movq arg arg)
@@ -328,8 +384,8 @@ using namespace std;
 					| r13
 					| r14
 					| r15
-	- label	::=		string
-	- var	::=		not_otherwise_mentioned_variable
+	+ label	::=		string
+	+ var	::=		not_otherwise_mentioned_variable
 	+ X860	::=		(instr+)
 */
 
@@ -340,13 +396,16 @@ class InstrX0;
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
-static list<std::shared_ptr<InstrX0>> blk_main_list;
+static list<std::shared_ptr<InstrX0>> blk_body_list;
+static list<std::shared_ptr<InstrX0>> blk_end_list;
 
 // stack implementation for registers: rsp | rbp
 static struct Node {
 	int data;
 	Node *link;
 };
+
+static int *StackX0 = new int[100];
 
 //static Node *rbp = new Node();
 //static Node *rsp = new Node();
@@ -382,6 +441,7 @@ public:
 	void virtual setValue(int _value) = 0;
 	string virtual getName(void) = 0;
 	string virtual toString(void) = 0;
+	int virtual get_offset(void) = 0;
 private:
 };
 
@@ -402,6 +462,10 @@ public:
 	}
 	string toString() {
 		return "$" + to_string(this->value);
+	}
+	int get_offset() {
+		cout << "\n\tINT has no offset.\n";
+		return 0;
 	}
 private:
 	int value;
@@ -446,6 +510,9 @@ public:
 	string toString() {
 		return "%" + this->name;
 	}
+	int get_offset() {
+		return 0;
+	}
 private:
 	int value;
 	string name;
@@ -464,22 +531,51 @@ public:
 	}
 	int eval() {
 		// this->variables_list = _variables_list;
+		if (this->reg->getName() == "rsp") {
+			std::list<pair<std::string, int>>::iterator it;
+			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+				if ((*it).first == "rsp") {
+					if (this->offset < 0) {
+						if ((*it).second >= (this->offset*(-1))) {
+							return StackX0[(*it).second + this->offset];
+						}
+						else {
+							cout << "\n\tTried reaching the space that is below stack's range.\n";
+						}
+					}
+					else {
+						if ((this->offset + (*it).second) <= 99) {
+							return StackX0[(*it).second + this->offset];
+						}
+						else {
+							cout << "\n\tTried reaching the space that is above stack's range.\n";
+						}
+					}
+				}
+				else {
+					cout << "\n\tCannot add offset to the integer type register. Tried doing so with: " << this->reg->getName() << ".\n";
+				}
+			}
+		}
 		return (this->offset + this->reg->eval());
 	}
 	void setValue(int _value) {
 		this->value = _value;
 	}
 	string toString() {
-		return "%" + this->reg->toString() + "(" + to_string(this->offset) + ")";
+		return this->reg->toString() + "(" + to_string(this->offset) + ")";
 	}
 	string getName() {
-		return "Register type has no name.";
+		return this->reg->getName();
+	}
+	int get_offset() {
+		return this->offset;
 	}
 private:
 	RegX0 *reg;
 	int value, offset;
 };
-IntRegX0* IRX(int _offset,RegX0 *_reg) {
+IntRegX0* IRX(int _offset, RegX0 *_reg) {
 	return new IntRegX0(_offset, _reg);
 }
 
@@ -517,6 +613,10 @@ public:
 	string toString() {
 		return this->name;
 	}
+	int get_offset() {
+		cout << "\n\tINT has no offset.\n";
+		return 0;
+	}
 private:
 	string name;
 	int value;
@@ -528,7 +628,7 @@ VarX0* VX(string _name) {
 //instruction ::= (addq arg arg) | (subq arg arg) | (movq arg arg) | (retq) | (negq arg) | (callq label) | (pushq arg) | (popq arg) | (jump label)
 class InstrX0 {
 public:
-	virtual ~InstrX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//virtual ~InstrX0() { std::cout << "__PRETTY_FUNCTION__INSTR" << std::endl; }
 	virtual int eval() = 0;
 	virtual string toString() = 0;
 	virtual bool isEnd() = 0;
@@ -539,21 +639,42 @@ private:
 // (popq arg) <-- instruction
 class PopqX0 : public InstrX0 {
 public:
-	~PopqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~PopqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
 	PopqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
 	bool isEmpty() {
-		if (top == NULL)
-			return true;
-		return false;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == "rsp") {
+				if ((*it).second == 0) {
+					return true;
+				}
+				else
+					return false;
+			}
+		}
+		/*
+			if (top == NULL)
+				return true;
+			return false;
+		*/
 	}
 	int pop(void) {
-		Node *tmp = top;
-		int value = top->data;
-		top = top->link;
-		delete (tmp);
-		return value;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == "rsp") {
+				(*it).second -= 1;
+				int temp = StackX0[(*it).second];
+				StackX0[(*it).second] = 0;
+				return temp;
+			}
+		}
+		/*
+			Node *tmp = top;
+			int value = top->data;
+			top = top->link;
+			delete (tmp);
+			return value;
+		*/
 	}
 	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
@@ -562,13 +683,13 @@ public:
 					((*it).second = pop());
 				}
 				else {
-					cout << "\tStack is empty, there is nothing there to pop.\n";
+					cout << "\n\tStack is empty, there is nothing there to pop.\n";
 					return 8;
 				}
 				return 0;
 			}
 		}
-		cout << "\tError register name for arg in pop command:" << this->dest->getName() << "\n";
+		cout << "\n\tError register name for arg in pop command:" << this->dest->getName() << "\n";
 		return 8;
 	}
 	string toString() {
@@ -590,20 +711,36 @@ PopqX0* PopX(ArgX0 *_arg) {
 // (pushq arg) <-- instruction
 class PushqX0 : public InstrX0 {
 public:
-	~PushqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~PushqX0() override { std::cout << "__PRETTY_FUNCTION__PUSH" << std::endl; }
 	PushqX0(ArgX0* _src) {
 		this->src = _src;
 	}
 	void push(int _value) {
-		Node *rsp = new Node();
-		rsp->data = _value;
-		rsp->link = top;
-		top = rsp;
+		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == "rsp") {
+				if ((*it).second < 99) {
+					(*it).second += 1;
+					StackX0[(*it).second-1] = _value;
+					return;
+				}
+				else {
+					cout << "\n\tTried doing push() when Stack was full.\n";
+					return;
+				}
+			}
+		}
+		/*
+			Node *rsp = new Node();
+			rsp->data = _value;
+			rsp->link = top;
+			top = rsp;
+		*/
 	}
 	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->src->getName()) {
-				(push((*it).second));
+				push((*it).second);
+				cout << "\n\tPUSHING: " << (*it).second << "\n";
 				return 0;
 			}
 		}
@@ -629,7 +766,7 @@ PushqX0* PshX(ArgX0 *_arg) {
 // (retq) <-- instruction (function marking success with storing 0 in %rax)
 class RetqX0 : public InstrX0 {
 public:
-	~RetqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~RetqX0() override { std::cout << "__PRETTY_FUNCTION__RETQ" << std::endl; }
 	RetqX0() {}
 	int eval() {
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
@@ -667,7 +804,7 @@ RetqX0* RtX() {
 // (callq read_int) <-- instruction (function printing out %rdi)
 class CallqX0 : public InstrX0 {
 public:
-	~CallqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~CallqX0() override { std::cout << "__PRETTY_FUNCTION__CALLQ" << std::endl; }
 	CallqX0() {
 	}
 	int eval() {
@@ -701,7 +838,7 @@ CallqX0* CllX() {
 // (negq arg) <-- instruction
 class NegqX0 : public InstrX0 {
 public:
-	~NegqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~NegqX0() override { std::cout << "__PRETTY_FUNCTION__NEGQ" << std::endl; }
 	NegqX0(ArgX0* _dest) {
 		this->dest = _dest;
 	}
@@ -740,7 +877,7 @@ NegqX0* NgX(ArgX0* _dest) {
 // (subq arg, arg) <-- instruction
 class SubqX0 : public InstrX0 {
 public:
-	~SubqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~SubqX0() override { std::cout << "__PRETTY_FUNCTION__SUBQ" << std::endl; }
 	SubqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
@@ -807,7 +944,7 @@ SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
 // (addq arg, arg) <-- instruction
 class AddqX0 : public InstrX0 {
 public:
-	~AddqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~AddqX0() override { std::cout << "__PRETTY_FUNCTION__ADDQ" << std::endl; }
 	AddqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
@@ -874,23 +1011,51 @@ AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
 // (movq arg arg) <-- instruction
 class MovqX0 : public InstrX0 {
 public:
-	~MovqX0() override { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	//~MovqX0() override { std::cout << "__PRETTY_FUNCTION__MOVQ" << std::endl; }
 	MovqX0(ArgX0* _src, ArgX0* _dest) {
 		this->src = _src;
 		this->dest = _dest;
 	}
 	int eval() {
 		std::list<pair<std::string, int>>::iterator it;
-		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval());
-				return 0;
+		if (this->dest->getName() == "rsp") {
+			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+				if ((*it).first == this->dest->getName()) {
+					if (this->dest->get_offset() < 0) {
+						if ((*it).second >= (this->dest->get_offset()*(-1))) {
+							StackX0[(*it).second + this->dest->get_offset()] = this->src->eval();
+							return 0;
+						}
+						else {
+							cout << "\n\tTried reaching the space that is below stack's range.\n";
+							return 1;
+						}
+					}
+					else {
+						if ((this->dest->get_offset() + (*it).second) <= 99) {
+							StackX0[(*it).second + this->dest->get_offset()] = this->src->eval();
+							return 0;
+						}
+						else {
+							cout << "\n\tTried reaching the space that is above stack's range.\n";
+							return 1;
+						}
+					}
+				}
 			}
 		}
-		for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
-			if ((*it).first == this->dest->getName()) {
-				((*it).second = this->src->eval());
-				return 0;
+		else {
+			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+				if ((*it).first == this->dest->getName()) {
+					((*it).second = this->src->eval());
+					return 0;
+				}
+			}
+			for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+				if ((*it).first == this->dest->getName()) {
+					((*it).second = this->src->eval());
+					return 0;
+				}
 			}
 		}
 		return 1;
@@ -986,7 +1151,7 @@ LabelX0* LbX(string _name) {
 // (jmp label) <-- instruction
 class JumpX0 : public InstrX0 {
 public:
-	~JumpX0() { std::cout << "__PRETTY_FUNCTION__" << std::endl; }
+	~JumpX0() { std::cout << "__PRETTY_FUNCTION__JUMP" << std::endl; }
 	JumpX0(LabelX0 *_label) {
 		this->label = _label;
 	}
@@ -1127,7 +1292,6 @@ public:
 private:
 };
 
-// selectA  (num n)C			= (num n)X				
 // (int) <-- argument
 class IntC0 : public ArgC0 {
 public:
@@ -1156,7 +1320,6 @@ private:
 	int value;
 };
 
-// selectA	(var x)C			= (var x)X
 // (var) <-- argument
 class VarC0 : public ArgC0 {
 public:
@@ -1227,8 +1390,8 @@ public:
 		return false;
 	}
 	ArgX0* select(VarC0* _dst) {
-		blk_main_list.push_back(std::make_shared<CallqX0>());
-		blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX(_dst->getName())));
+		blk_body_list.push_back(std::make_shared<CallqX0>());
+		blk_body_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX(_dst->getName())));
 		return NULL;
 	}
 private:
@@ -1257,8 +1420,8 @@ public:
 		return true;
 	}
 	ArgX0* select(VarC0* _dst) {
-		blk_main_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), VX(_dst->getName())));
-		blk_main_list.push_back(std::make_shared<NegqX0>(VX(_dst->getName())));
+		blk_body_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), VX(_dst->getName())));
+		blk_body_list.push_back(std::make_shared<NegqX0>(VX(_dst->getName())));
 		return NULL;
 	}
 private:
@@ -1288,8 +1451,8 @@ public:
 		return false;
 	}
 	ArgX0* select(VarC0* _dst) {
-		blk_main_list.push_back(std::make_shared<MovqX0>(this->right->select(NULL), VX(_dst->getName())));
-		blk_main_list.push_back(std::make_shared<AddqX0>(this->left->select(NULL), VX(_dst->getName())));
+		blk_body_list.push_back(std::make_shared<MovqX0>(this->right->select(NULL), VX(_dst->getName())));
+		blk_body_list.push_back(std::make_shared<AddqX0>(this->left->select(NULL), VX(_dst->getName())));
 		return NULL;
 	}
 private:
@@ -1345,7 +1508,7 @@ public:
 			this->exp->select(var);
 		}
 		else {
-			blk_main_list.push_back(std::make_shared<MovqX0>(this->exp->select(NULL), VX(this->var->getName())));
+			blk_body_list.push_back(std::make_shared<MovqX0>(this->exp->select(NULL), VX(this->var->getName())));
 			return;
 		}
 	}
@@ -1372,8 +1535,9 @@ public:
 	}
 	void select() {
 		// [(movq (selectA a) RAX)	(jmp END)] 
-		blk_main_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), RX("rax")));
-		blk_main_list.push_back(std::make_shared<JumpX0>(LbX("end:")));
+		blk_body_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), RX("rax")));
+		// blk_body_list.push_back(std::make_shared<MovqX0>(RX("rax"), IRX(5, RX("rsp"))));
+		blk_body_list.push_back(std::make_shared<JumpX0>(LbX("end:")));
 	}
 private:
 	ArgC0 *arg;
@@ -1481,30 +1645,16 @@ public:
 		std::list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>>::iterator it;
 		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
 			(it->second->select());
-			/*
-			if ((it->second)->isEnd()) {
-				std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
-				std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
-				BlockX0 *temp_blk = new BlockX0(&blk_main_list);
-				auto blk_main = std::make_shared<BlockX0>(*temp_blk);
-				pcnt = 0;
-				label_block_list.emplace_back(make_pair(lbl_main, blk_main));
-				// label_block_list.emplace_back(make_pair(lbl_end, NULL));
-				// init_variables_list.push_back(std::make_pair("x", 36));
-				return;
-			}
-			*/
 		}
-		std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
+		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
 		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
-		static list<std::shared_ptr<InstrX0>> blk_end_list;
 		blk_end_list.push_back(std::make_shared<RetqX0>());
-		BlockX0 *temp_blk_main = new BlockX0(&blk_main_list);
+		BlockX0 *temp_blk_body = new BlockX0(&blk_body_list);
 		BlockX0 *temp_blk_end = new BlockX0(&blk_end_list);
-		auto blk_main = std::make_shared<BlockX0>(*temp_blk_main);
+		auto blk_body = std::make_shared<BlockX0>(*temp_blk_body);
 		auto blk_end = std::make_shared<BlockX0>(*temp_blk_end);
 		pcnt = 0;
-		label_block_list.emplace_back(make_pair(lbl_main, blk_main));
+		label_block_list.emplace_back(make_pair(lbl_body, blk_body));
 		label_block_list.emplace_back(make_pair(lbl_end, blk_end));
 		init_variables_list.push_back(std::make_pair("x_0", 0));
 		init_variables_list.push_back(std::make_pair("x_1", 0));

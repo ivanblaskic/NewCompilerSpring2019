@@ -22,12 +22,24 @@ void print_registers_x0() {
 void print_stack_x0() {
 	cout << "\nStack Values:\n";
 	cout << "\tAddress\t\tValue\n";
-	Node *temp = NULL;
-	temp = top;
-	while (temp != NULL) {
-		cout << "\t" << temp << "\t" << temp->data << "\n";
-		temp = temp->link;
+	int temp;
+	for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+		if ((*it).first == "rsp") {
+			temp = (*it).second;
+		}
 	}
+	temp = 6;
+	for (int i = 0; i < temp; i++) {
+		cout << "\t" << &StackX0[i] << "\t" << StackX0[i] << "\n";
+	}
+	/*
+		Node *temp = NULL;
+		temp = top;
+		while (temp != NULL) {
+			cout << "\t" << temp << "\t" << temp->data << "\n";
+			temp = temp->link;
+		}
+	*/
 	cout << "\n";
 	system("Pause");
 }
@@ -418,14 +430,25 @@ int main() {
 
 		program->select();
 		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
-		ProgramX0 *program_test = PX();
-		program_test->emit();
-		program_test->execute();
+		ProgramX0 *program_test_select = PX();
+		program_test_select->emit();
+		program_test_select->execute();
 		system("Pause");
 
 		print_variables_x0();
 		print_registers_x0();
 		print_stack_x0();
+
+		/*
+		ProgramX0 *program_test_assign = program_test_select->assign();
+		program_test_assign->emit();
+		program_test_assign->execute();
+		system("Pause);
+		
+		print_variables_x0();
+		print_registers_x0();
+		print_stack_x0();
+		*/
 
 
 	/*
