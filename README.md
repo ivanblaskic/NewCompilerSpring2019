@@ -46,13 +46,13 @@ Compiler Written in C++ for Jay to Review
 1/6 Write a half-dozen tests for select-instr that predict its output.
 + Implement the select-instr pass for C0 programs.
 + Connect select-instr to your test suite.
+1/few Write a few tests for assign-homes that predict its output.
++ Implement the assign-homes pass for X0 programs.
++ Connect assign-homes to your test suite.
 - 
---> March 3rd, 4:43pm <--
+--> March 10th, 9:02pm <--
 - F+
 - 
-- Write a few tests for assign-homes that predict its output.
-- Implement the assign-homes pass for X0 programs.
-- Connect assign-homes to your test suite.
 - Write a half-dozen tests for patch-instructions that predict its output.
 - Implement the patch-instructions pass for X0 programs.
 - Connect patch-instructions to your test suite.
