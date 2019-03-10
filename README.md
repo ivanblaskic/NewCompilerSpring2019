@@ -49,13 +49,13 @@ Compiler Written in C++ for Jay to Review
 1/few Write a few tests for assign-homes that predict its output.
 + Implement the assign-homes pass for X0 programs.
 + Connect assign-homes to your test suite.
+1/6 Write a half-dozen tests for patch-instructions that predict its output.
++ Implement the patch-instructions pass for X0 programs.
++ Connect patch-instructions to your test suite.
 - 
---> March 10th, 9:02pm <--
+--> March 10th, 2:26am <--
 - F+
 - 
-- Write a half-dozen tests for patch-instructions that predict its output.
-- Implement the patch-instructions pass for X0 programs.
-- Connect patch-instructions to your test suite.
 - Implement your language runtime.
 - Implement the main-generation pass for X0 programs.
 - Connect your test suite to your system assembler and language runtime.
