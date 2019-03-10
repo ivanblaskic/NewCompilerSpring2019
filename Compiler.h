@@ -146,29 +146,26 @@
 		- remember to use helper functions for each kind of C0 AST
 	41) + connect select-instr to your test suite
 		- ensure that every test program behaves the same before and after select-instr by using the X0 interpreter
-
-		  ASSIGN()
-	42) ! write a few tests for assign-homes that predict its output
+	42) + write a few tests for assign-homes that predict its output
 		- you’ll want to make sure that the output program contains no variables 
 		  and that variables are assigned homes consistently
-	43) ! implement the assign-homes pass for X0 programs
+	43) + implement the assign-homes pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which do not mention variables
 		- for now, it should just assign everything to consistent stack locations in an arbitrary way 
 		  based on the set of variables used in the program
-	44) ! connect assign-homes to your test suite
+	44) + connect assign-homes to your test suite
 		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter 
 		- you may want to also include a check that guarantees the result contains no variable references
-
-		  PATCH()
-	45) 0/6 write a half-dozen tests for patch-instructions that predict its output
+	45) 1/6 write a half-dozen tests for patch-instructions that predict its output
 		- you’ll want to make sure memory references are legal
-	46) ! implement the patch-instructions pass for X0 programs
+	46) + implement the patch-instructions pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which mention memory 
 		  either zero or one times per instruction
-	47) ! connect patch-instructions to your test suite
+	47) + connect patch-instructions to your test suite
 		- ensure that every test program behaves the same before and after patch-instructions 
 		  by using the X0 interpreter
 		- remember, this pass assumes that assign-homes has run
+
 
 		  TOUCHDOWN(:
 	48) ! implement your language runtime
@@ -182,6 +179,8 @@
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
 		- you finally have a working compiler! Aren’t you proud? 
 
+		D-
+
 		  UNCOVER-LIVE()
 	51) ! write a dozen tests for uncover-live that predict its output
 		- I don’t remember using examples from real programs, because they are likely to be too complicated
@@ -191,7 +190,62 @@
 		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction 
 		- make sure that you add registers to the live sets, not just variables
 
-		D-
+		  BUILD-INTERFERENCES()
+	53) ! Write a dozen tests for build-interferences that predict its output
+		- these should be the same programs you tested uncover-live with
+	54) ! implement the build-interferences pass for X0 programs
+		- don’t go overboard with finding and using a graph library for your language 
+		- these are really simple graphs, relax
+
+		  COLOR-GRAPH()
+	55) ! write a dozen tests for color-graph that predict its output
+		- in addition to tests that use your build-interferences results
+		- you should also make some examples that correspond to Sudoku boards
+	56) ! implement the color-graph function on arbitrary graphs
+		- using the greedy saturation algorithm described in the book
+
+		  ASSIGN-REGISTERS()
+	57) ! replace assign-homes with a new pass named assign-registers 
+	      and implement the stupid-allocate-registers pass for X0 programs
+		- assign-registers pass should expect an assignment of variables to registers 
+		  or stack locations in the auxiliary field and remove variables 
+		  from the program by using the given mapping. stupid-allocate-registers 
+		  will generate this mapping from the set of variables by assigning them 
+		  all to stack locations
+		- this is a trivial generalization of assign-homes!
+	58) ! write a dozen tests for the assign-registers that predict its output and check their behavior
+		- you should manually come up with register assignments for some sample programs, 
+		  verify that assign-registers (when given those assignments) does it job, 
+		  and check that the programs behave the same as they did before assignment
+
+		  ALLOCATE-REGISTERS()
+	59) ! write a dozen tests for allocate-registers that predict its output
+		- these should be the same programs you tested color-graph with 
+		- make sure there are tests that actually spill to the stack
+	60) ! replace stupid-allocate-registers with a new allocate-registers pass on X0 programs
+		- this pass will assume uncover-live and build-interferences have been run 
+		  and use color-graph to construct a register assignment for assign-registers
+
+		  MAIN-GENERATION()
+	61) ! update the main-generation pass to save and restore callee-saved registers
+		- start off by saving and restoring all callee-saved registers, 
+		  then make it sensitive to what you actually use
+	62) ! connect your test suite to the new main-generation and allocate-registers passes
+		- you now have a better compiler
+
+		  MOVE-BIASING() & MOVE-GRAPH()
+	63) ! write a few test programs that have opportunities for move-biasing to be effective
+		- the book contain some examples 
+		- you should come up with at least one R1 program that has the property; 
+		- in addition to X0 program
+	64) ! extend your build-interferences pass to construct a move-graph
+		- update your build-interference tests to check that the move-graph is constructed correctly
+	65) ! extend your color-graph function to incorporate move-biasing with an optional input argument
+		- translate your move-biasing tests to color-graph problems and expected outputs
+	66) ! update your allocate-registers pass to make use of the move-biasing feature of color-graph
+		- this should be a trivial step of connecting the dots
+
+		C-
 
 */
 
@@ -273,6 +327,28 @@ using namespace std;
 
 // X0: steps 18-22 --> compiling C0 into X0
 //	   steps 42-44 --> assign-homes for putting vars in place --> from X0 w vars in2 X0 w/o vars
+//	   steps 45-47 --> patch for following the rules --> only 1 memory reference per instruction
+
+/*
+
+	Patch:	does everything like assign in terms of walks through,
+			but does things different when it comes down to actual instructions.
+
+	- if on addq there is 2 memory references then it compiles it to something different
+
+	patch	recurs	like	assign		
+	
+	TMP = RAX		* always available for this use --> don't using it down the road
+	
+	patch	(addq	R1(o1),		R2(o2))		=	[(movq	R1(o1)	,	TMP)
+												 (addq	TMP		,	R2(o2))]
+			(movq	R1(o1),		R2(o2))		=	[(movq	R1(o1)	,	TMP)
+												 (movq	TMP		,	R2(o2))]
+			;								=	[			;			   ]
+
+	patch	(i	:	is)		=		patch	i		++		patch is
+
+*/
 
 /*
 	18) + define data types for X0 program ASTs
@@ -291,15 +367,14 @@ using namespace std;
 		  you producing during compilation in the future
 		- automatically compare results of assembled program and your interpreter
 
-	ASSIGN() - 1st step of "Register Allocation" problem
-	42) ! write a few tests for assign-homes that predict its output
+	42) 1/6 write a few tests for assign-homes that predict its output
 		- you’ll want to make sure that the output program contains no variables
 		  and that variables are assigned homes consistently
-	43) ! implement the assign-homes pass for X0 programs
+	43) + implement the assign-homes pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which do not mention variables
 		- for now, it should just assign everything to consistent stack locations in an arbitrary way
 		  based on the set of variables used in the program
-	44) ! connect assign-homes to your test suite
+	44) + connect assign-homes to your test suite
 		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter
 		- you may want to also include a check that guarantees the result contains no variable references
 
@@ -310,8 +385,8 @@ input:	assign (program info_for_the_program [BODY -> (block info_for_the_block) 
 			--> find all of the variables and replace them with corresponding stack location
 
 output:	program (ip w/o local-vars) [
-			BEGIN -> (block 0 [pushq RBP;	movq RSP, RBP;	subq VC, RSP;	jmp BODY;])
-			END	  -> (block 0 [addq VC,RSP;	popq RBP;		retq])
+			BEGIN -> (block 0 [pushq RBP;	movq RSP, RBP;	subq VC, RSP;	jmp BODY;])		--> switched subq with addq
+			END	  -> (block 0 [addq VC,RSP;	popq RBP;		retq])							--> switched addq with subq
 			BODY  -> (block ib (assign o Instruction_Set))
 		])
 		
@@ -396,8 +471,13 @@ class InstrX0;
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
+static list<std::shared_ptr<InstrX0>> blk_begin_list;
 static list<std::shared_ptr<InstrX0>> blk_body_list;
+static list<std::shared_ptr<InstrX0>> tmp_patch_list;
 static list<std::shared_ptr<InstrX0>> blk_end_list;
+static list<pair<string, int>> var_mappings;
+
+static list<pair<string, int>> Variables; //C0
 
 // stack implementation for registers: rsp | rbp
 static struct Node {
@@ -431,6 +511,9 @@ static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int
 	std::make_pair("rbp", 0)
 };
 
+static int var_left_cnt;
+static int print_stack_var;
+
 // program counter
 static int pcnt;
 
@@ -442,6 +525,9 @@ public:
 	string virtual getName(void) = 0;
 	string virtual toString(void) = 0;
 	int virtual get_offset(void) = 0;
+	virtual ArgX0* assign() = 0;
+	bool virtual isMem() = 0;
+	virtual ArgX0* patch() = 0;
 private:
 };
 
@@ -466,6 +552,15 @@ public:
 	int get_offset() {
 		cout << "\n\tINT has no offset.\n";
 		return 0;
+	}
+	ArgX0* assign() {
+		return this;
+	}
+	bool isMem() {
+		return false;
+	}
+	ArgX0* patch() {
+		return new IntX0(this->value);
 	}
 private:
 	int value;
@@ -513,6 +608,15 @@ public:
 	int get_offset() {
 		return 0;
 	}
+	ArgX0* assign() {
+		return this;
+	}
+	bool isMem() {
+		return false;
+	}
+	ArgX0* patch() {
+		return new RegX0(this->name);
+	}
 private:
 	int value;
 	string name;
@@ -531,10 +635,10 @@ public:
 	}
 	int eval() {
 		// this->variables_list = _variables_list;
-		if (this->reg->getName() == "rsp") {
+		if ((this->getName()=="rsp") || (this->getName()=="rbp")) {
 			std::list<pair<std::string, int>>::iterator it;
 			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-				if ((*it).first == "rsp") {
+				if ((*it).first == this->getName()) {
 					if (this->offset < 0) {
 						if ((*it).second >= (this->offset*(-1))) {
 							return StackX0[(*it).second + this->offset];
@@ -552,15 +656,38 @@ public:
 						}
 					}
 				}
-				else {
-					cout << "\n\tCannot add offset to the integer type register. Tried doing so with: " << this->reg->getName() << ".\n";
-				}
 			}
 		}
 		return (this->offset + this->reg->eval());
 	}
 	void setValue(int _value) {
-		this->value = _value;
+		std::list<pair<string, int>>::iterator it;
+		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+			if ((*it).first == this->getName()) {
+				if (this->get_offset() < 0) {
+					if ((*it).second >= (this->get_offset()*(-1))) {
+						StackX0[(*it).second + this->get_offset()] = _value;
+						return;
+					}
+					else {
+						cout << "\n\tTried reaching the space that is below stack's range.\n";
+						return;
+					}
+				}
+				else {
+					if ((this->get_offset() + (*it).second) <= 99) {
+						StackX0[(*it).second + this->get_offset()] = _value;
+						return;
+					}
+					else {
+						cout << "\n\tTried reaching the space that is above stack's range.\n";
+						return;
+					}
+				}
+			}
+		}
+		cout << "\nError setting up intReg: " << this->toString() << "\n";
+		return;
 	}
 	string toString() {
 		return this->reg->toString() + "(" + to_string(this->offset) + ")";
@@ -570,6 +697,15 @@ public:
 	}
 	int get_offset() {
 		return this->offset;
+	}
+	ArgX0* assign() {
+		return this;
+	}
+	bool isMem() {
+		return true;
+	}
+	ArgX0* patch() {
+		return new IntRegX0(this->offset, RX(this->getName()));
 	}
 private:
 	RegX0 *reg;
@@ -617,6 +753,27 @@ public:
 		cout << "\n\tINT has no offset.\n";
 		return 0;
 	}
+	ArgX0* assign() {
+		for (std::list<pair<string, int>>::iterator it = var_mappings.begin(); it != var_mappings.end(); it++) {
+			if (this->name == (*it).first) {
+				return IRX((*it).second, RX("rbp"));
+			}
+		}
+		for (std::list<pair<string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end() ; it++) {
+			if ((*it).first == "rbp") {
+				StackX0[(*it).second + var_left_cnt] = this->eval();
+				var_mappings.push_back(make_pair(this->name, var_left_cnt));
+				var_left_cnt--;
+				return IRX(var_left_cnt + 1, RX("rbp"));
+			}
+		}
+	}
+	bool isMem() {
+		return false;
+	}
+	ArgX0* patch() {
+		return new VarX0(this->name);
+	}
 private:
 	string name;
 	int value;
@@ -633,6 +790,9 @@ public:
 	virtual string toString() = 0;
 	virtual bool isEnd() = 0;
 	virtual bool isJump() = 0;
+	virtual void assign() = 0;
+	virtual int patch() = 0;
+	virtual bool patched() = 0;
 private:
 };
 
@@ -701,6 +861,15 @@ public:
 	bool isJump() {
 		return false;
 	}
+	void assign() {
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
+		return false;
+	}
 private:
 	ArgX0 *dest;
 };
@@ -740,7 +909,7 @@ public:
 		for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->src->getName()) {
 				push((*it).second);
-				cout << "\n\tPUSHING: " << (*it).second << "\n";
+				// cout << "\n\tPUSHING: " << (*it).second << "\n";
 				return 0;
 			}
 		}
@@ -754,6 +923,15 @@ public:
 		return false;
 	}
 	bool isJump() {
+		return false;
+	}
+	void assign() {
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
 		return false;
 	}
 private:
@@ -794,6 +972,15 @@ public:
 	bool isJump() {
 		return false;
 	}
+	void assign() {
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
+		return false;
+	}
 private:
 	bool success = false;
 };
@@ -828,6 +1015,15 @@ public:
 	bool isJump() {
 		return false;
 	}
+	void assign() {
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
+		return false;
+	}
 private:
 	int value;
 };
@@ -844,6 +1040,9 @@ public:
 	}
 	int eval() {
 		std::list<pair<std::string, int>>::iterator it;
+		if (this->dest->isMem()) {
+			this->dest->setValue((-1)*this->dest->eval());
+		}
 		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == this->dest->getName()) {
 				((*it).second = -this->dest->eval());
@@ -867,11 +1066,90 @@ public:
 	bool isJump() {
 		return false;
 	}
+	void assign() {
+		this->dest = this->dest->assign();
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
+		return false;
+	}
 private:
 	ArgX0 *dest;
 };
 NegqX0* NgX(ArgX0* _dest) {
 	return new NegqX0(_dest);
+}
+
+// (movq arg arg) <-- instruction
+class MovqX0 : public InstrX0 {
+public:
+	//~MovqX0() override { std::cout << "__PRETTY_FUNCTION__MOVQ" << std::endl; }
+	MovqX0(ArgX0* _src, ArgX0* _dest) {
+		this->src = _src;
+		this->dest = _dest;
+	}
+	int eval() {
+		std::list<pair<std::string, int>>::iterator it;
+		if (this->dest->isMem()) {
+			this->dest->setValue(this->src->eval());
+		}
+		else {
+			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
+				if ((*it).first == this->dest->getName()) {
+					((*it).second = this->src->eval());
+					return 0;
+				}
+			}
+			for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
+				if ((*it).first == this->dest->getName()) {
+					((*it).second = this->src->eval());
+					return 0;
+				}
+			}
+		}
+		return 1;
+	}
+	string toString() {
+		string output_string = "\tmovq\t\t" + this->src->toString() + ",";
+		if (!(this->src->isMem())) {
+			output_string += "\t";
+		}
+		output_string += "\t" + this->dest->toString() + "\n";
+		return output_string;
+	}
+	bool isEnd() {
+		return false;
+	}
+	bool isJump() {
+		return false;
+	}
+	void assign() {
+		this->src = this->src->assign();
+		this->dest = this->dest->assign();
+		return;
+	}
+	int patch() {
+		if (this->src->isMem() && this->dest->isMem()) {
+			tmp_patch_list.push_back(std::make_shared<MovqX0>(this->src->patch(), RX("rax")));
+			tmp_patch_list.push_back(std::make_shared<MovqX0>(RX("rax"), this->dest->patch()));
+			return 1;
+		}
+		else {
+			// tmp_patch_list.push_back(std::make_shared<MovqX0>(this->src->patch(), this->dest->patch()));
+			return 0;
+		}
+	}
+	bool patched() {
+		return true;
+	}
+private:
+	ArgX0 *src, *dest;
+};
+MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
+	return new MovqX0(_src, _dest);
 }
 
 // (subq arg, arg) <-- instruction
@@ -889,13 +1167,29 @@ public:
 		return 0;
 	}
 	string toString() {
-		return "\tsubq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
+		string output_string = "\tsubq\t\t" + this->src->toString() + ",";
+		if (!(this->src->isMem())) {
+			output_string += "\t";
+		}
+		output_string += "\t" + this->dest->toString() + "\n";
+		return output_string;
 	}
 	bool isEnd() {
 		return false;
 	}
 	int readValue(int *_val, string _name) {
 		std::list<pair<std::string, int>>::iterator it;
+		if ((this->dest->isMem()) && (!src_rd)) {
+			*_val = this->dest->eval();
+			src_rd++;
+			readValue(&this->rd_src, this->src->getName());
+			return 0;
+		}
+		if ((this->src->isMem()) && (src_rd)) {
+			*_val = this->src->eval();
+			src_rd = 0;
+			return 0;
+		}
 		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == _name) {
 				*_val = (*it).second;
@@ -931,6 +1225,25 @@ public:
 	}
 	bool isJump() {
 		return false;
+	}
+	void assign() {
+		this->src = this->src->assign();
+		this->dest = this->dest->assign();
+		return;
+	}
+	int patch() {
+		if (this->src->isMem() && this->dest->isMem()) {
+			tmp_patch_list.push_back(std::make_shared<MovqX0>(this->src->patch(), RX("rax")));
+			tmp_patch_list.push_back(std::make_shared<SubqX0>(RX("rax"), this->dest->patch()));
+			return 1;
+		}
+		else {
+			// tmp_patch_list.push_back(std::make_shared<SubqX0>(this->src->patch(), this->dest->patch()));
+			return 0;
+		}
+	}
+	bool patched() {
+		return true;
 	}
 private:
 	int src_rd = 0;
@@ -957,6 +1270,17 @@ public:
 	}
 	int readValue(int *_val, string _name) {
 		std::list<pair<std::string, int>>::iterator it;
+		if ((this->dest->isMem()) && (src_rd == 0)) {
+			*_val = this->dest->eval();
+			src_rd++;
+			readValue(&this->rd_src, this->src->getName());
+			return 0;
+		}
+		if ((this->src->isMem()) && (src_rd)) {
+			*_val = this->src->eval();
+			src_rd = 0;
+			return 0;
+		}
 		for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 			if ((*it).first == _name) {
 				*_val = (*it).second;
@@ -991,13 +1315,37 @@ public:
 		this->dest->setValue(_value);
 	}
 	string toString() {
-		return "\taddq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
+		string output_string = "\taddq\t\t" + this->src->toString() + ",";
+		if (!(this->src->isMem())) {
+			output_string += "\t";
+		}
+		output_string += "\t" + this->dest->toString() + "\n";
+		return output_string;
 	}
 	bool isEnd() {
 		return false;
 	}
 	bool isJump() {
 		return false;
+	}
+	void assign() {
+		this->src = this->src->assign();
+		this->dest = this->dest->assign();
+		return;
+	}
+	int patch() {
+		if (this->src->isMem() && this->dest->isMem()) {
+			tmp_patch_list.push_back(std::make_shared<MovqX0>(this->src->patch(), RX("rax")));
+			tmp_patch_list.push_back(std::make_shared<AddqX0>(RX("rax"), this->dest->patch()));
+			return 1;
+		}
+		else {
+			// tmp_patch_list.push_back(std::make_shared<AddqX0>(this->src->patch(), this->dest->patch()));
+			return 0;
+		}
+	}
+	bool patched() {
+		return true;
 	}
 private:
 	int src_rd = 0;
@@ -1006,75 +1354,6 @@ private:
 };
 AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
 	return new AddqX0(_src, _dest);
-}
-
-// (movq arg arg) <-- instruction
-class MovqX0 : public InstrX0 {
-public:
-	//~MovqX0() override { std::cout << "__PRETTY_FUNCTION__MOVQ" << std::endl; }
-	MovqX0(ArgX0* _src, ArgX0* _dest) {
-		this->src = _src;
-		this->dest = _dest;
-	}
-	int eval() {
-		std::list<pair<std::string, int>>::iterator it;
-		if (this->dest->getName() == "rsp") {
-			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-				if ((*it).first == this->dest->getName()) {
-					if (this->dest->get_offset() < 0) {
-						if ((*it).second >= (this->dest->get_offset()*(-1))) {
-							StackX0[(*it).second + this->dest->get_offset()] = this->src->eval();
-							return 0;
-						}
-						else {
-							cout << "\n\tTried reaching the space that is below stack's range.\n";
-							return 1;
-						}
-					}
-					else {
-						if ((this->dest->get_offset() + (*it).second) <= 99) {
-							StackX0[(*it).second + this->dest->get_offset()] = this->src->eval();
-							return 0;
-						}
-						else {
-							cout << "\n\tTried reaching the space that is above stack's range.\n";
-							return 1;
-						}
-					}
-				}
-			}
-		}
-		else {
-			for (it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
-				if ((*it).first == this->dest->getName()) {
-					((*it).second = this->src->eval());
-					return 0;
-				}
-			}
-			for (it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
-				if ((*it).first == this->dest->getName()) {
-					((*it).second = this->src->eval());
-					return 0;
-				}
-			}
-		}
-		return 1;
-	}
-	string toString() {
-		return "\tmovq\t\t" + this->src->toString() + ",\t" + this->dest->toString() + "\n";
-	}
-	bool isEnd() {
-		return false;
-	}
-	bool isJump() {
-		return false;
-	}
-private:
-	ArgX0 *src;
-	ArgX0 *dest;
-};
-MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
-	return new MovqX0(_src, _dest);
 }
 
 // block info instructions
@@ -1151,7 +1430,7 @@ LabelX0* LbX(string _name) {
 // (jmp label) <-- instruction
 class JumpX0 : public InstrX0 {
 public:
-	~JumpX0() { std::cout << "__PRETTY_FUNCTION__JUMP" << std::endl; }
+	//~JumpX0() { std::cout << "__PRETTY_FUNCTION__JUMP" << std::endl; }
 	JumpX0(LabelX0 *_label) {
 		this->label = _label;
 	}
@@ -1180,6 +1459,15 @@ public:
 	bool isJump() {
 		return true;
 	};
+	void assign() {
+		return;
+	}
+	int patch() {
+		return 0;
+	}
+	bool patched() {
+		return false;
+	}
 private:
 	LabelX0 *label;
 	bool end_label;
@@ -1209,6 +1497,71 @@ public:
 			it->second->emit();
 			cout << "\n";
 		}
+	}
+	void assign() {
+		int var_cnt = 0;
+
+		init_variables_list.clear();
+
+		for (std::list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); ++it) {
+			var_cnt++;
+			init_variables_list.push_back(std::make_pair((*it).first, 0));
+		}
+
+		std::shared_ptr<LabelX0> lbl_begin(new LabelX0("begin:"));
+		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
+		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
+
+		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("rbp")));
+		blk_begin_list.push_back(std::make_shared<MovqX0>(RX("rsp"), RX("rbp")));
+		blk_begin_list.push_back(std::make_shared<AddqX0>(IX(var_cnt), RX("rsp")));
+		blk_begin_list.push_back(std::make_shared<JumpX0>(LbX("body:")));
+
+		var_left_cnt = var_cnt - 1;
+		print_stack_var = var_cnt;
+
+		// blk_body_list --> assigning homes
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
+			(*it)->assign();
+		}
+
+		blk_end_list.clear();
+		
+		blk_end_list.push_back(std::make_shared<SubqX0>(IX(var_cnt),RX("rsp")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("rbp")));
+		blk_end_list.push_back(std::make_shared<RetqX0>());
+
+		BlockX0 *temp_blk_begin = new BlockX0(&blk_begin_list);
+		BlockX0 *temp_blk_body = new BlockX0(&blk_body_list);
+		BlockX0 *temp_blk_end = new BlockX0(&blk_end_list);
+		
+		auto blk_begin = std::make_shared<BlockX0>(*temp_blk_begin);
+		auto blk_body = std::make_shared<BlockX0>(*temp_blk_body);
+		auto blk_end = std::make_shared<BlockX0>(*temp_blk_end);
+		
+		label_block_list.clear();
+
+		label_block_list.emplace_back(make_pair(lbl_begin, blk_begin));
+		label_block_list.emplace_back(make_pair(lbl_body, blk_body));
+		label_block_list.emplace_back(make_pair(lbl_end, blk_end));
+
+		return;
+	}
+	void patch() {
+		int prcnt = 0;
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
+			tmp_patch_list.clear();
+			if ((*it)->patched()) {
+				cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
+				if ((*it)->patch() == 1) {
+					it = blk_body_list.erase(it);
+					blk_body_list.splice(it, tmp_patch_list);
+					it--;
+				}
+			}
+			prcnt++;
+		}
+		return;
 	}
 private:
 };
@@ -1265,7 +1618,6 @@ class LabelC0;
 class TailC0;
 class VarC0;
 
-static list<pair<string, int>> Variables;
 static list<pair<std::shared_ptr<LabelC0>, std::shared_ptr<TailC0>>> label_tail_list;
 
 // (exp)

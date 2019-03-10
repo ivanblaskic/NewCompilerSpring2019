@@ -28,7 +28,7 @@ void print_stack_x0() {
 			temp = (*it).second;
 		}
 	}
-	temp = 6;
+	temp = print_stack_var + 1;
 	for (int i = 0; i < temp; i++) {
 		cout << "\t" << &StackX0[i] << "\t" << StackX0[i] << "\n";
 	}
@@ -55,30 +55,31 @@ int main() {
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-	mode = Interactive;
+		mode = Interactive;
+		
+		// R1 uniquify & resolve_complex test_suite
+		// R1 uniquify function test_suite
+		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
+		// let ([x 5] [+(L [(x 6) x]) (x)])
+		ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
+			
+		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
+			
+		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
+		cout << tp->prnt() << " = " << tp->intrp();
+		//cout << result;
+		cout << "\n\n";
+		system("Pause");
+
+		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 	
-	// R1 uniquify & resolve_complex test_suite
-	// R1 uniquify function test_suite
-	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
-	// let ([x 5] [+(L [(x 6) x]) (x)])
-	ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
-
-	ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
-	cout << "\nis it -11?\n";
-	//int result = tp->intrp();
-	cout << tp->prnt() << " = ";
-	//cout << result;
-	cout << "\n\n";
-	system("Pause");
-
-	ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
-	cout << "\nis it -11?\n";
-	int result_uniq = tp_uniq->intrp();
-	cout << tp_uniq->prnt() << " = " << result_uniq;
-	cout << "\n\n";
-	system("Pause");
-
-	/* 
+		ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
+		int result_uniq = tp_uniq->intrp();
+		cout << tp_uniq->prnt() << " = " << result_uniq;
+		cout << "\n\n";
+		system("Pause");
+	
+		/* 
 	// comment these 5 out 
 	if (result == result_uniq)
 		cout << "Compiler works! Bravo :) \n\n";
@@ -86,16 +87,21 @@ int main() {
 		cout << "Fix compiler! :( \n\n";
 	system("Pause");
 	*/
-
-	// R1 resolve_complex function test_suite
-	cout << "\nis it -11?\n";
-	ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
-	cout << "\n\n";
-	system("Pause");
 	
-	tp_res_comp->econ();
+		// R1 resolve_complex function test_suite
+	
+		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES AND SIMPLIFIED FOR COMPILATION: \n\n";
+	
+		ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
+		cout << "\n\n";
+		system("Pause");
+	
 
-	/* 
+		cout << "\n\nPROGRAM EXECUTION IN C0 LANGUAGE: \n\n";
+	
+		tp_res_comp->econ();
+	
+		/* 
 	// R1 optimization test_suite
 	// success * 5
 	// Let([X 5] Let([Y 95] X+Y)) = 100
@@ -148,8 +154,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// R1 test_suite
 	// success * 12
 	// Let([x 4+5] Let([x 3+4] -x) + x) = 2
@@ -183,8 +189,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// optimization test
 	mode = Interactive;
 
@@ -230,8 +236,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// function onNth test 
 	mode = Interactive;
 	int m_test = 5;
@@ -241,8 +247,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/* 
+	
+		/* 
 	// randP function for R1 successfully tested
 	// L ( [x (L[(x L[(x (+ x (read))) (-[read])]) (+ [-(read)] [Let([x read] [read])])])] 
 	//		[Let([x (+ [+ (read) (read)] [Let ([x x] [x])])] [+ (-[read]) (+ [read] [x])])]) = 20
@@ -259,8 +265,8 @@ int main() {
 		system("Pause");
 	}
 	*/
-
-	/*
+	
+		/*
 	// program 1 definition
 	// (+ [-(5) (+ [read] 10)]) = (-5) + (10 + read) = 5 + read
 	mode = Interactive;
@@ -274,8 +280,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// program 2 definition
 	// (- [+ (+ [- 2] [+ 14 (-2)]) -(23)]) = - [((14-2) - 2) - 23] = -12 + 2 + 23 = 13
 	ExpR0 *test_suite2 = new NegR0(	new AddR0(	new AddR0(	new NegR0(	new NumR0(2)),
@@ -295,8 +301,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// program 4 definition
 	// (+ [read] [+ (+ [10] [-(7)]) (+ [14] [read])]) = (+ read [+ 3 (+ 14 read)]) = (+ 17 (+ read read)) 
 	ExpR0 *test_suite4 = A(R(), A(A(I(10), N(I(7))), A(I(14), R())));
@@ -322,8 +328,8 @@ int main() {
 	cout << "\n\n";
 	system("Pause");
 	*/
-
-	/*
+	
+		/*
 	// program 7 definition
 	// (+ (14) (-291)) = -277
 	ExpR0 *test_suite7 = A(I(14), N(I(291)));
@@ -428,30 +434,49 @@ int main() {
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
+		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE: \n\n";
+
 		program->select();
-		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
 		ProgramX0 *program_test_select = PX();
 		program_test_select->emit();
 		program_test_select->execute();
+		cout << "\n\n";
+		system("Pause");
+
+		print_variables_x0();
+		print_registers_x0();
+		//print_stack_x0();
+
+		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
+
+		program_test_select->assign();
+		ProgramX0 *program_test_assign = PX();
+		program_test_assign->emit();
+		program_test_assign->execute();
+		cout << "\n\n";
+		system("Pause");
+		
+		print_variables_x0();
+		print_registers_x0();
+		print_stack_x0();
+
+		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS USING ONLY ONE MEMORY REFERENCE PER INSTRUCTION: \n\n";
+
+		program_test_assign->patch();
+		ProgramX0 *program_test_patch = PX();
+		program_test_patch->emit();
+		program_test_patch->execute();
+		cout << "\n\n";
 		system("Pause");
 
 		print_variables_x0();
 		print_registers_x0();
 		print_stack_x0();
 
+		cout << "\n\nHOPE YOU ENJOYED!\n\n";
+		system("Pause");
+
 		/*
-		ProgramX0 *program_test_assign = program_test_select->assign();
-		program_test_assign->emit();
-		program_test_assign->execute();
-		system("Pause);
-		
-		print_variables_x0();
-		print_registers_x0();
-		print_stack_x0();
-		*/
-
-
-	/*
 
 	// label-block init
 	std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
