@@ -77,7 +77,7 @@ Compiler Written in C++ for Jay to Review
 - Update your allocate-registers pass to make use of the move-biasing feature of color-graph.
 - 
 - < Objective >
---> March 13th, 11:59pm <--
+--> March 18th, 11:59pm <--
 - C- 
 - 
 - Extend your data types from R1 to R2.
@@ -139,6 +139,11 @@ Compiler Written in C++ for Jay to Review
 - Update your runtime to support the allocation interface.
 - Update your runtime to support printing out vectors.
 - Update your runtime to actually do garbage collection.
+- 
+- < Objective >
+--> May 1st, 11:59pm <--
+- A- 
+- 
 - Extend your data types from R3 to R4.
 - Extend your pretty printer from R3 to R4.
 - Write a dozen test R4 programs.
