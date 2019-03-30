@@ -53,12 +53,15 @@ Compiler Written in C++ for Jay to Review
 + Implement the patch-instructions pass for X0 programs.
 + Connect patch-instructions to your test suite.
 - 
---> March 10th, 2:26am <--
+--> March 30th, 2:00pm <--
 - F+
 - 
+- SKIP
 - Implement your language runtime.
 - Implement the main-generation pass for X0 programs.
 - Connect your test suite to your system assembler and language runtime.
+- SKIP
+-   
 - Write a dozen tests for uncover-live that predict its output.
 - Implement the uncover-live pass for X0 programs.
 - Write a dozen tests for build-interferences that predict its output.
