@@ -166,20 +166,23 @@
 		  by using the X0 interpreter
 		- remember, this pass assumes that assign-homes has run
 
+		  // Completed "Task #N - Description"
 
 		  TOUCHDOWN(:
-	48) ! implement your language runtime
+	48) ? implement your language runtime
 		- initially, this is just two functions: read_int and print_int 
 		- the first corresponds to the read call and the second is automatically used at the end of programs
-	49) ! implement the main-generation pass for X0 programs
+	49) ? implement the main-generation pass for X0 programs
 		- this pass should extend your final X0 programs with the prelude and postlude operations 
 		  that set up the stack pointer appropriately for your code
-	50) ! connect your test suite to your system assembler and language runtime
+	50) ? connect your test suite to your system assembler and language runtime
 		- close the final knot and get an actual compiler by having your final X0 programs 
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
 		- you finally have a working compiler! Aren’t you proud? 
 
 		D-
+
+	DOING REGISTER ALLOCATION WELL...
 
 		  UNCOVER-LIVE()
 	51) ! write a dozen tests for uncover-live that predict its output
@@ -233,13 +236,15 @@
 	62) ! connect your test suite to the new main-generation and allocate-registers passes
 		- you now have a better compiler
 
-		  MOVE-BIASING() & MOVE-GRAPH()
+		  MOVE-GRAPH()
 	63) ! write a few test programs that have opportunities for move-biasing to be effective
 		- the book contain some examples 
 		- you should come up with at least one R1 program that has the property; 
 		- in addition to X0 program
 	64) ! extend your build-interferences pass to construct a move-graph
 		- update your build-interference tests to check that the move-graph is constructed correctly
+
+		  MOVE-BIASING()	
 	65) ! extend your color-graph function to incorporate move-biasing with an optional input argument
 		- translate your move-biasing tests to color-graph problems and expected outputs
 	66) ! update your allocate-registers pass to make use of the move-biasing feature of color-graph
@@ -314,6 +319,8 @@
 #include <list>
 #include <stdlib.h>
 #include <time.h>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -325,9 +332,402 @@ using namespace std;
 //				-	-   -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
 
-// X0: steps 18-22 --> compiling C0 into X0
-//	   steps 42-44 --> assign-homes for putting vars in place --> from X0 w vars in2 X0 w/o vars
-//	   steps 45-47 --> patch for following the rules --> only 1 memory reference per instruction
+// X0:	steps 18-22 --> compiling C0 into X0
+//		steps 42-44 --> assign-homes for putting vars in place --> from X0 w vars in2 X0 w/o vars
+//		steps 45-47 --> patch for following the rules --> only 1 memory reference per instruction
+//		steps 48-50 --> implementing read_int code --> when program ends it just moves answer to RAX 
+//						+ jumped to end: label
+//					--> how do we check if the program did the job properly
+//		steps 51-52 --> liveness-analysis --> figuring out what's live where in IS
+//		steps 53-54 --> interference-analysis --> sketching interference graph
+//		steps 65-66 --> move-biasing --> adding a little bit extra info for better reg_al
+//		steps 63-64 --> move-graph --> helper for move-bias function
+//		steps 55-62 --> implementing register alocation 
+
+/*
+
+	REGISTER ALOCATION on a right way:
+
+		Going back to do a stupid assign part actually right.
+		Takes as much to do that right as it did to do everything thus far.
+
+		51-66 steps.
+
+*/
+
+/*
+
+		3rd portion: 55-62
+
+		...
+
+*/
+
+/*
+
+		HELPING TO HAVE mic-1 SO WHEN ERRORS IN HW OCCUR JUST CHANGE mic-1 NOT TO USE IT
+
+		* UNCOVER-LIVE()
+	51) ! write a dozen tests for uncover-live that predict its output
+		- I don’t remember using examples from real programs, because they are likely to be too complicated
+		- instead, use simple ones that you come up with by hand
+	52) ! implement the uncover-live pass for X0 programs
+		- this pass takes X0 programs and returns new X0 programs
+		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction
+		- make sure that you add registers to the live sets, not just variables
+
+		** BUILD-INTERFERENCES()
+	53) ! Write a dozen tests for build-interferences that predict its output
+		- these should be the same programs you tested uncover-live with
+	54) ! implement the build-interferences pass for X0 programs
+		- don’t go overboard with finding and using a graph library for your language
+		- these are really simple graphs, relax
+
+		*** MOVE-BIASING()
+	65) ! extend your color-graph function to incorporate move-biasing with an optional input argument
+		- translate your move-biasing tests to color-graph problems and expected outputs
+	66) ! update your allocate-registers pass to make use of the move-biasing feature of color-graph
+		- this should be a trivial step of connecting the dots
+
+		**** MOVE-GRAPH()
+	63) ! write a few test programs that have opportunities for move-biasing to be effective
+		- the book contain some examples
+		- you should come up with at least one R1 program that has the property;
+		- in addition to X0 program
+	64) ! extend your build-interferences pass to construct a move-graph
+		- update your build-interference tests to check that the move-graph is constructed correctly
+
+		*
+
+		Every instructions are in reality just arbitrary set of bits.
+		It is not how we imagine it to be with opcode and stuff we went over in comp-arch.
+
+		This is why we did patch because it doesn't work like we imagine.
+		There is no patterns!
+
+		Greedy Version: assign vars to regs as you see them
+		1 --> some vars are not needed later, why giving it scarce resource?
+				- variables eventually stop being useful - this ignores it
+		2 --> some vars matter more
+				- e.g. index in a loop
+				- setup, smth, loop * 1,000,000 --> vars here matter the most
+
+		* mattering more: occurs in more instructions that gets run
+				- not more instructions appearing in code
+
+		
+		1) When do variables stop mattering? Range of program where variables matter
+			- v: 1-3	
+			- y: 5-9	
+			* v & y don't conflict so they can use the same registers
+
+		1) noticing that some variables matter more - not gonna do that
+		2) doing this decision process quickly - decide fast (quadritic or quabical time)
+			--> could be linear: N	--> **FREE** 
+									--> you have to look through instructions either way
+									--> only N^2 part of compiler
+
+		1) liveness analysis: when is x needed
+		2) feed by liveness analysis: interference analysis: what conflicts
+		3) feed by interference analysis: assignment
+
+		When was variable needed? not the same as the range where it matters done before
+			--> where does the program need to know variable's value 
+			--> when it's assigned the value it starts existing until it's last read
+			--> liveness analysis have to start at the bottom of the program
+			--> from end to start adding things when they get read
+			--> doing it
+
+		live-after set: annotated after arrows 
+			--> when we assign value to something
+				-> we don't need it after the previous instruction 
+			--> when we read value 
+				-> we need it after the previous instructions until it's written in it
+
+									--> 0 
+		1	movq	$1,		!v
+									--> !v
+		2	movq	$46,	!w	
+									--> !w, !v
+		3	movq	!v,		!x
+									--> !w, !x
+		4	addq	$7,		!x
+									--> !w, !x
+		5	movq	!x,		!y
+									--> !w, !y, !x 
+		6	addq	$4,		!y
+									--> !w, !y, !x
+		7	movq	!x,		!z
+									--> !w, !y, !z
+		8	addq	!w,		!z
+									--> !y, !z
+		9	movq	!y,		!t
+									--> !t, !z
+		10	negq	!t
+									--> !t, !z
+		11	movq	!z,		%rax
+									--> !t
+		12	addq	!t,		%rax
+									--> 0
+		13	jmp		END
+									--> 0
+
+		Easy one --> fewer variables than registers.
+
+		Formula for liveness analysis
+			- instrs	1	...		n			
+				if (k==n) 
+					LiveAfter(k) = 0
+				else 
+					LiveBefore(k+1)
+				
+				LiveBefore(k) = (LiveAfter(k) - W(k)) U (R(k)) 
+					--> W: written variables, R: read variables
+
+		W: X0 instruction --> set(vars)
+		R: X0 instruction --> set(vars)
+			- W(popq a)			= W(a)
+			- R(popq a)			= 0
+			- W(addq src, dst)	= W(dst)
+			- R(addq src, dst)	= R(src) U R(dst)
+			- W(movq src, dst)	= W(dst)
+			- R(movq src, dst)	= R(dst)
+			- W(subq src, dst)	= W(dst)
+			- R(subq src, dst)	= R(src) U R(dst)
+			- W(negq a)			= W(a)
+			- R(negq a)			= R(a)
+			- W & R (jumpq)		= 0
+			- W & R (callq)		= 0
+			- W & R (retq)		= 0
+						
+		W: X0 argument --> set(vars)
+		R: X0 argument --> set(vars)
+			- W & R(%r)				= 0
+			- W & R($n)				= 0
+			- W & R([offset] %r)	= 0
+			- W & R(!v)				= {v}
+
+		liveness: Block --> Block
+		- liveness (block information instruction_set{is}) 
+			= block (information + [liveness_information = liveness ({is})]) {is}
+
+		BLOCK HAVING A FIELD: liveness_information per instruction!?
+			- LI: list of set in the same way that IS is the set of instructions
+			- same length, going through in same order and comparing them
+
+		*** MORE COMPLICATED WHEN WE GET TO IF STATEMENTS ***
+
+		Write few test cases like we did in class for X0 programs.
+			- after every single step for interpreter if there is liveness information
+			- delete all of the information that is not mention in live-after set
+			- if those deleted ones are tried to be read down the road
+			- then it will try to read uninitialized variable and interpreter crushes
+			- liveness doing wrong thing there is a way to realize that
+			- test early!!!
+
+		**
+
+		When does variable x interfere with variable y?
+			- iff for some k: LiveAfter(k) contains {x,y}
+
+notGOOD>	Loop: checking for all the pairs if they interfere at all
+			1) Iterate through variable x on the left
+			2) Iterate through variable y on the right
+			3) Iterate through all the instructions
+			--> going through and looking if in LiveAfter both x & y are in the set
+
+BETTER>		Iterating through the instructions rather than the variables
+			--> tells us about this interference
+			--> about that
+			--> etc.
+
+		V {nodes} & (V,V) {edges} --> I'm a graph!
+
+		Nodes in our program, graphing interference by iterating through instruction set:
+			v:		w-2  
+			w:		v-2		x-3		y-6(not5)?				z-8
+			z:										y-8		w-8		t-9		
+			t:														z-9		%rax-11
+			y:						x-6				z-8
+			x:				w-3		y-6(not5)?
+			%rax:															t-11
+		
+		Adding edge even if there is already one there, BUT
+			--> for line 5 we don't include edge between x and y bc the instruction writes y
+			--> then it doesn't matter that it's there
+
+		SO, when writing in var from var we keep the var that is being read as one mattering
+		AND, the one that we are writing into is ignored and doesn't interfer with anything yet
+
+									--> 0
+		1	movq	$1,		!v
+									--> !v
+		2	movq	$46,	!w
+									--> !w, !v
+		3	movq	!v,		!x
+									--> !w, !x
+		4	addq	$7,		!x
+									--> !w, !x
+		5	movq	!x,		!y
+									--> !w, !y, !x		--> shouldn't we add w interfer w y
+		6	addq	$4,		!y
+									--> !w, !y, !x
+		7	movq	!x,		!z
+									--> !w, !y, !z		--> x conflicting with w and y, but not 
+															with z since it's writing in it 
+		8	addq	!w,		!z
+									--> !y, !z			--> now connecting y and z 
+														--> not before
+		9	movq	!y,		!t
+									--> !t, !z
+		10	negq	!t
+									--> !t, !z
+		11	movq	!z,		%rax
+									--> !t
+		12	addq	!t,		%rax
+									--> 0
+		13	jmp		END
+									--> 0
+
+		Formulas for everything above:
+			1- If Ik is arithmetic like (addq src dest)							
+				for every V is element of LiveAfter(k) we add (dest,V) to I
+					unless dest==V --> not to itself
+						* where dest could be register or variable
+
+			2- If Ik is like (movq src dest)
+				for every V is element of LiveAfter(k) we add (dest,V) to I
+					unless dest==V or src==V --> not extras
+
+			3- If Ik treats any registers special
+					then add (r,V) to I for all V is element of LiveAfter(k)
+
+			e.g. callq treats caller-saved and %rax registers special so
+						rax, rdx, rcx, rsi, rdi, r8-r11 are special registers 
+								for callq function
+
+		* where I is INTERFERENCE GRAPH
+
+		START CARRYING ABOUT REGISTERS IN INTERFERENCE ANALYSIS.
+
+		interference: Block --> Block
+		- interference (block information instruction_set{is})
+			= block (information + [interference_information {graph} = interference ({is})]) {is}
+
+		* for IL use some graph library that comes with C++
+
+		***
+
+		move-biasing funtion: down the line at some point can be implemented
+			If (movq	s	d) is in program 
+				prefer reg(s) = reg(d)	
+
+		--> consequence is the ability to remove some instructions out of program 
+				with a good register allocation, 
+					by using move-biasing in particular prefering movq %rax,%rax
+						over other options 
+
+		**** 
+
+		for move-graph just add tiny little bit of (s,d) to the interference-graph
+			- to movq in particular I guess
+
+		That way we save some edges and know our interference graph changes
+			Nodes in our program, graphing interference by iterating through instruction set:
+				- v:	x
+				- w:
+				- z:			x
+				- t:				y
+				- y:		x		t
+				- x:	w	y	z
+
+		When things are moved or movq is used...
+			Down the road, I am picking something for x and what should I choose
+				- something that w, y or z has
+
+*/
+
+/*
+
+	Compiler works and does something!
+
+	THIS IS POSSIBLE. PRINTING IN PIPE? fd(), fork() etc. EVERY LANGUAGE HAS THE ABILITY.
+	- make pipe, rename fd, fork(), run program, wait for it to die, read number, convert it 
+		--> ways of using system libraries to do all of this for you
+		--> C++: system stream library? 
+			* system function means run some program
+				* version that returns stream object of whatever the output of program is
+
+		  TOUCHDOWN(:
+	48) ! implement your language runtime
+		- initially, this is just two functions: read_int and print_int
+		- the first corresponds to the read call and the second is automatically used at the end of programs
+	49) ! implement the main-generation pass for X0 programs
+		- this pass should extend your final X0 programs with the prelude and postlude operations
+		  that set up the stack pointer appropriately for your code
+	50) ! connect your test suite to your system assembler and language runtime
+		- close the final knot and get an actual compiler by having your final X0 programs
+		  (that come out of main-generation) sent to the system assembler and linked with your language runtime
+		- you finally have a working compiler! Aren’t you proud?
+
+		Language Runtime for printing out the functions
+
+		// printing 64bit thing - maybe %d is not the best fit
+		
+		runtime.c		int64_t
+			int read_int() {
+				int x;
+				scanf("%d", &x); 
+				return x;
+			}
+			int print_int(int x) {
+				printf("%d",x);
+				return 0;
+			}
+
+		Making sure that the code that is written so far actually gets run:
+
+		main:	X (follows the rule)	-->	X (follows the rule and prints out the answers)
+				* answer is in RAx			* answer is printed and can be called
+
+		main	(program	info	blks)	=	(program	info	blks	t 
+													[_main --> (block 0 
+														[(callq BEGIN)			// or jumpq?
+														 (movq	RAX,	RDI)
+														 (callq _print_int)
+														 (retq)]])
+
+	_main:
+		- the function that gets called by the OS when it loads the program and executes it.
+
+	Calling BEGIN label so that the answer is written in the RAX
+		- int x is expected to be at %rdi to print it out
+
+	When we call the program now it will actually be run because 
+		- label is named _main
+		- it will print the result out
+
+	Automatically making that all of this happen and compiler gets run! 
+
+	... print x86 to x.s ...								// x.s --> what you printed out
+
+	$CC		runtime.c		x.s			-o			x.bin	// compile	
+			*above			*run X0		*object		*naming it				
+	{compiling the code with C compiler}
+
+	$/x.bin													// printing out the number
+	{running binary}
+
+		...read output ... string right now ... turn into number ...
+		{read the binary + turn it into the number}
+
+		... compare w expected ...							// same as for r program
+		{make sure it's the actual value that one would expect}
+
+	* running it inside your test suite - for thousands of randomly generated programs
+	** want to make it so my code reads what that number is and checks is it the right one
+
+*/
 
 /*
 
@@ -528,6 +928,8 @@ public:
 	virtual ArgX0* assign() = 0;
 	bool virtual isMem() = 0;
 	virtual ArgX0* patch() = 0;
+	virtual string masm() = 0;
+	bool virtual isInt() = 0;
 private:
 };
 
@@ -561,6 +963,12 @@ public:
 	}
 	ArgX0* patch() {
 		return new IntX0(this->value);
+	}
+	string masm() {
+		return to_string(this->value);
+	}
+	bool isInt() {
+		return true;
 	}
 private:
 	int value;
@@ -616,6 +1024,12 @@ public:
 	}
 	ArgX0* patch() {
 		return new RegX0(this->name);
+	}
+	string masm() {
+		return this->name;
+	}
+	bool isInt() {
+		return false;
 	}
 private:
 	int value;
@@ -707,6 +1121,18 @@ public:
 	ArgX0* patch() {
 		return new IntRegX0(this->offset, RX(this->getName()));
 	}
+	string masm() {
+		string temp;
+		temp = "[" + this->reg->masm();
+		if (offset >= 0) {
+			temp += "+";
+		}
+		temp += to_string(this->offset) + "]";
+		return temp;
+	}
+	bool isInt() {
+		return false;
+	}
 private:
 	RegX0 *reg;
 	int value, offset;
@@ -774,6 +1200,13 @@ public:
 	ArgX0* patch() {
 		return new VarX0(this->name);
 	}
+	string masm() {
+		cout << "\n\tError: No variables in assembly.\n";
+		return "V(" + this->name + ")";
+	}
+	bool isInt() {
+		return false;
+	}
 private:
 	string name;
 	int value;
@@ -793,6 +1226,7 @@ public:
 	virtual void assign() = 0;
 	virtual int patch() = 0;
 	virtual bool patched() = 0;
+	virtual string masm() = 0;
 private:
 };
 
@@ -870,6 +1304,9 @@ public:
 	bool patched() {
 		return false;
 	}
+	string masm() {
+		return "pop " + this->dest->masm();
+	}
 private:
 	ArgX0 *dest;
 };
@@ -934,6 +1371,9 @@ public:
 	bool patched() {
 		return false;
 	}
+	string masm() {
+		return "push " + this->src->masm();
+	}
 private:
 	ArgX0 *src;
 };
@@ -981,6 +1421,9 @@ public:
 	bool patched() {
 		return false;
 	}
+	string masm() {
+		return "ret";
+	}
 private:
 	bool success = false;
 };
@@ -1023,6 +1466,9 @@ public:
 	}
 	bool patched() {
 		return false;
+	}
+	string masm() {
+		return "call function_name";
 	}
 private:
 	int value;
@@ -1075,6 +1521,9 @@ public:
 	}
 	bool patched() {
 		return false;
+	}
+	string masm() {
+		return "neg " + this->dest->masm();
 	}
 private:
 	ArgX0 *dest;
@@ -1144,6 +1593,9 @@ public:
 	}
 	bool patched() {
 		return true;
+	}
+	string masm() {
+		return "mov " + this->dest->masm() +", " + this->src->masm();
 	}
 private:
 	ArgX0 *src, *dest;
@@ -1218,6 +1670,11 @@ public:
 				}
 			}
 		}
+		if (this->src->isInt()) {
+			*_val = this->src->eval();
+			src_rd = 0;
+			return 0;
+		}
 		return 1;
 	}
 	void writeValue(int _value) {
@@ -1245,6 +1702,9 @@ public:
 	bool patched() {
 		return true;
 	}
+	string masm() {
+		return "sub " + this->dest->masm() + ", " + this->src->masm();
+	}
 private:
 	int src_rd = 0;
 	int rd_src, rd_dst;
@@ -1264,8 +1724,9 @@ public:
 	}
 	int eval() {
 		if (readValue(&rd_dst, this->dest->getName()) == 1)
-			cout << "\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
+		cout << "\n\n\tError Reading Values: " << this->src->getName() << " & " << this->dest->getName() << "\n\n";
 		writeValue(this->rd_dst + this->rd_src);
+		//writeValue(this->src->eval() + this->dest->eval());
 		return 0;
 	}
 	int readValue(int *_val, string _name) {
@@ -1309,6 +1770,11 @@ public:
 				}
 			}
 		}
+		if (this->src->isInt()) {
+			*_val = this->src->eval();
+			src_rd = 0;
+			return 0;
+		}
 		return 1;
 	}
 	void writeValue(int _value) {
@@ -1346,6 +1812,9 @@ public:
 	}
 	bool patched() {
 		return true;
+	}
+	string masm() {
+		return "add " + this->dest->masm() + ", " + this->src->masm();
 	}
 private:
 	int src_rd = 0;
@@ -1400,6 +1869,14 @@ public:
 	bool isJump() {
 		return jump;
 	}
+	string masm() {
+		string temp;
+		list<std::shared_ptr<InstrX0>>::iterator it;
+		for (it = this->instructions_list->begin(); it != this->instructions_list->end(); ++it) {
+			temp += (*it)->masm() + "\n";
+		}
+		return temp;
+	}
 private:
 	bool end = false;
 	bool jump = false;
@@ -1415,7 +1892,7 @@ public:
 		this->name = _name;
 	}
 	void emit() {
-		cout << name << "\t";
+		cout << name << ":" << "\t";
 	}
 	string getName() {
 		return this->name;
@@ -1468,6 +1945,9 @@ public:
 	bool patched() {
 		return false;
 	}
+	string masm() {
+		return "jmp " + this->label->getName();
+	}
 private:
 	LabelX0 *label;
 	bool end_label;
@@ -1508,14 +1988,14 @@ public:
 			init_variables_list.push_back(std::make_pair((*it).first, 0));
 		}
 
-		std::shared_ptr<LabelX0> lbl_begin(new LabelX0("begin:"));
-		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
-		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
+		std::shared_ptr<LabelX0> lbl_begin(new LabelX0("begin"));
+		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body"));
+		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end"));
 
 		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("rbp")));
 		blk_begin_list.push_back(std::make_shared<MovqX0>(RX("rsp"), RX("rbp")));
 		blk_begin_list.push_back(std::make_shared<AddqX0>(IX(var_cnt), RX("rsp")));
-		blk_begin_list.push_back(std::make_shared<JumpX0>(LbX("body:")));
+		blk_begin_list.push_back(std::make_shared<JumpX0>(LbX("body")));
 
 		var_left_cnt = var_cnt - 1;
 		print_stack_var = var_cnt;
@@ -1552,7 +2032,7 @@ public:
 		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
 			tmp_patch_list.clear();
 			if ((*it)->patched()) {
-				cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
+				//cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
 				if ((*it)->patch() == 1) {
 					it = blk_body_list.erase(it);
 					blk_body_list.splice(it, tmp_patch_list);
@@ -1744,6 +2224,7 @@ public:
 	ArgX0* select(VarC0* _dst) {
 		blk_body_list.push_back(std::make_shared<CallqX0>());
 		blk_body_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX(_dst->getName())));
+		init_variables_list.push_back(std::make_pair(_dst->getName(), 0));
 		return NULL;
 	}
 private:
@@ -1774,6 +2255,7 @@ public:
 	ArgX0* select(VarC0* _dst) {
 		blk_body_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), VX(_dst->getName())));
 		blk_body_list.push_back(std::make_shared<NegqX0>(VX(_dst->getName())));
+		init_variables_list.push_back(std::make_pair(_dst->getName(), 0));
 		return NULL;
 	}
 private:
@@ -1803,11 +2285,14 @@ public:
 		return false;
 	}
 	ArgX0* select(VarC0* _dst) {
-		blk_body_list.push_back(std::make_shared<MovqX0>(this->right->select(NULL), VX(_dst->getName())));
-		blk_body_list.push_back(std::make_shared<AddqX0>(this->left->select(NULL), VX(_dst->getName())));
+		this->temp = _dst;
+		blk_body_list.push_back(std::make_shared<MovqX0>(this->right->select(NULL), VX(this->temp->getName())));
+		blk_body_list.push_back(std::make_shared<AddqX0>(this->left->select(NULL), VX(this->temp->getName())));
+		init_variables_list.push_back(std::make_pair(this->temp->getName(), 0));
 		return NULL;
 	}
 private:
+	VarC0 *temp;
 	ArgC0 *left, *right;
 };
 
@@ -1819,7 +2304,6 @@ public:
 	void virtual select() = 0;
 private:
 };
-
 // (assign var exp) <-- stmt
 class AssignC0 : public StmtC0 {
 public:
@@ -1849,11 +2333,11 @@ public:
 		//		for exp = add:		selectE dst (+ aL aR)	=	[movq (selectA aR)dst;]
 		//														[addq (selectA aL)dst;]
 		if (this->exp->isAdd()) {
-			this->exp->select(var);
+			this->exp->select(this->var);
 			return;
 		}
 		else if (this->exp->isNeg()) {
-			this->exp->select(var);
+			this->exp->select(this->var);
 			return;
 		}
 		else if (this->exp->isRead()) {
@@ -1861,6 +2345,7 @@ public:
 		}
 		else {
 			blk_body_list.push_back(std::make_shared<MovqX0>(this->exp->select(NULL), VX(this->var->getName())));
+			init_variables_list.push_back(std::make_pair(this->var->getName(), 0));
 			return;
 		}
 	}
@@ -1889,7 +2374,7 @@ public:
 		// [(movq (selectA a) RAX)	(jmp END)] 
 		blk_body_list.push_back(std::make_shared<MovqX0>(this->arg->select(NULL), RX("rax")));
 		// blk_body_list.push_back(std::make_shared<MovqX0>(RX("rax"), IRX(5, RX("rsp"))));
-		blk_body_list.push_back(std::make_shared<JumpX0>(LbX("end:")));
+		blk_body_list.push_back(std::make_shared<JumpX0>(LbX("end")));
 	}
 private:
 	ArgC0 *arg;
@@ -1998,8 +2483,8 @@ public:
 		for (it = label_tail_list.begin(); it != label_tail_list.end(); ++it) {
 			(it->second->select());
 		}
-		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body:"));
-		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end:"));
+		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body"));
+		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end"));
 		blk_end_list.push_back(std::make_shared<RetqX0>());
 		BlockX0 *temp_blk_body = new BlockX0(&blk_body_list);
 		BlockX0 *temp_blk_end = new BlockX0(&blk_end_list);
@@ -2008,14 +2493,8 @@ public:
 		pcnt = 0;
 		label_block_list.emplace_back(make_pair(lbl_body, blk_body));
 		label_block_list.emplace_back(make_pair(lbl_end, blk_end));
-		init_variables_list.push_back(std::make_pair("x_0", 0));
-		init_variables_list.push_back(std::make_pair("x_1", 0));
-		init_variables_list.push_back(std::make_pair("L_x_4", 0));
-		init_variables_list.push_back(std::make_pair("A_x_3", 0));
-		init_variables_list.push_back(std::make_pair("L_x_2", 0));
 		return;
 	}
-
 private:
 };
 
@@ -2775,7 +3254,7 @@ public:
 	void econ() {
 		
 		// label tester
-		std::shared_ptr<LabelC0> lbl_tester(new LabelC0("body:"));
+		std::shared_ptr<LabelC0> lbl_tester(new LabelC0("body"));
 		// initializing program
 		list<std::shared_ptr<StmtC0>> tail_tester;
 
