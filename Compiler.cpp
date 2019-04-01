@@ -43,7 +43,20 @@ void print_stack_x0() {
 	cout << "\n";
 	system("Pause");
 }
-
+void print_liveness_x0() {
+	cout << "\nLiveness:\n";
+	cout << "\tLine Number\tWhat's Live\n";
+	for (std::list<pair<int, list<string>>>::iterator it = live_before.begin(); it != live_before.end(); ++it) {
+		list<string> temp = (*it).second;
+		cout << "\t" << (*it).first << "\t";
+		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
+			cout << *it1 << ", ";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	system("Pause");
+}
 
 int main() {
 
@@ -54,6 +67,8 @@ int main() {
 	//				-	-	-	-			 ---	-	- -  -- -
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
+
+		cout << "\n\n\tMy program has a weird requirement where I am not letting you use my register names as your variable names.\n\tI demand creativity from you mate!\n\n";
 
 		mode = Interactive;
 		
@@ -451,6 +466,7 @@ int main() {
 		ProgramX0 *program_test_select = PX();
 		program_test_select->emit();
 		program_test_select->execute();
+		program_test_select->liveness();
 		cout << "\n\n";
 		system("Pause");
 
@@ -482,6 +498,7 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 
+		/*
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 		string temp;
 		for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
@@ -491,10 +508,13 @@ int main() {
 		myfile.open("ASMFunction.asm");
 		myfile << ".code\n" << "getValueFromASM proc\n" << temp << "getValueFromASM endp\n" << "end";
 		myfile.close();
+		*/
 
 		print_variables_x0();
 		print_registers_x0();
 		print_stack_x0();
+
+		print_liveness_x0();
 
 		cout << "\n\nHOPE YOU ENJOYED!\n\n";
 		delete program_test_patch;

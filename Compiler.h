@@ -1,5 +1,6 @@
 #pragma once
 
+// Steps taken and to be taken while building compilers
 /*
 	author: Ivan Blaskic
 	date:	01/24/2019
@@ -180,7 +181,7 @@
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
 		- you finally have a working compiler! Aren’t you proud? 
 
-		D-
+	SKIPPED 48-50 with 48 & 49 being partially done and commented out in the .cpp and .asm file that has the program stored in it is named ASMFunction.asm
 
 	DOING REGISTER ALLOCATION WELL...
 
@@ -254,6 +255,7 @@
 
 */
 
+// RC0 Language Version Syntax
 /*
 	RC0	:=		p	=	(program	info	e)
 				e	=	(arg)	|	(let	x	c	e)
@@ -267,6 +269,7 @@
 
 */
 
+// Example of Optimizer's job for R0
 /*
 	OPTIMIZER's JOB example:
 
@@ -282,6 +285,7 @@
 		opt [+ (12) (read)] = (+ [12] [read])
 */
 
+// Resolve-complex Pass Explained [30-32]
 /*
 	30) ! write a half-dozen tests for resolve-complex that predict its output
 		- write a half-dozen tests for resolve-complex that predict its output
@@ -332,18 +336,23 @@ using namespace std;
 //				-	-   -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
 
+// Steps related to X0 [18-62]
+/*
 // X0:	steps 18-22 --> compiling C0 into X0
 //		steps 42-44 --> assign-homes for putting vars in place --> from X0 w vars in2 X0 w/o vars
 //		steps 45-47 --> patch for following the rules --> only 1 memory reference per instruction
 //		steps 48-50 --> implementing read_int code --> when program ends it just moves answer to RAX 
 //						+ jumped to end: label
 //					--> how do we check if the program did the job properly
+//		
 //		steps 51-52 --> liveness-analysis --> figuring out what's live where in IS
 //		steps 53-54 --> interference-analysis --> sketching interference graph
 //		steps 65-66 --> move-biasing --> adding a little bit extra info for better reg_al
 //		steps 63-64 --> move-graph --> helper for move-bias function
 //		steps 55-62 --> implementing register alocation 
+*/
 
+// Bigger picture on steps [51-62]
 /*
 
 	REGISTER ALOCATION on a right way:
@@ -355,6 +364,7 @@ using namespace std;
 
 */
 
+// After liveness, interference and before move-graph steps [55-62]
 /*
 
 		3rd portion: 55-62
@@ -363,6 +373,7 @@ using namespace std;
 
 */
 
+// Liveness,interference and move-graph analysis - core of the fine register allocation [51-54] + [63-66]
 /*
 
 		HELPING TO HAVE mic-1 SO WHEN ERRORS IN HW OCCUR JUST CHANGE mic-1 NOT TO USE IT
@@ -448,7 +459,7 @@ using namespace std;
 		1	movq	$1,		!v
 									--> !v
 		2	movq	$46,	!w	
-									--> !w, !v
+									--> !w, !v			// when testing, for instance for instruction 3, check if w and v are both in live_before(4) if one is not then delete it
 		3	movq	!v,		!x
 									--> !w, !x
 		4	addq	$7,		!x
@@ -484,8 +495,43 @@ using namespace std;
 				LiveBefore(k) = (LiveAfter(k) - W(k)) U (R(k)) 
 					--> W: written variables, R: read variables
 
-		W: X0 instruction --> set(vars)
-		R: X0 instruction --> set(vars)
+		int line_number;
+		static int program_length;
+		list<pair<int,list<string>> live_before;
+		
+		* add registers to variables as well
+
+		Program Class:				--> DONE
+			block.liveness();
+		
+		Block Class:
+			liveness() {
+				each_instruction.liveness(index); // from last to first
+			}
+
+		Instuction Class:
+			list<string> var_wr = new list<string>;
+			list<string> var_rd = new list<string>;
+			liveness(index) {
+				call written_variables() and read_variables() // initializing two lists
+				if index==program_length 
+					live_before[index+1, NULL]
+				else
+					list<string> temp = live_before[index+1]
+					for each var_wr look for it in temp and kick out as in patch() pass
+					for each var_rd look for it in temp and if not found then add in it
+					live_before[index, temp]
+			}
+			written_variables() {
+				// depending on instruction
+				var_wr = names of vars that instruction writes in it	// this->dest->getName()
+			}
+			read_variables() {
+				var_rd = names of vars that instruction reads from		// this->src->getName()
+			}
+
+			W: X0 instruction --> set(vars)
+			R: X0 instruction --> set(vars)
 			- W(popq a)			= W(a)
 			- R(popq a)			= 0
 			- W(addq src, dst)	= W(dst)
@@ -497,11 +543,11 @@ using namespace std;
 			- W(negq a)			= W(a)
 			- R(negq a)			= R(a)
 			- W & R (jumpq)		= 0
-			- W & R (callq)		= 0
+			- W & R (callq)		= 0					
 			- W & R (retq)		= 0
 						
-		W: X0 argument --> set(vars)
-		R: X0 argument --> set(vars)
+			W: X0 argument --> set(vars)
+			R: X0 argument --> set(vars)
 			- W & R(%r)				= 0
 			- W & R($n)				= 0
 			- W & R([offset] %r)	= 0
@@ -647,6 +693,7 @@ BETTER>		Iterating through the instructions rather than the variables
 
 */
 
+// Assembly creation and testing [48-50] --> stuck
 /*
 
 	Compiler works and does something!
@@ -729,6 +776,7 @@ BETTER>		Iterating through the instructions rather than the variables
 
 */
 
+// Patch as a simple way of not allowing more than 1 memory use per instruction [45-48]
 /*
 
 	Patch:	does everything like assign in terms of walks through,
@@ -750,6 +798,7 @@ BETTER>		Iterating through the instructions rather than the variables
 
 */
 
+// X0 setup [18-22] + well described assign-homes pass that eliminates variables use by replacing it with memory use [42-45]
 /*
 	18) + define data types for X0 program ASTs
 	19) + write an emitter for X0 programs - obicni toString jel...
@@ -821,6 +870,7 @@ output:	program (ip w/o local-vars) [
 		
 */
 
+// Syntax and Semantics of the X0 language [18-22]
 /*
 	main:	movq $10, %rax
 			addq $32, %rax
@@ -868,6 +918,11 @@ class LabelX0;
 class BlockX0;
 class InstrX0;
 
+// could be per body; here for liveness-analysis
+static int line_number = 0;
+static int program_length;
+list<pair<int, list<std::string>>> live_before;
+
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
@@ -879,17 +934,19 @@ static list<pair<string, int>> var_mappings;
 
 static list<pair<string, int>> Variables; //C0
 
-// stack implementation for registers: rsp | rbp
+// stack implementation for registers: rsp | rbp --> old implementation --> updated 
+/*
 static struct Node {
 	int data;
 	Node *link;
 };
+*/
 
 static int *StackX0 = new int[100];
 
 //static Node *rbp = new Node();
 //static Node *rsp = new Node();
-static Node *top = NULL;
+//static Node *top = NULL;
 
 // register ::= rax | rbx | rcx | rdx | rsi | rdi | r8 | r9 | r10 | r11 | r12 | r13 | r14 | r15
 static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int>> {
@@ -1227,6 +1284,11 @@ public:
 	virtual int patch() = 0;
 	virtual bool patched() = 0;
 	virtual string masm() = 0;
+	virtual void liveness() = 0;
+	virtual void interference() = 0;
+	virtual void moveGraph() = 0;
+	virtual void writtenVars() = 0;
+	virtual void readVars() = 0;
 private:
 };
 
@@ -1307,8 +1369,64 @@ public:
 	string masm() {
 		return "pop " + this->dest->masm();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_wr->emplace_back(this->dest->getName());
+		}
+		return;
+	}
+	void readVars() {
+		return;
+	}
 private:
 	ArgX0 *dest;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 PopqX0* PopX(ArgX0 *_arg) {
 	return new PopqX0(_arg);
@@ -1373,9 +1491,65 @@ public:
 	}
 	string masm() {
 		return "push " + this->src->masm();
+	};
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		return;
+	}
+	void readVars() {
+		if ((!(this->src->isInt())) && (!(this->src->isMem()))) {
+			var_rd->emplace_back(this->src->getName());
+		}
+		return;
 	}
 private:
 	ArgX0 *src;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 PushqX0* PshX(ArgX0 *_arg) {
 	return new PushqX0(_arg);
@@ -1424,8 +1598,61 @@ public:
 	string masm() {
 		return "ret";
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		return;
+	}
+	void readVars() {
+		return;
+	}
 private:
 	bool success = false;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 RetqX0* RtX() {
 	return new RetqX0();
@@ -1470,8 +1697,61 @@ public:
 	string masm() {
 		return "call function_name";
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		return;
+	}
+	void readVars() {
+		return;
+	}
 private:
 	int value;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 CallqX0* CllX() {
 	return new CallqX0();
@@ -1525,13 +1805,78 @@ public:
 	string masm() {
 		return "neg " + this->dest->masm();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_wr->emplace_back(this->dest->getName());
+		}
+		return;
+	}
+	void readVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_rd->emplace_back(this->dest->getName());
+		}
+		return;
+	}
 private:
 	ArgX0 *dest;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 NegqX0* NgX(ArgX0* _dest) {
 	return new NegqX0(_dest);
 }
 
+/*
+
+			- W(movq src, dst)	= W(dst)
+			- R(movq src, dst)	= R(src)
+
+*/
 // (movq arg arg) <-- instruction
 class MovqX0 : public InstrX0 {
 public:
@@ -1597,8 +1942,67 @@ public:
 	string masm() {
 		return "mov " + this->dest->masm() +", " + this->src->masm();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_wr->emplace_back(this->dest->getName());
+		}
+		return;
+	}
+	void readVars() {
+		if ((!(this->src->isInt())) && (!(this->src->isMem()))) {
+			var_rd->emplace_back(this->src->getName());
+		}
+		return;
+	}
 private:
 	ArgX0 *src, *dest;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 MovqX0* MvX(ArgX0* _src, ArgX0* _dest) {
 	return new MovqX0(_src, _dest);
@@ -1705,15 +2109,83 @@ public:
 	string masm() {
 		return "sub " + this->dest->masm() + ", " + this->src->masm();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_wr->emplace_back(this->dest->getName());
+		}
+		return;
+	}
+	void readVars() {
+		if ((!(this->src->isInt())) && (!(this->src->isMem()))) {
+			var_rd->emplace_back(this->src->getName());
+		}
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_rd->emplace_back(this->dest->getName());
+		}
+		return;
+	}
 private:
 	int src_rd = 0;
 	int rd_src, rd_dst;
 	ArgX0 *src, *dest;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
 	return new SubqX0(_src, _dest);
 }
 
+/*
+
+			- W(addq src, dst)	= W(dst)
+			- R(addq src, dst)	= R(src) U R(dst)
+
+*/
 // (addq arg, arg) <-- instruction
 class AddqX0 : public InstrX0 {
 public:
@@ -1796,8 +2268,8 @@ public:
 	}
 	void assign() {
 		this->src = this->src->assign();
-		this->dest = this->dest->assign();
-		return;
+this->dest = this->dest->assign();
+return;
 	}
 	int patch() {
 		if (this->src->isMem() && this->dest->isMem()) {
@@ -1816,10 +2288,72 @@ public:
 	string masm() {
 		return "add " + this->dest->masm() + ", " + this->src->masm();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_wr->emplace_back(this->dest->getName());
+		}
+		return;
+	}
+	void readVars() {
+		if ((!(this->src->isInt())) && (!(this->src->isMem()))) {
+			var_rd->emplace_back(this->src->getName());
+		}
+		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
+			var_rd->emplace_back(this->dest->getName());
+		}
+		return;
+	}
 private:
 	int src_rd = 0;
 	ArgX0 *src, *dest;
 	int rd_src, rd_dst;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
 	return new AddqX0(_src, _dest);
@@ -1828,7 +2362,7 @@ AddqX0* AdX(ArgX0* _src, ArgX0* _dest) {
 // block info instructions
 class BlockX0 {
 public:
-	BlockX0 (list<std::shared_ptr<InstrX0>> *_instructions_list) {
+	BlockX0(list<std::shared_ptr<InstrX0>> *_instructions_list) {
 		this->instructions_list = _instructions_list;
 	}
 	int instructions_cnt() {
@@ -1877,6 +2411,29 @@ public:
 		}
 		return temp;
 	}
+	void liveness() {
+		program_length = 0;
+		line_number = 0;
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it = instructions_list->begin(); it != instructions_list->end(); ++it) {
+			program_length++;
+		}
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it = instructions_list->begin(); it != instructions_list->end(); ++it) {
+			line_number++;
+			if (line_number == program_length) {
+				while (line_number != 0) {
+					(*it)->liveness();
+					--it;
+					line_number-=1;
+				}
+			}
+		}
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
 private:
 	bool end = false;
 	bool jump = false;
@@ -1904,6 +2461,12 @@ LabelX0* LbX(string _name) {
 	return new LabelX0(_name);
 }
 
+/*
+
+			W: X0 instruction --> set(vars)
+			R: X0 instruction --> set(vars)
+
+*/
 // (jmp label) <-- instruction
 class JumpX0 : public InstrX0 {
 public:
@@ -1948,9 +2511,62 @@ public:
 	string masm() {
 		return "jmp " + this->label->getName();
 	}
+	void liveness() {
+		writtenVars();
+		readVars();
+		if (line_number == program_length) {
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+		}
+		else {
+			list<string> temp_list;
+			std::list<pair<int, list<string>>>::iterator it;
+			for (it = live_before.begin(); it != live_before.end(); ++it) {
+				if ((it)->first == line_number + 1) {
+					temp_list = (it)->second;
+				}
+			}
+			std::list<string>::iterator it1;
+			std::list<string>::iterator it2;
+			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+					if ((*it1) == (*it2)) {
+						it2 = temp_list.erase(it2);
+					}
+				}
+			}
+			bool found = false;
+			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+					if ((*it1) == (*it2)) {
+						found = true;
+					}
+				}
+				if (found == false) {
+					temp_list.emplace_back(*it2);
+					found = false;
+				}
+			}
+			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+		}
+		return;
+	}
+	void interference() {
+
+	}
+	void moveGraph() {
+
+	}
+	void writtenVars() {
+		return;
+	}
+	void readVars() {
+		return;
+	}
 private:
 	LabelX0 *label;
 	bool end_label;
+	list<string> *var_wr = new list<string>();
+	list<string> *var_rd = new list<string>();
 };
 
 // program info [label->block]
@@ -2042,6 +2658,17 @@ public:
 			prcnt++;
 		}
 		return;
+	}
+	void liveness() {
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
+			(*it)->liveness();
+		}
+	}
+	void interference() {
+		// interference-analysis
+	}
+	void moveGraph() {
+		// move graph for future and present benefits
 	}
 private:
 };
@@ -2507,12 +3134,7 @@ private:
 //				-	 -  -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
 
-/*
-	R0 on paper
-	R1 about to go on paper
-	R0 + let + var + 
-*/
-
+// Resolve-complex() + econ() passes formulated
 /*
 
 	RC0:	p	=	(program	info	e)
@@ -3284,6 +3906,7 @@ private:
 	bool init = false;
 };
 
+// onNth and randP testing functions' definitions
 /*
 ExpR0* onNth(int m) {
 	if (m == 0) return I(1);
@@ -3332,7 +3955,6 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 // -----------------------------------------------------------------------------------------------------------
 
 // X0: steps 18-22 --> compiling C0 into X0
-
 /*
 	18) + define data types for X0 program ASTs
 	19) + write an emitter for X0 programs - obicni toString jel...
@@ -3351,6 +3973,7 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		- automatically compare results of assembled program and your interpreter
 */
 
+// Syntax of X0 language
 /*
 	main:	movq $10, %rax
 			addq $32, %rax
@@ -3394,6 +4017,7 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	+ X860	::=		(instr+)
 */
 
+// 1st version of X0 language implementation when compiling to it from C0
 /*
 
 class LabelX0;
