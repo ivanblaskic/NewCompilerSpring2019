@@ -46,11 +46,15 @@ void print_stack_x0() {
 void print_liveness_x0() {
 	cout << "\nLiveness:\n";
 	cout << "\tLine Number\tWhat's Live\n";
-	for (std::list<pair<int, list<string>>>::iterator it = live_before.begin(); it != live_before.end(); ++it) {
-		list<string> temp = (*it).second;
-		cout << "\t" << (*it).first << "\t";
+	for (std::list<list<string>>::iterator it = live_before.begin(); it != live_before.end(); ++it) {
+		list<string> temp = *it;
 		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
-			cout << *it1 << ", ";
+			if (it1 == temp.begin()) {
+				cout << "\t" << *it1 << "\t\t";
+			}
+			else {
+				cout << *it1 << ", ";
+			}
 		}
 		cout << "\n";
 	}

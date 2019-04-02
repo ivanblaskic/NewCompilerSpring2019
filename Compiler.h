@@ -921,7 +921,8 @@ class InstrX0;
 // could be per body; here for liveness-analysis
 static int line_number = 0;
 static int program_length;
-list<pair<int, list<std::string>>> live_before;
+static int temp_length;
+static list<list<string>> live_before;
 
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
@@ -1373,29 +1374,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1404,7 +1421,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -1496,29 +1513,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1527,7 +1560,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -1602,29 +1635,46 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					cout << "8";
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1633,7 +1683,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -1701,29 +1751,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1732,7 +1798,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -1809,29 +1875,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1840,7 +1922,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -1871,12 +1953,6 @@ NegqX0* NgX(ArgX0* _dest) {
 	return new NegqX0(_dest);
 }
 
-/*
-
-			- W(movq src, dst)	= W(dst)
-			- R(movq src, dst)	= R(src)
-
-*/
 // (movq arg arg) <-- instruction
 class MovqX0 : public InstrX0 {
 public:
@@ -1946,29 +2022,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin();it1!=temp_list1.end();++it1) {
+					if (it1==temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -1977,7 +2069,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -2113,29 +2205,45 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -2144,7 +2252,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -2180,12 +2288,6 @@ SubqX0* SbX(ArgX0* _src, ArgX0* _dest) {
 	return new SubqX0(_src, _dest);
 }
 
-/*
-
-			- W(addq src, dst)	= W(dst)
-			- R(addq src, dst)	= R(src) U R(dst)
-
-*/
 // (addq arg, arg) <-- instruction
 class AddqX0 : public InstrX0 {
 public:
@@ -2292,29 +2394,45 @@ return;
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				cout << "1";
+				list<string> temp_list1 = (*it);
+				cout << "2";
+				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
+					if (it1 == temp_list1.begin()) {
+						cout << "3";
+						if (stoi((*it1), nullptr, 10) == line_number + 1) {
+							cout << "4";
+							*it1 = to_string(line_number);
+							cout << "5";
+							temp_list = *it;
+							cout << "6";
+							*it1 = to_string(line_number + 1);
+							cout << "7";
+						}
+					}
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -2323,7 +2441,7 @@ return;
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -2411,19 +2529,32 @@ public:
 		}
 		return temp;
 	}
+	int getLength() {
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it3 = instructions_list->begin(); it3 != instructions_list->end(); ++it3) {
+			temp_length++;
+		}
+		return temp_length;
+	}
 	void liveness() {
-		program_length = 0;
+		int program_length = getLength();
+		temp_length = 0;
 		line_number = 0;
 		for (std::list<std::shared_ptr<InstrX0>>::iterator it = instructions_list->begin(); it != instructions_list->end(); ++it) {
-			program_length++;
+			temp_length++;
 		}
-		for (std::list<std::shared_ptr<InstrX0>>::iterator it = instructions_list->begin(); it != instructions_list->end(); ++it) {
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it1 = instructions_list->begin(); it1 != instructions_list->end(); ++it1) {
 			line_number++;
-			if (line_number == program_length) {
+			if (line_number == temp_length) {
 				while (line_number != 0) {
-					(*it)->liveness();
-					--it;
-					line_number-=1;
+					(*it1)->liveness();
+					//it1--;
+					it1 = instructions_list->erase(it1);
+					liveness();
+					//line_number-=1;
+					return;
+				}
+				if (line_number == 1) {
+					return;
 				}
 			}
 		}
@@ -2461,12 +2592,6 @@ LabelX0* LbX(string _name) {
 	return new LabelX0(_name);
 }
 
-/*
-
-			W: X0 instruction --> set(vars)
-			R: X0 instruction --> set(vars)
-
-*/
 // (jmp label) <-- instruction
 class JumpX0 : public InstrX0 {
 public:
@@ -2515,29 +2640,35 @@ public:
 		writtenVars();
 		readVars();
 		if (line_number == program_length) {
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>()));
+			list<string> last_list{ to_string(line_number + 1) };
+			live_before.emplace_back(last_list);
 		}
 		else {
 			list<string> temp_list;
-			std::list<pair<int, list<string>>>::iterator it;
+			std::list<list<string>>::iterator it;
+			std::list<string>::iterator it1;
 			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				if ((it)->first == line_number + 1) {
-					temp_list = (it)->second;
+				list<string> temp_list1 = (*it);
+				it1 = temp_list1.begin();
+				if (stoi((*it1), nullptr, 10) == line_number + 1) {
+					*it1 = to_string(line_number);
+					temp_list = *it;
+					*it1 = to_string(line_number + 1);
 				}
 			}
-			std::list<string>::iterator it1;
+			std::list<string>::iterator it3;
 			std::list<string>::iterator it2;
-			for (it1 = var_wr->begin(); it1 != var_wr->end(); ++it1) {
+			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						it2 = temp_list.erase(it2);
 					}
 				}
 			}
 			bool found = false;
-			for (it1 = var_rd->begin(); it1 != var_rd->end(); it1++) {
+			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
 				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
-					if ((*it1) == (*it2)) {
+					if ((*it3) == (*it2)) {
 						found = true;
 					}
 				}
@@ -2546,7 +2677,7 @@ public:
 					found = false;
 				}
 			}
-			live_before.emplace_back(make_pair(line_number + 1, new list<string>(temp_list)));
+			live_before.emplace_back(temp_list);
 		}
 		return;
 	}
@@ -2660,9 +2791,9 @@ public:
 		return;
 	}
 	void liveness() {
-		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
-			(*it)->liveness();
-		}
+		BlockX0 *temp_blk = new BlockX0(&blk_body_list);
+		temp_blk->liveness();
+		return;
 	}
 	void interference() {
 		// interference-analysis
