@@ -62,8 +62,8 @@ Compiler Written in C++ for Jay to Review
 - Connect your test suite to your system assembler and language runtime.
 - SKIP
 -   
-- Write a dozen tests for uncover-live that predict its output.
-- Implement the uncover-live pass for X0 programs.
++ Write a dozen tests for uncover-live that predict its output.
++ Implement the uncover-live pass for X0 programs.
 - Write a dozen tests for build-interferences that predict its output.
 - Implement the build-interferences pass for X0 programs.
 - Write a dozen tests for color-graph that predict its output.
