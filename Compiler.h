@@ -477,7 +477,7 @@ using namespace std;
 		10	negq	!t
 									--> !t, !z
 		11	movq	!z,		%rax
-									--> !t
+									--> !t, rax
 		12	addq	!t,		%rax
 									--> 0
 		13	jmp		END
@@ -1377,52 +1377,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -1516,52 +1528,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -1638,53 +1662,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					cout << "8";
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -1754,52 +1789,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -1878,52 +1925,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -2025,52 +2084,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin();it1!=temp_list1.end();++it1) {
-					if (it1==temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -2208,52 +2279,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -2397,52 +2480,64 @@ return;
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				cout << "1";
-				list<string> temp_list1 = (*it);
-				cout << "2";
-				for (it1 = temp_list1.begin(); it1 != temp_list1.end(); ++it1) {
-					if (it1 == temp_list1.begin()) {
-						cout << "3";
-						if (stoi((*it1), nullptr, 10) == line_number + 1) {
-							cout << "4";
-							*it1 = to_string(line_number);
-							cout << "5";
-							temp_list = *it;
-							cout << "6";
-							*it1 = to_string(line_number + 1);
-							cout << "7";
-						}
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
-					}
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
 				}
-			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -2536,28 +2631,26 @@ public:
 		return temp_length;
 	}
 	void liveness() {
-		int program_length = getLength();
 		temp_length = 0;
 		line_number = 0;
-		for (std::list<std::shared_ptr<InstrX0>>::iterator it = instructions_list->begin(); it != instructions_list->end(); ++it) {
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it5 = instructions_list->begin(); it5 != instructions_list->end(); ++it5) {
 			temp_length++;
 		}
-		for (std::list<std::shared_ptr<InstrX0>>::iterator it1 = instructions_list->begin(); it1 != instructions_list->end(); ++it1) {
+		for (std::list<std::shared_ptr<InstrX0>>::iterator it6 = instructions_list->begin(); it6 != instructions_list->end(); ++it6) {
 			line_number++;
 			if (line_number == temp_length) {
 				while (line_number != 0) {
-					(*it1)->liveness();
+					(*it6)->liveness();
 					//it1--;
-					it1 = instructions_list->erase(it1);
+					it6 = instructions_list->erase(it6);
 					liveness();
 					//line_number-=1;
 					return;
 				}
-				if (line_number == 1) {
-					return;
-				}
 			}
 		}
+		list<string> first_list{ to_string(line_number) };
+		live_before.emplace_back(first_list);
 	}
 	void interference() {
 
@@ -2643,42 +2736,64 @@ public:
 			list<string> last_list{ to_string(line_number + 1) };
 			live_before.emplace_back(last_list);
 		}
-		else {
-			list<string> temp_list;
-			std::list<list<string>>::iterator it;
-			std::list<string>::iterator it1;
-			for (it = live_before.begin(); it != live_before.end(); ++it) {
-				list<string> temp_list1 = (*it);
-				it1 = temp_list1.begin();
-				if (stoi((*it1), nullptr, 10) == line_number + 1) {
-					*it1 = to_string(line_number);
-					temp_list = *it;
-					*it1 = to_string(line_number + 1);
-				}
-			}
-			std::list<string>::iterator it3;
-			std::list<string>::iterator it2;
-			for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
-					if ((*it3) == (*it2)) {
-						it2 = temp_list.erase(it2);
+		bool first = true;
+		list<string> temp_list;
+		std::list<list<string>>::iterator it;
+		std::list<string>::iterator it1;
+		for (it = live_before.begin(); it != live_before.end(); ++it) {
+			for (it1 = it->begin(); it1 != it->end(); ++it1) {
+				if (first) {
+					int temp = stoi(*it1);
+					if (temp == line_number + 1) {
+						*it1 = to_string(line_number);
+						temp_list = *it;
+						*it1 = to_string(line_number + 1);
 					}
+					first = false;
 				}
 			}
-			bool found = false;
-			for (it3 = var_rd->begin(); it3 != var_rd->end(); it3++) {
-				for (it2 = temp_list.begin(); it2 != temp_list.end(); it2++) {
+			first = true;
+		}
+		first = true;
+		bool found = false;
+		std::list<string>::iterator it3;
+		std::list<string>::iterator it2;
+		for (it3 = var_wr->begin(); it3 != var_wr->end(); ++it3) {
+			for (it2 = temp_list.begin(); it2 != temp_list.end(); ++it2) {
+				if (first) {
+					first = false;
+				}
+				else {
 					if ((*it3) == (*it2)) {
+						*it2 = "deleted";
 						found = true;
 					}
 				}
-				if (found == false) {
-					temp_list.emplace_back(*it2);
-					found = false;
+			}
+		}
+		first = false;
+		list<string> temp_list2 = temp_list;
+		temp_list.clear();
+		for (it2 = temp_list2.begin(); it2 != temp_list2.end(); ++it2) {
+			if (*it2 != "deleted") {
+				temp_list.emplace_back(*it2);
+			}
+		}
+		found = false;
+		std::list<string>::iterator it4;
+		std::list<string>::iterator it5;
+		for (it4 = var_rd->begin(); it4 != var_rd->end(); it4++) {
+			for (it5 = temp_list.begin(); it5 != temp_list.end(); it5++) {
+				if ((*it4) == (*it5)) {
+					found = true;
 				}
 			}
-			live_before.emplace_back(temp_list);
+			if (found == false) {
+				temp_list.emplace_back(*it4);
+				found = false;
+			}
 		}
+		live_before.emplace_back(temp_list);
 		return;
 	}
 	void interference() {
@@ -2792,6 +2907,7 @@ public:
 	}
 	void liveness() {
 		BlockX0 *temp_blk = new BlockX0(&blk_body_list);
+		program_length = temp_blk->getLength();
 		temp_blk->liveness();
 		return;
 	}
