@@ -186,10 +186,10 @@
 	DOING REGISTER ALLOCATION WELL...
 
 		  UNCOVER-LIVE()
-	51) ! write a dozen tests for uncover-live that predict its output
+	51) + write a dozen tests for uncover-live that predict its output
 		- I don’t remember using examples from real programs, because they are likely to be too complicated
 		- instead, use simple ones that you come up with by hand
-	52) ! implement the uncover-live pass for X0 programs
+	52) + implement the uncover-live pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs 
 		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction 
 		- make sure that you add registers to the live sets, not just variables
@@ -379,10 +379,10 @@ using namespace std;
 		HELPING TO HAVE mic-1 SO WHEN ERRORS IN HW OCCUR JUST CHANGE mic-1 NOT TO USE IT
 
 		* UNCOVER-LIVE()
-	51) ! write a dozen tests for uncover-live that predict its output
+	51) + write a dozen tests for uncover-live that predict its output
 		- I don’t remember using examples from real programs, because they are likely to be too complicated
 		- instead, use simple ones that you come up with by hand
-	52) ! implement the uncover-live pass for X0 programs
+	52) + implement the uncover-live pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs
 		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction
 		- make sure that you add registers to the live sets, not just variables
@@ -490,7 +490,7 @@ using namespace std;
 				if (k==n) 
 					LiveAfter(k) = 0
 				else 
-					LiveBefore(k+1)
+					LiveAfter(k) = LiveBefore(k+1)
 				
 				LiveBefore(k) = (LiveAfter(k) - W(k)) U (R(k)) 
 					--> W: written variables, R: read variables
@@ -635,6 +635,9 @@ BETTER>		Iterating through the instructions rather than the variables
 		13	jmp		END
 									--> 0
 
+		
+		static list<std::string> interference_variables_list;
+
 		Formulas for everything above:
 			1- If Ik is arithmetic like (addq src dest)							
 				for every V is element of LiveAfter(k) we add (dest,V) to I
@@ -653,6 +656,7 @@ BETTER>		Iterating through the instructions rather than the variables
 								for callq function
 
 		* where I is INTERFERENCE GRAPH
+
 
 		START CARRYING ABOUT REGISTERS IN INTERFERENCE ANALYSIS.
 
@@ -923,12 +927,15 @@ static int line_number = 0;
 static int program_length;
 static int temp_length;
 static list<list<string>> live_before;
+static list<list<string>> live_after;
 
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
+static list<std::string> interference_variables_list;
 static list<std::shared_ptr<InstrX0>> blk_begin_list;
 static list<std::shared_ptr<InstrX0>> blk_body_list;
+static list<std::shared_ptr<InstrX0>> blk_body_list_liveness;
 static list<std::shared_ptr<InstrX0>> tmp_patch_list;
 static list<std::shared_ptr<InstrX0>> blk_end_list;
 static list<pair<string, int>> var_mappings;
@@ -945,9 +952,12 @@ static struct Node {
 
 static int *StackX0 = new int[100];
 
-//static Node *rbp = new Node();
-//static Node *rsp = new Node();
-//static Node *top = NULL;
+// old stack variables
+/* 
+static Node *rbp = new Node();
+static Node *rsp = new Node
+static Node *top = NULL;
+*/
 
 // register ::= rax | rbx | rcx | rdx | rsi | rdi | r8 | r9 | r10 | r11 | r12 | r13 | r14 | r15
 static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int>> {
@@ -1438,7 +1448,7 @@ public:
 		return;
 	}
 	void interference() {
-
+		return;
 	}
 	void moveGraph() {
 
@@ -1589,7 +1599,7 @@ public:
 		return;
 	}
 	void interference() {
-
+		return;
 	}
 	void moveGraph() {
 
@@ -1723,7 +1733,7 @@ public:
 		return;
 	}
 	void interference() {
-
+		return;
 	}
 	void moveGraph() {
 
@@ -1849,8 +1859,45 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-	void interference() {
 
+	/*
+
+			If Ik treats any registers special
+					then add (r,V) to I for all V is element of LiveAfter(k)
+
+			e.g. callq treats caller-saved and %rax registers special so
+						rax, rdx, rcx, rsi, rdi, r8-r11 are special registers
+								for callq function
+
+	*/
+
+	void interference() {
+		bool first = true;
+		bool found = false;
+		for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
+			if (found == false) {
+				list<string> temp_list = *it;
+				first = true;
+				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
+					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+						string temp_string = *it1;
+						if (temp_string != "rax") {
+							list<string> temp_input{ temp_string,"rax"};
+							interference_variables_list.emplace_back(temp_input);
+						}
+					}
+					if (first) {
+						if (stoi(*it1) == line_number) {
+							found = true;
+						}
+						first = false;
+					}
+				}
+			}
+			else {
+				return;
+			}
+		}
 	}
 	void moveGraph() {
 
@@ -1986,7 +2033,7 @@ public:
 		return;
 	}
 	void interference() {
-
+		return;
 	}
 	void moveGraph() {
 
@@ -2144,8 +2191,46 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-	void interference() {
 
+	/*
+
+		static list<std::string> interference_variables_list;
+
+		If Ik is like (movq src dest)
+			for every V is element of LiveAfter(k) we add (dest,V) to I
+				unless dest==V or src==V --> not extras
+
+		* where I is INTERFERENCE GRAPH
+
+	*/
+
+	void interference() {
+		bool first = true;
+		bool found = false;
+		for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
+			if (found == false) {
+				list<string> temp_list = *it;
+				first = true;
+				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
+					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+						string temp_string = *it1;
+						if ((temp_string != this->dest->getName()) && (temp_string != this->src->getName())) {
+							list<string> temp_input{ temp_string,this->dest->getName() };
+							interference_variables_list.emplace_back(temp_input);
+						}
+					}
+					if (first) {
+						if (stoi(*it1) == line_number) {
+							found = true;
+						}
+						first = false;
+					}
+				}
+			}
+			else {
+				return;
+			}
+		}
 	}
 	void moveGraph() {
 
@@ -2339,8 +2424,45 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-	void interference() {
 
+	/*
+
+		static list<std::string> interference_variables_list;
+
+			If Ik is arithmetic like (addq src dest)							
+				for every V is element of LiveAfter(k) we add (dest,V) to I
+					unless dest==V --> not to itself
+						* where dest could be register or variable
+
+	*/
+
+	void interference() {
+		bool first = true;
+		bool found = false;
+		for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
+			if (found == false) {
+				list<string> temp_list = *it;
+				first = true;
+				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
+					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+						string temp_string = *it1;
+						if (temp_string != this->dest->getName()) {
+							list<string> temp_input{ temp_string,this->dest->getName() };
+							interference_variables_list.emplace_back(temp_input);
+						}
+					}
+					if (first) {
+						if (stoi(*it1) == line_number) {
+							found = true;
+						}
+						first = false;
+					}
+				}
+			}
+			else {
+				return;
+			}
+		}
 	}
 	void moveGraph() {
 
@@ -2540,8 +2662,45 @@ return;
 		live_before.emplace_back(temp_list);
 		return;
 	}
-	void interference() {
 
+	/*
+
+		static list<std::string> interference_variables_list;
+
+		If Ik is arithmetic like (addq src dest)
+			for every V is element of LiveAfter(k) we add (dest,V) to I
+				unless dest==V --> not to itself
+					* where dest could be register or variable
+	
+	*/
+
+	void interference() {
+		bool first = true;
+		bool found = false;
+		for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
+			if (found == false) {
+				list<string> temp_list = *it;
+				first = true;
+				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
+					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+						string temp_string = *it1;
+						if (temp_string != this->dest->getName()) {
+							list<string> temp_input{ temp_string,this->dest->getName() };
+							interference_variables_list.emplace_back(temp_input);
+						}
+					}
+					if (first) {
+						if (stoi(*it1) == line_number) {
+							found = true;
+						}
+						first = false;
+					}
+				}
+			}
+			else {
+				return;
+			}
+		}
 	}
 	void moveGraph() {
 
@@ -2649,16 +2808,34 @@ public:
 				}
 			}
 		}
-		list<string> first_list{ to_string(line_number) };
-		live_before.emplace_back(first_list);
-	}
-	void interference() {
-
+		//list<string> first_list{ to_string(line_number) };
+		//live_before.emplace_back(first_list);
+		line_number = program_length+1;
+		for (std::list<list<string>>::iterator it7 = live_before.begin(); it7 != live_before.end(); ++it7) {
+			line_number--;
+			if (line_number > 0) {
+				list<string> temp = *it7;
+				int firstInList = true;
+				for (std::list<string>::iterator it8 = temp.begin(); it8 != temp.end(); ++it8) {
+					if (firstInList) {
+						firstInList = false;
+						*it8 = to_string(line_number);
+					}
+				}
+				live_after.emplace_back(temp);
+			}
+			else if (line_number == 0) {
+				list<string> temp {"0"};
+				live_after.emplace_back(temp);
+			}
+		}
+		return;
 	}
 	void moveGraph() {
 
 	}
 private:
+
 	bool end = false;
 	bool jump = false;
 	list<std::shared_ptr<InstrX0>> *instructions_list;
@@ -2797,7 +2974,7 @@ public:
 		return;
 	}
 	void interference() {
-
+		return;
 	}
 	void moveGraph() {
 
@@ -2894,7 +3071,7 @@ public:
 		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
 			tmp_patch_list.clear();
 			if ((*it)->patched()) {
-				//cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
+				cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
 				if ((*it)->patch() == 1) {
 					it = blk_body_list.erase(it);
 					blk_body_list.splice(it, tmp_patch_list);
@@ -2906,13 +3083,21 @@ public:
 		return;
 	}
 	void liveness() {
-		BlockX0 *temp_blk = new BlockX0(&blk_body_list);
+		for (list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); ++it) {
+			blk_body_list_liveness.emplace_back(*it);
+		}
+		BlockX0 *temp_blk = new BlockX0(&blk_body_list_liveness);
 		program_length = temp_blk->getLength();
 		temp_blk->liveness();
 		return;
 	}
 	void interference() {
-		// interference-analysis
+		line_number = 0;
+		for (list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); ++it) {
+			line_number++;
+			(*it)->interference();
+		}
+		return;
 	}
 	void moveGraph() {
 		// move graph for future and present benefits

@@ -43,10 +43,28 @@ void print_stack_x0() {
 	cout << "\n";
 	system("Pause");
 }
-void print_liveness_x0() {
-	cout << "\nLiveness:\n";
-	cout << "\tLine Number\tWhat's Live\n";
+void print_liveness_before_x0() {
+	cout << "\nLiveness Before:\n";
+	cout << "\tLine Number\tWhat's Live Before\n";
 	for (std::list<list<string>>::iterator it = live_before.begin(); it != live_before.end(); ++it) {
+		list<string> temp = *it;
+		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
+			if (it1 == temp.begin()) {
+				cout << "\t" << *it1 << "\t\t";
+			}
+			else {
+				cout << *it1 << ", ";
+			}
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	system("Pause");
+}
+void print_liveness_after_x0() {
+	cout << "\nLiveness After:\n";
+	cout << "\tLine Number\tWhat's Live After\n";
+	for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
 		list<string> temp = *it;
 		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
 			if (it1 == temp.begin()) {
@@ -80,13 +98,13 @@ int main() {
 		// R1 uniquify function test_suite
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 		// let ([x 5] [+(L [(x 6) x]) (x)])
-		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
+		ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
 		//ExpR0 *te = A(I(5), I(2));
 		// let ([x (read)][+ (x) (5)])
-		ExpR0 *te = L(V("x"), R(), A(V("x"), I(5)));
+		//ExpR0 *te = L(V("x"), R(), A(V("x"), I(5)));
 
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
 			
@@ -99,8 +117,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 	
 		ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
-		delete te;
-		delete tp;
 		int result_uniq = tp_uniq->intrp();
 		cout << tp_uniq->prnt() << " = " << result_uniq;
 		cout << "\n\n";
@@ -120,7 +136,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES AND SIMPLIFIED FOR COMPILATION: \n\n";
 	
 		ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
-		delete tp_uniq;
 		cout << "\n\n";
 		system("Pause");
 	
@@ -448,7 +463,6 @@ int main() {
 		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
 		*/
 
-		delete tp_res_comp;
 		ProgC0 *program = new ProgC0();
 		program->execute();
 		program->emit();
@@ -466,7 +480,7 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE: \n\n";
 
 		program->select();
-		delete program;
+
 		ProgramX0 *program_test_select = PX();
 		program_test_select->emit();
 		program_test_select->execute();
@@ -481,7 +495,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
 
 		program_test_select->assign();
-		delete program_test_select;
 		ProgramX0 *program_test_assign = PX();
 		program_test_assign->emit();
 		program_test_assign->execute();
@@ -495,7 +508,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS USING ONLY ONE MEMORY REFERENCE PER INSTRUCTION: \n\n";
 
 		program_test_assign->patch();
-		delete program_test_assign;
 		ProgramX0 *program_test_patch = PX();
 		program_test_patch->emit();
 		program_test_patch->execute();
@@ -518,9 +530,17 @@ int main() {
 		print_registers_x0();
 		print_stack_x0();
 
-		print_liveness_x0();
+		print_liveness_before_x0();
+		print_liveness_after_x0();
 
 		cout << "\n\nHOPE YOU ENJOYED!\n\n";
+		delete te;
+		delete tp;
+		delete tp_uniq;
+		delete tp_res_comp;
+		delete program_test_select;
+		delete program_test_assign;
+		delete program;
 		delete program_test_patch;
 		system("Pause");
 
