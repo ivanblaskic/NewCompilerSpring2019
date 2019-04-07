@@ -64,8 +64,12 @@ Compiler Written in C++ for Jay to Review
 -   
 + Write a dozen tests for uncover-live that predict its output.
 + Implement the uncover-live pass for X0 programs.
-- Write a dozen tests for build-interferences that predict its output.
-- Implement the build-interferences pass for X0 programs.
++ Write a dozen tests for build-interferences that predict its output.
++ Implement the build-interferences pass for X0 programs.
+- 
+--> April 7th, 2:00pm <--
+- D-
+- 
 - Write a dozen tests for color-graph that predict its output.
 - Implement the color-graph function on arbitrary graphs.
 - Replace assign-homes with a new pass named assign-registers and implement the stupid-allocate-registers pass for X0 programs.
@@ -80,7 +84,7 @@ Compiler Written in C++ for Jay to Review
 - Update your allocate-registers pass to make use of the move-biasing feature of color-graph.
 - 
 - < Objective >
---> March 18th, 11:59pm <--
+--> April 15th, 11:59pm <--
 - C- 
 - 
 - Extend your data types from R1 to R2.
@@ -111,6 +115,11 @@ Compiler Written in C++ for Jay to Review
 - Extend the patch-instructions pass for X1 programs, with a few test cases to check its output.
 - Update your runtime to support printing out booleans, in addition to integers.
 - Update your main-generation pass for boolean-outputting programs.
+- 
+- < Objective >
+--> April 30th, 11:59pm <--
+- B- 
+- 
 - Extend your compiler to support conditional moves.
 - Extend your data types from R2 to R3.
 - Extend your pretty printer from R2 to R3.
@@ -120,6 +129,14 @@ Compiler Written in C++ for Jay to Review
 - Extend your type-checker from R2 to R3.
 - Extend your random generation function from R2 to R3.
 - Write a function that generates an R3 program that uses N bytes of memory and makes it unreachable M times.
+- 
+- < Objective >
+--> May 2nd, 11:59pm <--
+- B
+- 
+
+INTRO TO COMPILER CONSTRUCTION w Jay McCarthy SPRING 2019 UML
+
 - Write some R3-specific optimizer tests.
 - Extend your optimizer from R2 to R3.
 - Modify your type-checker so that it wraps every expression in its type.
@@ -142,11 +159,6 @@ Compiler Written in C++ for Jay to Review
 - Update your runtime to support the allocation interface.
 - Update your runtime to support printing out vectors.
 - Update your runtime to actually do garbage collection.
-- 
-- < Objective >
---> May 1st, 11:59pm <--
-- A- 
-- 
 - Extend your data types from R3 to R4.
 - Extend your pretty printer from R3 to R4.
 - Write a dozen test R4 programs.
