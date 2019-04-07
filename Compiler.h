@@ -195,9 +195,9 @@
 		- make sure that you add registers to the live sets, not just variables
 
 		  BUILD-INTERFERENCES()
-	53) ! Write a dozen tests for build-interferences that predict its output
+	53) + Write a dozen tests for build-interferences that predict its output
 		- these should be the same programs you tested uncover-live with
-	54) ! implement the build-interferences pass for X0 programs
+	54) + implement the build-interferences pass for X0 programs
 		- don’t go overboard with finding and using a graph library for your language 
 		- these are really simple graphs, relax
 
@@ -367,6 +367,16 @@ using namespace std;
 // After liveness, interference and before move-graph steps [55-62]
 /*
 
+		Before moving on:
+			
+		Write few test cases like we did in class for X0 programs.
+			- after every single step for interpreter if there is liveness information
+			- delete all of the information that is not mention in live-after set
+			- if those deleted ones are tried to be read down the road
+			- then it will try to read uninitialized variable and interpreter crushes
+			- liveness doing wrong thing there is a way to realize that
+			- test early!!!
+
 		3rd portion: 55-62
 
 		...
@@ -388,9 +398,9 @@ using namespace std;
 		- make sure that you add registers to the live sets, not just variables
 
 		** BUILD-INTERFERENCES()
-	53) ! Write a dozen tests for build-interferences that predict its output
+	53) + Write a dozen tests for build-interferences that predict its output
 		- these should be the same programs you tested uncover-live with
-	54) ! implement the build-interferences pass for X0 programs
+	54) + implement the build-interferences pass for X0 programs
 		- don’t go overboard with finding and using a graph library for your language
 		- these are really simple graphs, relax
 
@@ -932,7 +942,7 @@ static list<list<string>> live_after;
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
-static list<std::string> interference_variables_list;
+static list<list<std::string>> interference_variables_list;
 static list<std::shared_ptr<InstrX0>> blk_begin_list;
 static list<std::shared_ptr<InstrX0>> blk_body_list;
 static list<std::shared_ptr<InstrX0>> blk_body_list_liveness;
@@ -1882,7 +1892,8 @@ public:
 					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != "rax") {
-							list<string> temp_input{ temp_string,"rax"};
+							string input = to_string(line_number);
+							list<string> temp_input{ input,temp_string,"rax"};
 							interference_variables_list.emplace_back(temp_input);
 						}
 					}
@@ -2215,7 +2226,8 @@ public:
 					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if ((temp_string != this->dest->getName()) && (temp_string != this->src->getName())) {
-							list<string> temp_input{ temp_string,this->dest->getName() };
+							string input = to_string(line_number);
+							list<string> temp_input{ input, temp_string,this->dest->getName() };
 							interference_variables_list.emplace_back(temp_input);
 						}
 					}
@@ -2447,7 +2459,8 @@ public:
 					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != this->dest->getName()) {
-							list<string> temp_input{ temp_string,this->dest->getName() };
+							string input = to_string(line_number);
+							list<string> temp_input{ input, temp_string,this->dest->getName() };
 							interference_variables_list.emplace_back(temp_input);
 						}
 					}
@@ -2685,7 +2698,8 @@ return;
 					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != this->dest->getName()) {
-							list<string> temp_input{ temp_string,this->dest->getName() };
+							string input = to_string(line_number);
+							list<string> temp_input{ input, temp_string,this->dest->getName() };
 							interference_variables_list.emplace_back(temp_input);
 						}
 					}
@@ -3071,7 +3085,7 @@ public:
 		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
 			tmp_patch_list.clear();
 			if ((*it)->patched()) {
-				cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
+				// cout << "\n\tAdjusting code: " << prcnt << " " << (*it)->toString() <<"\n";
 				if ((*it)->patch() == 1) {
 					it = blk_body_list.erase(it);
 					blk_body_list.splice(it, tmp_patch_list);

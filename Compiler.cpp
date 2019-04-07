@@ -44,7 +44,7 @@ void print_stack_x0() {
 	system("Pause");
 }
 void print_liveness_before_x0() {
-	cout << "\nLiveness Before:\n";
+	cout << "\nLiveness Before Analysis:\n";
 	cout << "\tLine Number\tWhat's Live Before\n";
 	for (std::list<list<string>>::iterator it = live_before.begin(); it != live_before.end(); ++it) {
 		list<string> temp = *it;
@@ -62,9 +62,27 @@ void print_liveness_before_x0() {
 	system("Pause");
 }
 void print_liveness_after_x0() {
-	cout << "\nLiveness After:\n";
+	cout << "\nLiveness After Analysis:\n";
 	cout << "\tLine Number\tWhat's Live After\n";
 	for (std::list<list<string>>::iterator it = live_after.begin(); it != live_after.end(); ++it) {
+		list<string> temp = *it;
+		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
+			if (it1 == temp.begin()) {
+				cout << "\t" << *it1 << "\t\t";
+			}
+			else {
+				cout << *it1 << ", ";
+			}
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+	system("Pause");
+}
+void print_interference_x0() {
+	cout << "\nInterference Analysis:\n";
+	cout << "\tLine Number\tWhat's Iterfering?\n";
+	for (std::list<list<string>>::iterator it = interference_variables_list.begin(); it != interference_variables_list.end(); ++it) {
 		list<string> temp = *it;
 		for (std::list<string>::iterator it1 = temp.begin(); it1 != temp.end(); ++it1) {
 			if (it1 == temp.begin()) {
@@ -97,8 +115,9 @@ int main() {
 		// R1 uniquify & resolve_complex test_suite
 		// R1 uniquify function test_suite
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
-		// let ([x 5] [+(L [(x 6) x]) (x)])
-		ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
+		// let ([x 5] [+(L [(x 6) x]) (x)]) --> add(let ([x 5] [+(L [(x 6) x]) (x)]), let([x 2] [+ (read) (x)]))
+		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
+		ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),A(V("x"),I(2))));
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
@@ -485,6 +504,7 @@ int main() {
 		program_test_select->emit();
 		program_test_select->execute();
 		program_test_select->liveness();
+		program_test_select->interference();
 		cout << "\n\n";
 		system("Pause");
 
@@ -532,6 +552,7 @@ int main() {
 
 		print_liveness_before_x0();
 		print_liveness_after_x0();
+		print_interference_x0();
 
 		cout << "\n\nHOPE YOU ENJOYED!\n\n";
 		delete te;
