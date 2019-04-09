@@ -377,7 +377,100 @@ using namespace std;
 			- liveness doing wrong thing there is a way to realize that
 			- test early!!!
 
-		3rd portion: 55-62
+		3rd portion: 55-62: WATCH CLASS 02/07 - ECHO + NOTES 6.pdf - CC FILE
+
+		COLOR-GRAPH() till 30:43
+	55) ! write a dozen tests for color-graph that predict its output
+		- in addition to tests that use your build-interferences results
+		- you should also make some examples that correspond to Sudoku boards
+	56) ! implement the color-graph function on arbitrary graphs
+		- using the greedy saturation algorithm described in the book
+
+		Related to Sudoku Game Problematic 
+		- variables as the 81 numbers & registers as the 9 locations
+		- assigning variables to registers 
+		- write down what things are not allowed to be or what they are allowed to be
+			- for every variable
+			- PENCIL MARK the name of the technique - recording can or can't information
+			- list of constraints eventually giving you what it has to be
+			- easy problems
+			- WE ARE ONLY DOING THIS LEVEL OF HARD
+		- medium hard --> those 2 can be 2 or 8 and there is one that can be 2 or 8 or 3 and that one will be 3 bc of the constraints other 2 have
+		- avanced hard --> you have to guess, see if it works and go back
+			- if our problem is that hard then just use the stack location
+			- we just prefer to store them in registers
+		Our Algorithm
+		- set of things you are allowed or not allowed to use = Saturation 
+			- in our case: how many registers (colors) you cannot use
+		- sudoku and register allocation are both example of "graph coloring"
+		- W: vertices (G) - priority queue - where priority is a size of saturation 
+			- while W is not empty 
+				- select vertex from W where sat(vertex) is maximum
+				- find the lowest color that is not in {color(u)|(u) € adj(vertex)}
+				* colors are numbers now and will eventually be registers
+				- color(vertex) = c
+				- removing vertex from W
+		- annoying features is dealing with priority queue
+			- finding vertex, v, and checking it's neighbours, going through them and sorting them into HAVE-COLORS and DON'T-HAVE-COLORS
+				- go through HAVE-COLORS to see what colors I am not allowed to do and picking the smallest color to use
+				- go through all the numbers and one by one check if any of the numbers is using that one, iterating from 0 to infinity
+				- hash-table of what colors are used from my neighbours
+				- from 0 to infinity picking what is not in that hash-table --> how Jay does it
+					- if there is 13 registers and I have 14 as the lowest available I can put it into the stack location - reasoning for having infinity
+			- later on we say what exactly those colors mean & the ones we use are registers and rest are stack locations
+			- after you assigned the color you go back through the neighbours and in particula DON'T-HAVE-COLORS ones & update their priority 
+
+
+		  ASSIGN-REGISTERS()
+	57) ! replace assign-homes with a new pass named assign-registers 
+	      and implement the stupid-allocate-registers pass for X0 programs
+		- assign-registers pass should expect an assignment of variables to registers 
+		  or stack locations in the auxiliary field and remove variables 
+		  from the program by using the given mapping. stupid-allocate-registers 
+		  will generate this mapping from the set of variables by assigning them 
+		  all to stack locations
+		- this is a trivial generalization of assign-homes!
+	58) ! write a dozen tests for the assign-registers that predict its output and check their behavior
+		- you should manually come up with register assignments for some sample programs, 
+		  verify that assign-registers (when given those assignments) does it job, 
+		  and check that the programs behave the same as they did before assignment
+
+		  ...
+
+		  ALLOCATE-REGISTERS()
+	59) ! write a dozen tests for allocate-registers that predict its output
+		- these should be the same programs you tested color-graph with 
+		- make sure there are tests that actually spill to the stack
+	60) ! replace stupid-allocate-registers with a new allocate-registers pass on X0 programs
+		- this pass will assume uncover-live and build-interferences have been run 
+		  and use color-graph to construct a register assignment for assign-registers
+
+		  ...
+
+		  MAIN-GENERATION()
+	61) ! update the main-generation pass to save and restore callee-saved registers
+		- start off by saving and restoring all callee-saved registers, 
+		  then make it sensitive to what you actually use
+	62) ! connect your test suite to the new main-generation and allocate-registers passes
+		- you now have a better compiler
+
+		...
+
+		  MOVE-GRAPH()
+	63) ! write a few test programs that have opportunities for move-biasing to be effective
+		- the book contain some examples 
+		- you should come up with at least one R1 program that has the property; 
+		- in addition to X0 program
+	64) ! extend your build-interferences pass to construct a move-graph
+		- update your build-interference tests to check that the move-graph is constructed correctly
+
+		...
+
+		  MOVE-BIASING()	
+	65) ! extend your color-graph function to incorporate move-biasing with an optional input argument
+		- translate your move-biasing tests to color-graph problems and expected outputs
+	66) ! update your allocate-registers pass to make use of the move-biasing feature of color-graph
+		- this should be a trivial step of connecting the dots
 
 		...
 
@@ -403,6 +496,8 @@ using namespace std;
 	54) + implement the build-interferences pass for X0 programs
 		- don’t go overboard with finding and using a graph library for your language
 		- these are really simple graphs, relax
+
+		** which variables are active at the same time - they cannot use the same register
 
 		*** MOVE-BIASING()
 	65) ! extend your color-graph function to incorporate move-biasing with an optional input argument
@@ -646,7 +741,7 @@ BETTER>		Iterating through the instructions rather than the variables
 									--> 0
 
 		
-		static list<std::string> interference_variables_list;
+		static list<list<std::string>> interference_variables_list;
 
 		Formulas for everything above:
 			1- If Ik is arithmetic like (addq src dest)							
@@ -936,17 +1031,24 @@ class InstrX0;
 static int line_number = 0;
 static int program_length;
 static int temp_length;
+// used to store what's live before and live after the given line number
 static list<list<string>> live_before;
 static list<list<string>> live_after;
 
 // label --> block	LIST
 static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block_list;
 static list<pair<std::string, int>> init_variables_list;
+// which variables are active at the same time
 static list<list<std::string>> interference_variables_list;
+// list of instructions used to setup the environment to run the body
 static list<std::shared_ptr<InstrX0>> blk_begin_list;
+// list of instructions in body
 static list<std::shared_ptr<InstrX0>> blk_body_list;
+// temporary copy of blk_body_list used for liveness analysis due to reverse pointer missing
 static list<std::shared_ptr<InstrX0>> blk_body_list_liveness;
+// temporary variable use for simple patch pass through instructions
 static list<std::shared_ptr<InstrX0>> tmp_patch_list;
+// list of instructions used to "unsetup" the environment after running the body
 static list<std::shared_ptr<InstrX0>> blk_end_list;
 static list<pair<string, int>> var_mappings;
 
