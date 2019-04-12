@@ -1,5 +1,8 @@
 #pragma once
 
+// JAY WISDOM: Only evaluate and consider saving computational time when it has saving human time as an end point
+// 54:00
+
 // Steps taken and to be taken while building compilers
 /*
 	author: Ivan Blaskic
@@ -321,6 +324,7 @@
 #include <memory>
 #include <utility>
 #include <list>
+#include <vector>
 #include <stdlib.h>
 #include <time.h>
 #include <iostream>
@@ -395,21 +399,33 @@ using namespace std;
 			- list of constraints eventually giving you what it has to be
 			- easy problems
 			- WE ARE ONLY DOING THIS LEVEL OF HARD
+
 		- medium hard --> those 2 can be 2 or 8 and there is one that can be 2 or 8 or 3 and that one will be 3 bc of the constraints other 2 have
 		- avanced hard --> you have to guess, see if it works and go back
 			- if our problem is that hard then just use the stack location
 			- we just prefer to store them in registers
+
 		Our Algorithm
 		- set of things you are allowed or not allowed to use = Saturation 
 			- in our case: how many registers (colors) you cannot use
+		
 		- sudoku and register allocation are both example of "graph coloring"
 		- W: vertices (G) - priority queue - where priority is a size of saturation 
 			- while W is not empty 
 				- select vertex from W where sat(vertex) is maximum
 				- find the lowest color that is not in {color(u)|(u) € adj(vertex)}
 				* colors are numbers now and will eventually be registers
-				- color(vertex) = c
+				- color(vertex) <-- c	*** rather than finding the lowest color
+										*** look at the the move graph - who am I related to in regards to moving
+										*** for all u inside of there I figure out what their color is 
+										*** that gives us a set --> we subtract saturation from that set
+										*** we have what my move neighboors are and what I am not allowed to be
+										*** if there is anything in this set then I choose something from it
+										*** the lowest value 
+										*** or just pick the lowest number that is not in saturation
+
 				- removing vertex from W
+	
 		- annoying features is dealing with priority queue
 			- finding vertex, v, and checking it's neighbours, going through them and sorting them into HAVE-COLORS and DON'T-HAVE-COLORS
 				- go through HAVE-COLORS to see what colors I am not allowed to do and picking the smallest color to use
@@ -417,9 +433,62 @@ using namespace std;
 				- hash-table of what colors are used from my neighbours
 				- from 0 to infinity picking what is not in that hash-table --> how Jay does it
 					- if there is 13 registers and I have 14 as the lowest available I can put it into the stack location - reasoning for having infinity
+
 			- later on we say what exactly those colors mean & the ones we use are registers and rest are stack locations
 			- after you assigned the color you go back through the neighbours and in particula DON'T-HAVE-COLORS ones & update their priority 
 
+		 v,0 - w,1  -  x,2
+				|  \ /		  %rax 0	%rbx 1	%rdx 2		--> registers on left - never interfere
+				|  / \			|				  /			--> everything live will conflict w caller-saved registers
+			   y,0	-  z,2	-  t,1		%rcx 3	 |			--> say %rcx and %rdx are caller-saved registers - when calls take place
+				\						  /		/
+				 - - - - - - - - - - - - - - - - 
+
+		-- when they have the same number of constraints - can be random pick
+		
+		-- input to coloring is the graph --> output of coloring is assignment (vertices into colors)
+
+		-- Jay did: G x (V-->C) --> assignment (V-->C)
+		{initial color assignment, just contains all of the vertices with incrementing numbers}
+	 
+		*** Move-Biasing 65-66: another graph added to algorithm above ***
+
+		Adding a Mapping from Color to Registers or Stack Locations (Color --> X arg)
+
+		Sigma		-->		(for i = 0 to 13) && (for r = rbx ... r15)
+								Sigma[i] = r
+							(for i = 14 to biggest number in C - assignment)
+								Sigma[i] = Stack var (i-13)		{%rsp(8 x (i-13))}
+		
+		* don't forget to record how many stack variables there are --> equals to biggest # in C-13
+		* same as it used to be with old no-variables pass, but now we use registers for better performance
+		* modifying the already existing function or modification
+		* SIGMA(V) = sigma[c(V)] --> should be easy to stack this code on top of everything you have
+		
+		** any register that you use that is callee save registers you have to actually save it
+		** used to be:		main-pass		BEGIN	-->		pushq		rbp			// saving rbp
+		**													movq		rsp, rbp	// saving rbp
+		**													save		callee-saves regs
+		**													subq		FC {free var cnt}, rsp	
+		**																			// saving rsp
+		**													jmp			BODY
+
+		** now: FC = how many stack-vars rather than how many vars
+		** used to be:		main-pass		END		-->		addq		FC, rsp
+		**													restore		callee-saves regs
+		**													popq		rbp
+
+		** callee-saves = rsp, rbp, r12-r15 --> have to be saved by callee 
+			- if we are going to use them we have to save them
+
+		** saving-regs: rsp & rbp already pushed 
+		** add: pushq r12, pushq r13, ..., pushq r15
+		** you can either always push them or just those which you use
+
+		** restoring-regs: always in the opposite order
+		** add: popq r15, popq r14, ..., popq r12
+		
+		If I do all of this I am at C- and task 67!
 
 		  ASSIGN-REGISTERS()
 	57) ! replace assign-homes with a new pass named assign-registers 
@@ -1040,6 +1109,36 @@ static list<pair<std::shared_ptr<LabelX0>,std::shared_ptr<BlockX0>>> label_block
 static list<pair<std::string, int>> init_variables_list;
 // which variables are active at the same time
 static list<list<std::string>> interference_variables_list;
+// information on: how many interferences this var has {use isVar to separate regs from vars} and what are those 
+// e.g.		add_0	5	x_0		x_1		add_1	let_0	add_2
+static list<list<std::string>> detailed_interference_list;
+// information on: what are the vars interfering with along with its colors
+// e.g.		add_0		x_0	N		x_1	0		add_1 N		let_0 N		add_2 1
+// add_0	--> add_0 2 into vars_assignment_colors_list
+// N		--> not yet assigned
+static list<list<std::string>> interfering_colors_list;
+// information on: how many colors were used and by which vars
+/*
+// 0	x_1		x_5
+// 1	add_2	let_3
+// 2	add_0	let_2
+// 3	x_0
+// 4	let_0
+// 5	add_1
+*/
+static list<list<std::string>> vars_assignment_colors_list;
+// information on how many vars is even used in coloring
+static int colors_used;
+// assigning registers to colors - have to be initialized
+/*
+//	e.g.	[0]	"rax"	[1] "rbx"	[2] "rcx"	[3] "rdx"	... which ones we cannot use?
+*/
+static vector<string> colors_assigned;
+// saturation priority queue
+// e.g.		"add_0"		"2"		-->		there is 2 colors that add_0 cannot be (0,1)
+static list<pair<string, int>> priority_queue;
+// what is moved into what
+static list<pair<string, string>> move_list;
 // list of instructions used to setup the environment to run the body
 static list<std::shared_ptr<InstrX0>> blk_begin_list;
 // list of instructions in body
@@ -3217,6 +3316,76 @@ public:
 	}
 	void moveGraph() {
 		// move graph for future and present benefits
+		// go through instructions and then add all of the arguments for each move in body
+		// use patch as a guide
+		// in comments below there is data type for you list<pair<string,string>> 
+	}
+
+	// memory management functions for color-graph
+
+	/*
+	
+	static list<pair<std::string, int>> init_variables_list;
+	
+	// which variables are active at the same time
+	static list<list<std::string>> interference_variables_list;
+
+	// information on: how many interferences this var has {use isVar to separate regs from vars} and what are those 
+		// e.g.		add_0	5	x_0		x_1		add_1	let_0	add_2
+	static list<list<std::string>> detailed_interference_list;
+
+	// information on: what are the vars interfering with along with its colors
+		// e.g.		add_0		x_0	N		x_1	0		add_1 N		let_0 N		add_2 1
+		// add_0	--> add_0 2 into vars_assignment_colors_list
+		// N		--> not yet assigned
+	static list<list<std::string>> interfering_colors_list;
+
+	// information on: how many colors were used and by which vars
+		// 0	x_1		x_5
+		// 1	add_2	let_3
+		// 2	add_0	let_2
+		// 3	x_0
+		// 4	let_0
+		// 5	add_1
+	static list<list<std::string>> vars_assignment_colors_list;
+
+	// information on how many vars is even used in coloring
+	static int colors_used;
+
+	// assigning registers to colors - have to be initialized
+	//	e.g.	[0]	"rax"	[1] "rbx"	[2] "rcx"	[3] "rdx"	... which ones we cannot use?
+	static vector<string> colors_assigned;
+
+	// saturation priority queue
+		// e.g.		"add_0"		"2"		-->		there is 2 colors that add_0 cannot be (0,1)
+	static list<pair<string, int>> priority_queue;
+
+	// what is moved into what
+	static list<pair<string, string>> move_list;
+	
+	*/
+
+	// figure out how to sort them into have-colors and don't have-colors if you need
+	// compare your idea to Jay's
+	// see where will you and how write the functions
+	// use the patch as an example
+	void colorGraph() {
+		for (list<list<std::string>>::iterator it = interference_variables_list.begin(); it != interference_variables_list.end(); ++it) {
+			// emptying the interference list and fillig the detailed interference list up
+		}
+		// going through detailed interference list and initializing coloring list
+		// adding registers that need to be interfering with variables in body
+		// this is done by adding "rax" together with "0" or "rbx" with "1" in coloring list
+		// following initialize priority queue list with var_name and its saturation
+		// take the first var, check its neigbours and what it cannot be
+			// extra step will be looking at the move graph 
+			// then checking if there is var that this one moves into 
+			// then seeing what their color is for each
+			// now we subtract what we cannot be colors from those 
+			// we assign the color if there is any left after subtracting saturation
+		// assign the lowest color that it can be to it if move-graph set doesn't work
+		// removing this var from priority queue 
+		// after this move to don't have colors neighboors jay says - or just to priority queue I say?
 	}
 private:
 };
