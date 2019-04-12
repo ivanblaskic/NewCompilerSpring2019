@@ -1662,7 +1662,7 @@ public:
 		return;
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
@@ -1813,7 +1813,7 @@ public:
 		return;
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		return;
@@ -1947,7 +1947,7 @@ public:
 		return;
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		return;
@@ -2112,7 +2112,7 @@ public:
 		}
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		return;
@@ -2248,7 +2248,7 @@ public:
 		return;
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
@@ -2446,7 +2446,10 @@ public:
 		}
 	}
 	void moveGraph() {
-
+		if ((!this->src->isInt()) && (!this->dest->isInt())) {
+			move_list.emplace_back(make_pair(this->src->getName(), this->dest->getName()));
+		}
+		return;
 	}
 	void writtenVars() {
 		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
@@ -2679,7 +2682,7 @@ public:
 		}
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
@@ -2918,7 +2921,7 @@ return;
 		}
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		if ((!(this->dest->isInt())) && (!(this->dest->isMem()))) {
@@ -3192,7 +3195,7 @@ public:
 		return;
 	}
 	void moveGraph() {
-
+		return;
 	}
 	void writtenVars() {
 		return;
@@ -3315,10 +3318,10 @@ public:
 		return;
 	}
 	void moveGraph() {
-		// move graph for future and present benefits
-		// go through instructions and then add all of the arguments for each move in body
-		// use patch as a guide
-		// in comments below there is data type for you list<pair<string,string>> 
+		for (list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); ++it) {
+			(*it)->moveGraph();
+		}
+		return;
 	}
 
 	// memory management functions for color-graph
@@ -3371,7 +3374,7 @@ public:
 	// use the patch as an example
 	void colorGraph() {
 		for (list<list<std::string>>::iterator it = interference_variables_list.begin(); it != interference_variables_list.end(); ++it) {
-			// emptying the interference list and fillig the detailed interference list up
+			// emptying the interference list and filling the detailed interference list up
 		}
 		// going through detailed interference list and initializing coloring list
 		// adding registers that need to be interfering with variables in body

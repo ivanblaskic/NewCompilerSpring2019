@@ -505,6 +505,9 @@ int main() {
 		program_test_select->execute();
 		program_test_select->liveness();
 		program_test_select->interference();
+		// expecting colorGraph() to deliver full register allocation
+		program_test_select->moveGraph();
+		program_test_select->colorGraph();
 		cout << "\n\n";
 		system("Pause");
 
@@ -513,8 +516,9 @@ int main() {
 		//print_stack_x0();
 
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
+		
 
-		program_test_select->assign();
+		//program_test_select->assign();
 		ProgramX0 *program_test_assign = PX();
 		program_test_assign->emit();
 		program_test_assign->execute();
