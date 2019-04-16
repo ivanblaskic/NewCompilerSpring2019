@@ -1,3 +1,5 @@
+// what if it doesn't have color assigned to it yet 
+
 #include <string>
 #include <iostream>
 #include <memory>
@@ -18,57 +20,24 @@ static list<pair<std::string, int>> init_variables_list;
 static list<list<std::string>> interference_variables_list;
 
 // information on: how many interferences this var has {use isVar to separate regs from vars} and what are those
-	// e.g.		add_0	x_0		x_1		add_1	let_0	add_2
 static list<list<std::string>> detailed_interference_list;
 
-// information on: what are the vars interfering with along with its colors
-	// e.g.		add_0		x_0	N		x_1	0		add_1 N		let_0 N		add_2 1
-	// add_0	--> add_0 2 into vars_assignment_colors_list
-	// N		--> not yet assigned
+// information on: what are the vars interfering with or what colors it cannot be
 static list<list<std::string>> interfering_colors_list;
-
-// information on: how many colors were used and by which vars
-	// 0	x_1		x_5
-	// 1	add_2	let_3
-	// 2	add_0	let_2
-	// 3	x_0
-	// 4	let_0
-	// 5	add_1
-static list<list<std::string>> vars_assignment_colors_list;
 
 // information on how many colors is even available in coloring
 static int colors_used = 13;
 
-// assigning registers to colors - have to be initialized
-//	e.g.	[0]	"rax"	[1] "rbx"	[2] "rcx"	[3] "rdx"	... which ones we cannot use?
+// assigning registers to colors - have to be initialized --> [0] rax, [1] rbx, ...
 static vector<list<string>> colors_assigned;
 
-// saturation priority queue
-	// e.g.		"add_0"		"2"		-->		there is 2 colors that add_0 cannot be (0,1)
+// saturation priority queue --> name + counter of things it cannot be
 static list<pair<string, int>> saturation_queue;
 
 // what is moved into what
 static list<pair<string, string>> move_list;
 
-static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string, int>>{
-	std::make_pair("rax", 0),
-	std::make_pair("rbx", 0),
-	std::make_pair("rcx", 0),
-	std::make_pair("rdx", 0),
-	std::make_pair("rsi", 0),
-	std::make_pair("rdi", 0),
-	std::make_pair("r8", 0),
-	std::make_pair("r9", 0),
-	std::make_pair("r10", 0),
-	std::make_pair("r11", 0),
-	std::make_pair("r12", 0),
-	std::make_pair("r13", 0),
-	std::make_pair("r14", 0),
-	std::make_pair("r15", 0),
-	std::make_pair("rsp", 0),
-	std::make_pair("rbp", 0)
-};
-
+// initial list of colors assigned to regs
 static list<pair<string, int>> colors =	   {(make_pair("rax", 0)),
 											(make_pair("rbx", 1)),
 											(make_pair("rcx", 2)),
@@ -84,12 +53,35 @@ static list<pair<string, int>> colors =	   {(make_pair("rax", 0)),
 											(make_pair("rsi", 12)),
 											(make_pair("rdi", 13))};
 
-int color(string var_name) {
+// function that returns the color of how to color the variable var_name
+static int color(string var_name) {
 	bool found = false;
 	bool first;
 	bool nope = false;
 	list<string> cannot_be;
 	list<string> temp_list;
+	list<string> move_colors;
+	// move_colors has all of the regs/vars that this one gets moved into or from 
+	for (list<pair<string, string>>::iterator it = move_list.begin(); it != move_list.end(); ++it) {
+		if ((*it).first == var_name) {
+			temp_list.emplace_back((*it).second);
+		}
+		if ((*it).second == var_name) {
+			temp_list.emplace_back((*it).first);
+		}
+	}
+	// seeing if those regs/vars have anything assigned to them if so keep them in list
+	for (int i = 0; i < 14; ++i) {
+		for (list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++it) {
+			for (list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); it1++) {
+				if ((*it) == (*it1)) {
+					move_colors.push_back(to_string(i));
+				}
+			}
+		}
+	}
+	temp_list.clear();
+	// finding the proper list of strings this var interfers with
 	for (list<list<string>>::iterator it1 = interfering_colors_list.begin(); it1 != interfering_colors_list.end(); ++it1) {
 		first = true;
 		for (list<string>::iterator it2 = (*it1).begin(); it2 != (*it1).end(); ++it2) {
@@ -100,6 +92,23 @@ int color(string var_name) {
 			first = false;
 		}
 	}
+	// looking if any of move into/from vars/regs also interferes with this one (then = -1)
+	if (found) {
+		for (list<string>::iterator it1 = cannot_be.begin(); it1 != cannot_be.end(); ++it1) {
+			for (list<string>::iterator it2 = move_colors.begin(); it2 != move_colors.end(); ++it2) {
+				if ((*it1) == (*it2)) {
+					*it2 = to_string(-1);
+				}
+			}// prevedi move_colors u color ako je moguce
+		}
+	}
+	// go through move_colors and if any of assigned 
+	for (list<string>::iterator it2 = move_colors.begin(); it2 != move_colors.end(); ++it2) {
+		if ((*it2) != to_string(-1)) {
+			return stoi(*it2);
+		}
+	}
+	// else if move-biasing is not possible then assign lowest possible color
 	if (found) {
 		for (int i = 0; i < 14; ++i) {
 			nope = false;
@@ -113,13 +122,14 @@ int color(string var_name) {
 			}
 		}
 	}
+	// if no interferences assign 0
 	else {
-		colors_assigned[0].push_back(var_name);
 		return 0;
 	}
 }
 
-bool isQueueEmpty() {
+// information if there is anything left to be assigned
+static bool isQueueEmpty() {
 	int queue_elements = 0;
 	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); ++it) {
 		queue_elements++;
@@ -132,18 +142,21 @@ bool isQueueEmpty() {
 	}
 }
 
-string get_sat_max() {
+// get top of the priority queue or var to be assigned the color
+static string get_sat_max() {
 	string return_string;
 	int temp_max = -1;
 	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); it++) {
 		if ((*it).second > temp_max) {
 			return_string = (*it).first;
+			temp_max = (*it).second;
 		}
 	}
 	return return_string;
 }
 
-void print_queue() {
+// printing the saturation queue out
+static void print_queue() {
 	cout << "\n" << "Printing Saturation Priority Queue: " << "\n\n";
 	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); it++) {
 		cout << "\t" << (*it).first << "\t" << (*it).second;
@@ -151,7 +164,8 @@ void print_queue() {
 	cout << "\n\n";
 }
 
-void print_colors_assigned() {
+// printing the colors and what registers are assigned to them
+static void print_colors_assigned() {
 	cout << "\n" << "Printing Colors Assignment: " << "\n\n";
 	for (int i = 0; i < 14; ++i) {
 		cout << "\t" << i;
@@ -163,7 +177,8 @@ void print_colors_assigned() {
 	cout << "\n\n";
 }
 
-void print_color_graph_x0(list<list<string>> *ptr_printable) {
+// printing the list<list<string>> type
+static void print_color_graph_x0(list<list<string>> *ptr_printable) {
 	bool first = true;
 	cout << "\n" << "Printing Detailed Interference List: " << "\n";
 	for (list<list<string>>::iterator it2 = ptr_printable->begin(); it2 != ptr_printable->end(); it2++) {
@@ -181,12 +196,15 @@ void print_color_graph_x0(list<list<string>> *ptr_printable) {
 	cout << "\n\n";
 }
 
-void refresh_queue(string name, int color) {
+// once color is known refresh_queue updates the things that need to be updated - saturation queue, colors assigned and interfering colors list
+static void refresh_queue(string name, int color) {
 	bool first = true;
 	bool erase = false;
 	bool erased = false;
 	list<list<string>> new_list;
 	list<pair<string, int>> temp_queue;
+	string curr_line;
+	colors_assigned[color].emplace_back(name);
 	for (list<list<string>>::iterator it = interfering_colors_list.begin(); it != interfering_colors_list.end(); ++it) {
 		for (list<string>::iterator it1 = (*it).begin(); it1 != (*it).end(); ++it1) {
 			if (first) {
@@ -199,25 +217,21 @@ void refresh_queue(string name, int color) {
 						}
 					}
 				}
-			}
-			else if (!(erase) && (erased)) {
-				if ((*it1) == name) {
-					*it1 = to_string(color);
-					for (list<pair<string, int>>::iterator it3 = temp_queue.begin(); it3 != temp_queue.end(); ++it3) {
-						if ((*it1) == (*it3).first) {
-							--(*it3).second;
-						}
-					}
+				else {
+					curr_line = *it1;
 				}
 			}
 			else if (!(erase) && !(erased)) {
 				if ((*it1) == name) {
-					*it1 = to_string(color);
 					for (list<pair<string, int>>::iterator it3 = saturation_queue.begin(); it3 != saturation_queue.end(); ++it3) {
-						if ((*it1) == (*it3).first) {
-							--(*it3).second;
+						if (curr_line == (*it3).first) {
+							cout << "\n\t<<<<< " << curr_line << ", " << to_string((*it3).second) << " >>>>>>";
+							(*it3).second = (*it3).second + 1;
+							cout << (*it3).second << "\n";
+							// doesn't get updated here in the list
 						}
 					}
+					*it1 = to_string(color);
 				}
 			}
 
@@ -228,6 +242,7 @@ void refresh_queue(string name, int color) {
 			new_list.emplace_back(*it);
 		}
 		erase = false;
+		erased = false;
 	}
 	interfering_colors_list.clear();
 	interfering_colors_list = new_list;
@@ -244,6 +259,13 @@ int main(void) {
 	interference_variables_list.emplace_back(temp3);
 	list<string> temp4 ({"rbx", "rcx"});
 	interference_variables_list.emplace_back(temp4);
+	list<string> temp5({ "add_x_1", "rbx", "add_x_0" });
+	interference_variables_list.emplace_back(temp5);
+	list<string> temp6({ "add_x_2", "add_x_1", "rcx" });
+	interference_variables_list.emplace_back(temp6);
+
+	move_list.emplace_back(make_pair("add_x_0", "rdx"));
+
 
 	bool found = false;
 	bool first = true;
@@ -367,6 +389,7 @@ int main(void) {
 		}
 		assigned = false;
 		temp_input_list.clear();
+		sorted_list.clear();
 	}
 
 	// filling up saturation queue
@@ -421,6 +444,7 @@ int main(void) {
 	string temp_var;
 	int temp_color;
 
+	// doing color assignment
 	while (!(isQueueEmpty())) {
 		temp_var = get_sat_max();
 		temp_color = color(temp_var);
@@ -431,7 +455,7 @@ int main(void) {
 		system("Pause");
 	}
 
-	// not printing what it's supposed to missing assigned vars
+	// printing resulting color --> vars, regs
 	print_colors_assigned();
 	system("Pause");
 
