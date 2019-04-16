@@ -36,8 +36,8 @@ static list<list<std::string>> interfering_colors_list;
 	// 5	add_1
 static list<list<std::string>> vars_assignment_colors_list;
 
-// information on how many vars is even used in coloring
-static int colors_used;
+// information on how many colors is even available in coloring
+static int colors_used = 13;
 
 // assigning registers to colors - have to be initialized
 //	e.g.	[0]	"rax"	[1] "rbx"	[2] "rcx"	[3] "rdx"	... which ones we cannot use?
@@ -45,7 +45,7 @@ static vector<list<string>> colors_assigned;
 
 // saturation priority queue
 	// e.g.		"add_0"		"2"		-->		there is 2 colors that add_0 cannot be (0,1)
-static list<pair<string, int>> priority_queue;
+static list<pair<string, int>> saturation_queue;
 
 // what is moved into what
 static list<pair<string, string>> move_list;
@@ -84,7 +84,84 @@ static list<pair<string, int>> colors =	   {(make_pair("rax", 0)),
 											(make_pair("rsi", 12)),
 											(make_pair("rdi", 13))};
 
+int color(string var_name) {
+	bool found = false;
+	bool first;
+	bool nope = false;
+	list<string> cannot_be;
+	list<string> temp_list;
+	for (list<list<string>>::iterator it1 = interfering_colors_list.begin(); it1 != interfering_colors_list.end(); ++it1) {
+		first = true;
+		for (list<string>::iterator it2 = (*it1).begin(); it2 != (*it1).end(); ++it2) {
+			if ((first) && (*it2 == var_name)) {
+				cannot_be = *it1;
+				found = true;
+			}
+			first = false;
+		}
+	}
+	if (found) {
+		for (int i = 0; i < 14; ++i) {
+			nope = false;
+			for (list<string>::iterator it1 = cannot_be.begin(); it1 != cannot_be.end(); it1++) {
+				if (to_string(i) == (*it1)) {
+					nope = true;
+				}
+			}
+			if (!(nope)) {
+				return i;
+			}
+		}
+	}
+	else {
+		colors_assigned[0].push_back(var_name);
+		return 0;
+	}
+}
 
+bool isQueueEmpty() {
+	int queue_elements = 0;
+	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); ++it) {
+		queue_elements++;
+	}
+	if (queue_elements > 0) {
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+string get_sat_max() {
+	string return_string;
+	int temp_max = -1;
+	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); it++) {
+		if ((*it).second > temp_max) {
+			return_string = (*it).first;
+		}
+	}
+	return return_string;
+}
+
+void print_queue() {
+	cout << "\n" << "Printing Saturation Priority Queue: " << "\n\n";
+	for (list<pair<string, int>>::iterator it = saturation_queue.begin(); it != saturation_queue.end(); it++) {
+		cout << "\t" << (*it).first << "\t" << (*it).second;
+	}
+	cout << "\n\n";
+}
+
+void print_colors_assigned() {
+	cout << "\n" << "Printing Colors Assignment: " << "\n\n";
+	for (int i = 0; i < 14; ++i) {
+		cout << "\t" << i;
+		for (list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++it) {
+			cout << "\t" << *it;
+		}
+		cout << "\n";
+	}
+	cout << "\n\n";
+}
 
 void print_color_graph_x0(list<list<string>> *ptr_printable) {
 	bool first = true;
@@ -107,19 +184,43 @@ void print_color_graph_x0(list<list<string>> *ptr_printable) {
 void refresh_queue(string name, int color) {
 	bool first = true;
 	bool erase = false;
+	bool erased = false;
 	list<list<string>> new_list;
+	list<pair<string, int>> temp_queue;
 	for (list<list<string>>::iterator it = interfering_colors_list.begin(); it != interfering_colors_list.end(); ++it) {
 		for (list<string>::iterator it1 = (*it).begin(); it1 != (*it).end(); ++it1) {
 			if (first) {
 				if ((*it1) == name) {
 					erase = true;
+					for (list<pair<string, int>>::iterator it2 = saturation_queue.begin(); it2 != saturation_queue.end(); ++it2) {
+						if (!((*it2).first == name)) {
+							temp_queue.emplace_back(*it2);
+							erased = true;
+						}
+					}
 				}
 			}
-			else if (!(erase)) {
+			else if (!(erase) && (erased)) {
 				if ((*it1) == name) {
 					*it1 = to_string(color);
+					for (list<pair<string, int>>::iterator it3 = temp_queue.begin(); it3 != temp_queue.end(); ++it3) {
+						if ((*it1) == (*it3).first) {
+							--(*it3).second;
+						}
+					}
 				}
 			}
+			else if (!(erase) && !(erased)) {
+				if ((*it1) == name) {
+					*it1 = to_string(color);
+					for (list<pair<string, int>>::iterator it3 = saturation_queue.begin(); it3 != saturation_queue.end(); ++it3) {
+						if ((*it1) == (*it3).first) {
+							--(*it3).second;
+						}
+					}
+				}
+			}
+
 			first = false;
 		}
 		first = true;
@@ -130,6 +231,8 @@ void refresh_queue(string name, int color) {
 	}
 	interfering_colors_list.clear();
 	interfering_colors_list = new_list;
+	saturation_queue.clear();
+	saturation_queue = temp_queue;
 }
 
 int main(void) {
@@ -146,11 +249,7 @@ int main(void) {
 	bool first = true;
 	int var_cnt = 0;
 
-	// figure out how to sort them into have-colors and don't have-colors if you need - trying w/o
-	// compare your idea to Jay's - let's do main
-	// see where will you and how write the functions
-	// use the patch as an example
-
+	// initialize variables and registers used
 	for (list<list<std::string>>::iterator it = interference_variables_list.begin(); it != interference_variables_list.end(); ++it) {
 		// emptying the interference list and filling the detailed interference list up 
 		// initialization - var_1 0 ...		var_2 0 ...		var_3 0 ...		...
@@ -181,6 +280,7 @@ int main(void) {
 
 	list<list<string>> temp_result;
 
+	// given all the registers and variables the stuff they will be interfering with
 	for (list<list<string>>::iterator it = detailed_interference_list.begin(); it != detailed_interference_list.end(); it++) {
 		list<string> per_var_list;
 		for (list<string>::iterator it1 = (*it).begin(); it1 != (*it).end(); ++it1) {
@@ -214,17 +314,13 @@ int main(void) {
 	detailed_interference_list.clear();
 	detailed_interference_list = temp_result; 
 
-	// information on: what are the vars interfering with along with its colors
-	// e.g.		add_0		x_0	N		x_1	0		add_1 N		let_0 N		add_2 1
-	// add_0	--> add_0 2 into vars_assignment_colors_list
-	// N		--> not yet assigned
-
 	first = true;
 	list<string> temp_iteration;
 	list<string> temp_input_list;
 	list<string> sorted_list;
 	bool assigned = false;
 
+	// replacing registers with the colors they are initially assigned to make the task easier 
 	for (list<list<string>>::iterator it = detailed_interference_list.begin(); it != detailed_interference_list.end(); it++) {
 		temp_iteration = *it;
 		string curr_str;
@@ -273,20 +369,74 @@ int main(void) {
 		temp_input_list.clear();
 	}
 
+	// filling up saturation queue
+	for (list<list<string>>::iterator it = interfering_colors_list.begin(); it != interfering_colors_list.end(); it++) {
+		temp_iteration = *it;
+		first = true;
+		string input_string;
+		int input_saturation_value = 0;
+		bool try_it = true;
+		for (list<string>::iterator it1 = temp_iteration.begin(); it1 != temp_iteration.end(); ++it1) {
+			if (first) {
+				input_string = *it1;
+			}
+			else {
+				try {
+					stoi(*it1);
+				}
+				catch (std::invalid_argument& e) {
+					try_it = false;
+				}
+				if (try_it) {
+					if ((stoi(*it1) >= 0) && (stoi(*it1) <= 13)) {
+						++input_saturation_value;
+					}
+				}
+				try_it = true;
+			}
+			first = false;
+		}
+		saturation_queue.emplace_back(make_pair(input_string, input_saturation_value));
+	}
+
+	// filling the colors assigned vector with appropriate stuff that gets assigned to them
+	for (list<pair<string, int>>::iterator it = colors.begin(); it != colors.end(); ++it) {
+		temp_input_list.clear();
+		temp_input_list.push_back((*it).first);
+		colors_assigned.push_back(temp_input_list);
+	}
+
 	print_color_graph_x0(&detailed_interference_list);
 	system("Pause");
 
 	print_color_graph_x0(&interfering_colors_list);
 	system("Pause");
 
-	refresh_queue("add_x_0", 3);
+	//refresh_queue("add_x_0", 3);
+	//print_color_graph_x0(&interfering_colors_list);
+	//system("Pause");
 
-	print_color_graph_x0(&interfering_colors_list);
+	print_queue();
+
+	string temp_var;
+	int temp_color;
+
+	while (!(isQueueEmpty())) {
+		temp_var = get_sat_max();
+		temp_color = color(temp_var);
+		refresh_queue(temp_var,temp_color);		
+		print_color_graph_x0(&interfering_colors_list);
+		system("Pause");
+		print_queue();
+		system("Pause");
+	}
+
+	// not printing what it's supposed to missing assigned vars
+	print_colors_assigned();
 	system("Pause");
-	
-	// going through detailed interference list and initializing coloring list
-	// adding registers that need to be interfering with variables in body
-	// this is done by adding "rax" together with "0" or "rbx" with "1" in coloring list
+
+	//fill the move list
+	//print the move list
 
 	// following initialize priority queue list with var_name and its saturation
 	// take the first var, check its neigbours and what it cannot be
