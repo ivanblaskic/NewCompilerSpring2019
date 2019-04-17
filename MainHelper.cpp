@@ -196,6 +196,14 @@ static void print_color_graph_x0(list<list<string>> *ptr_printable) {
 	cout << "\n\n";
 }
 
+static void print_move_graph_x0() {
+	cout << "\n" << "Printing Move Graph: " << "\n\n";
+	for (list<pair<string, string>>::iterator it = move_list.begin(); it != move_list.end(); ++it) {
+		cout << "\t" << (*it).first << "\t" << (*it).second;
+	}
+	cout << "\n\n";
+}
+
 // once color is known refresh_queue updates the things that need to be updated - saturation queue, colors assigned and interfering colors list
 static void refresh_queue(string name, int color) {
 	bool first = true;
@@ -203,6 +211,7 @@ static void refresh_queue(string name, int color) {
 	bool erased = false;
 	list<list<string>> new_list;
 	list<pair<string, int>> temp_queue;
+	list<pair<string, int>> sat_queue;
 	string curr_line;
 	colors_assigned[color].emplace_back(name);
 	for (list<list<string>>::iterator it = interfering_colors_list.begin(); it != interfering_colors_list.end(); ++it) {
@@ -223,12 +232,9 @@ static void refresh_queue(string name, int color) {
 			}
 			else if (!(erase) && !(erased)) {
 				if ((*it1) == name) {
-					for (list<pair<string, int>>::iterator it3 = saturation_queue.begin(); it3 != saturation_queue.end(); ++it3) {
+					for (list<pair<string, int>>::iterator it3 = temp_queue.begin(); it3 != temp_queue.end(); ++it3) {
 						if (curr_line == (*it3).first) {
-							cout << "\n\t<<<<< " << curr_line << ", " << to_string((*it3).second) << " >>>>>>";
 							(*it3).second = (*it3).second + 1;
-							cout << (*it3).second << "\n";
-							// doesn't get updated here in the list
 						}
 					}
 					*it1 = to_string(color);
@@ -431,9 +437,11 @@ int main(void) {
 
 	print_color_graph_x0(&detailed_interference_list);
 	system("Pause");
+	system("Cls");
 
 	print_color_graph_x0(&interfering_colors_list);
 	system("Pause");
+	system("Cls");
 
 	//refresh_queue("add_x_0", 3);
 	//print_color_graph_x0(&interfering_colors_list);
@@ -444,19 +452,29 @@ int main(void) {
 	string temp_var;
 	int temp_color;
 
+	print_move_graph_x0();
+	system("Pause");
+	system("Cls");
+
+
 	// doing color assignment
 	while (!(isQueueEmpty())) {
-		temp_var = get_sat_max();
-		temp_color = color(temp_var);
-		refresh_queue(temp_var,temp_color);		
 		print_color_graph_x0(&interfering_colors_list);
 		system("Pause");
 		print_queue();
 		system("Pause");
+		system("Cls");
+		temp_var = get_sat_max();
+		temp_color = color(temp_var);
+		refresh_queue(temp_var,temp_color);		
 	}
 
 	// printing resulting color --> vars, regs
 	print_colors_assigned();
+	system("Pause");
+	system("Cls");
+
+	cout << "\n\tProgram Execution Is Over.\n\tPress >>ENTER<< To Exit The Terminal.\n\n";
 	system("Pause");
 
 	//fill the move list

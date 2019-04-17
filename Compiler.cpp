@@ -108,7 +108,9 @@ int main() {
 	//				-	 -  -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-		cout << "\n\n\tMy program has a weird requirement where I am not letting you use my register names as your variable names.\n\tI demand creativity from you mate!\n\n";
+		cout << "\nMy program has a weird requirement where I am not letting you use my register names as your variable names.\nI demand creativity from you mate!\n\n";
+		system("Pause");
+		system("Cls");
 
 		mode = Interactive;
 		
@@ -132,6 +134,7 @@ int main() {
 		//cout << result;
 		cout << "\n\n";
 		system("Pause");
+		system("Cls");
 
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 	
@@ -140,7 +143,8 @@ int main() {
 		cout << tp_uniq->prnt() << " = " << result_uniq;
 		cout << "\n\n";
 		system("Pause");
-	
+		system("Cls");
+
 		/* 
 		// comment these 5 out 
 		if (result == result_uniq)
@@ -157,7 +161,7 @@ int main() {
 		ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
 		cout << "\n\n";
 		system("Pause");
-	
+		system("Cls");
 
 		cout << "\n\nPROGRAM EXECUTION IN C0 LANGUAGE: \n\n";
 	
@@ -486,7 +490,8 @@ int main() {
 		program->execute();
 		program->emit();
 		cout << "\n\n";
-		system("pause");
+		system("Pause");
+		system("Cls");
 
 	// -----------------------------------------------------------------------------------------------------------
 	//				-	-	-----			-------	----- -   - -----
@@ -505,15 +510,21 @@ int main() {
 		program_test_select->execute();
 		program_test_select->liveness();
 		program_test_select->interference();
-		// expecting colorGraph() to deliver full register allocation
+		cout << "\n\n";
+		system("Pause");
+		system("Cls");
+
 		program_test_select->moveGraph();
 		program_test_select->colorGraph();
 		cout << "\n\n";
 		system("Pause");
+		system("Cls");
 
 		print_variables_x0();
 		print_registers_x0();
 		//print_stack_x0();
+
+		/*
 
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
 		
@@ -524,6 +535,7 @@ int main() {
 		program_test_assign->execute();
 		cout << "\n\n";
 		system("Pause");
+		system("Cls");
 		
 		print_variables_x0();
 		print_registers_x0();
@@ -537,6 +549,9 @@ int main() {
 		program_test_patch->execute();
 		cout << "\n\n";
 		system("Pause");
+		system("Cls");
+		
+		*/
 
 		/*
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
@@ -551,12 +566,25 @@ int main() {
 		*/
 
 		print_variables_x0();
+		system("Pause");
+		system("Cls");
 		print_registers_x0();
-		print_stack_x0();
+		system("Pause");
+		system("Cls");
+
+		//system("Pause");
+		//system("Cls");
+		//print_stack_x0();
 
 		print_liveness_before_x0();
+		system("Pause");
+		system("Cls");
 		print_liveness_after_x0();
+		system("Pause");
+		system("Cls");
 		print_interference_x0();
+		system("Pause");
+		system("Cls");
 
 		cout << "\n\nHOPE YOU ENJOYED!\n\n";
 		delete te;
@@ -564,56 +592,57 @@ int main() {
 		delete tp_uniq;
 		delete tp_res_comp;
 		delete program_test_select;
-		delete program_test_assign;
+		//delete program_test_assign;
 		delete program;
-		delete program_test_patch;
+		//delete program_test_patch;
 		system("Pause");
+		system("Cls");
 
 		/*
 
-	// label-block init
-	std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
-
-	list<std::shared_ptr<InstrX0>> blk_main_list;
-	blk_main_list.push_back(std::make_shared<MovqX0>(IX(10),RX("rax")));		// movq		intX0, regx0
-	blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), RX("rbx")));	// movq		regX0, regx0
-	blk_main_list.push_back(std::make_shared<AddqX0>(IX(15), RX("rax")));		// addq		intx0, regX0
-	blk_main_list.push_back(std::make_shared<CallqX0>());						// callq
-	blk_main_list.push_back(std::make_shared<AddqX0>(RX("rbx"), RX("rax")));	// addq		regX0, regX0
-	blk_main_list.push_back(std::make_shared<SubqX0>(IX(10),RX("rax")));		// subq		intX0, regX0
-	blk_main_list.push_back(std::make_shared<SubqX0>(RX("rax"),RX("rdi")));		// subq		regX0, regX0
-	blk_main_list.push_back(std::make_shared<NegqX0>(RX("rbx")));				// negq		regX0
-	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
-	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
-	blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
-	blk_main_list.push_back(std::make_shared<PopqX0>(RX("rcx")));				// popq		regX0
-	blk_main_list.push_back(std::make_shared<MovqX0>(VX("x"), RX("rdx")));		// movq		varX0, regx0
-	blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX("x")));		// movq		regX0, varX0
-	// works perfect, creates loop if used here
-	// blk_main_list.push_back(std::make_shared<JumpX0>(LbX("main:")));			// jmp		labelX0			
-	blk_main_list.push_back(std::make_shared<RetqX0>());						// retq
-	BlockX0 *temp_blk = new BlockX0(&blk_main_list);
-	auto blk_main = std::make_shared<BlockX0>(*temp_blk);
-
-	pcnt = 0;
-	label_block_list.emplace_back(make_pair(lbl_main, blk_main));
-
-	// program call
-	init_variables_list.push_back(std::make_pair("x", 36));
-	ProgramX0 *program_test = PX();
-	program_test->emit();
-	program_test->execute();
-	system("Pause");
+		// label-block init
+		std::shared_ptr<LabelX0> lbl_main(new LabelX0("main:"));
 	
-	// variables print
-	print_variables_x0();
-
-	// registers print
-	print_registers_x0();
-
-	// stack print
-	print_stack_x0();
-
-	*/
+		list<std::shared_ptr<InstrX0>> blk_main_list;
+		blk_main_list.push_back(std::make_shared<MovqX0>(IX(10),RX("rax")));		// movq		intX0, regx0
+		blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), RX("rbx")));	// movq		regX0, regx0
+		blk_main_list.push_back(std::make_shared<AddqX0>(IX(15), RX("rax")));		// addq		intx0, regX0
+		blk_main_list.push_back(std::make_shared<CallqX0>());						// callq
+		blk_main_list.push_back(std::make_shared<AddqX0>(RX("rbx"), RX("rax")));	// addq		regX0, regX0
+		blk_main_list.push_back(std::make_shared<SubqX0>(IX(10),RX("rax")));		// subq		intX0, regX0
+		blk_main_list.push_back(std::make_shared<SubqX0>(RX("rax"),RX("rdi")));		// subq		regX0, regX0
+		blk_main_list.push_back(std::make_shared<NegqX0>(RX("rbx")));				// negq		regX0
+		blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+		blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+		blk_main_list.push_back(std::make_shared<PushqX0>(RX("rax")));				// pushq	regX0
+		blk_main_list.push_back(std::make_shared<PopqX0>(RX("rcx")));				// popq		regX0
+		blk_main_list.push_back(std::make_shared<MovqX0>(VX("x"), RX("rdx")));		// movq		varX0, regx0
+		blk_main_list.push_back(std::make_shared<MovqX0>(RX("rax"), VX("x")));		// movq		regX0, varX0
+		// works perfect, creates loop if used here
+		// blk_main_list.push_back(std::make_shared<JumpX0>(LbX("main:")));			// jmp		labelX0			
+		blk_main_list.push_back(std::make_shared<RetqX0>());						// retq
+		BlockX0 *temp_blk = new BlockX0(&blk_main_list);
+		auto blk_main = std::make_shared<BlockX0>(*temp_blk);
+	
+		pcnt = 0;
+		label_block_list.emplace_back(make_pair(lbl_main, blk_main));
+	
+		// program call
+		init_variables_list.push_back(std::make_pair("x", 36));
+		ProgramX0 *program_test = PX();
+		program_test->emit();
+		program_test->execute();
+		system("Pause");
+		
+		// variables print
+		print_variables_x0();
+	
+		// registers print
+		print_registers_x0();
+	
+		// stack print
+		print_stack_x0();
+	
+		*/
 
 }
