@@ -176,8 +176,6 @@
 		  by using the X0 interpreter
 		- remember, this pass assumes that assign-homes has run
 
-		  // Completed "Task #N - Description"
-
 		  TOUCHDOWN(:
 	48) ? implement your language runtime
 		- initially, this is just two functions: read_int and print_int 
@@ -191,8 +189,6 @@
 		- you finally have a working compiler! Aren’t you proud? 
 
 	SKIPPED 48-50 with 48 & 49 being partially done and commented out in the .cpp and .asm file that has the program stored in it is named ASMFunction.asm
-
-	DOING REGISTER ALLOCATION WELL...
 
 		  UNCOVER-LIVE()
 	51) + write a dozen tests for uncover-live that predict its output
@@ -218,7 +214,7 @@
 		- using the greedy saturation algorithm described in the book
 
 		  ASSIGN-REGISTERS()
-	57) ! replace assign-homes with a new pass named assign-registers 
+	57) + replace assign-homes with a new pass named assign-registers 
 	      and implement the stupid-allocate-registers pass for X0 programs
 		- assign-registers pass should expect an assignment of variables to registers 
 		  or stack locations in the auxiliary field and remove variables 
@@ -226,24 +222,24 @@
 		  will generate this mapping from the set of variables by assigning them 
 		  all to stack locations
 		- this is a trivial generalization of assign-homes!
-	58) ! write a dozen tests for the assign-registers that predict its output and check their behavior
+	58) + write a dozen tests for the assign-registers that predict its output and check their behavior
 		- you should manually come up with register assignments for some sample programs, 
 		  verify that assign-registers (when given those assignments) does it job, 
 		  and check that the programs behave the same as they did before assignment
 
 		  ALLOCATE-REGISTERS()
-	59) ! write a dozen tests for allocate-registers that predict its output
+	59) + write a dozen tests for allocate-registers that predict its output
 		- these should be the same programs you tested color-graph with 
 		- make sure there are tests that actually spill to the stack
-	60) ! replace stupid-allocate-registers with a new allocate-registers pass on X0 programs
+	60) + replace stupid-allocate-registers with a new allocate-registers pass on X0 programs
 		- this pass will assume uncover-live and build-interferences have been run 
 		  and use color-graph to construct a register assignment for assign-registers
 
 		  MAIN-GENERATION()
-	61) ! update the main-generation pass to save and restore callee-saved registers
+	61) + update the main-generation pass to save and restore callee-saved registers
 		- start off by saving and restoring all callee-saved registers, 
 		  then make it sensitive to what you actually use
-	62) ! connect your test suite to the new main-generation and allocate-registers passes
+	62) + connect your test suite to the new main-generation and allocate-registers passes
 		- you now have a better compiler
 
 		  MOVE-GRAPH()
@@ -260,7 +256,9 @@
 	66) + update your allocate-registers pass to make use of the move-biasing feature of color-graph
 		- this should be a trivial step of connecting the dots
 
-		C-
+		>> C- <<
+
+		Completed "Task #N - Description"
 
 */
 
@@ -1124,6 +1122,7 @@ static list<list<std::string>> interfering_colors_list;
 
 // information on how many colors is even available in coloring
 static int colors_used = 13;
+static int max_color = 0;
 
 // assigning registers to colors - have to be initialized --> [0] rax, [1] rbx, ...
 static vector<list<string>> colors_assigned;
@@ -1180,6 +1179,11 @@ static Node *rsp = new Node
 static Node *top = NULL;
 */
 
+/*
+
+	"rax", "rbx", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"
+
+*/
 // register ::= rax | rbx | rcx | rdx | rsi | rdi | r8 | r9 | r10 | r11 | r12 | r13 | r14 | r15
 static list<pair<std::string, int>> *RegistersX0 = new list<pair<std::string,int>> {
 	std::make_pair("rax", 0),
@@ -1672,17 +1676,35 @@ public:
 		return 0;
 	}
 	ArgX0* assign() {
-		for (std::list<pair<string, int>>::iterator it = var_mappings.begin(); it != var_mappings.end(); it++) {
-			if (this->name == (*it).first) {
-				return IRX((*it).second, RX("rbp"));
+		bool first = true;
+		int color_reg = 0;
+		for (int i = 0; i <= max_color; i++) {
+			for (list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++it) {
+				if (*it == name) {
+					color_reg = i;
+				}
 			}
 		}
-		for (std::list<pair<string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end() ; it++) {
-			if ((*it).first == "rbp") {
-				StackX0[(*it).second + var_left_cnt] = this->eval();
-				var_mappings.push_back(make_pair(this->name, var_left_cnt));
-				var_left_cnt--;
-				return IRX(var_left_cnt + 1, RX("rbp"));
+		if ((color_reg >= 0) && (color_reg <= 13)) {
+			for (std::list<pair<string, int>>::iterator it = colors.begin(); it != colors.end(); ++it) {
+				if (color_reg == (*it).second) {
+					return RX((*it).first);
+				}
+			}
+		}
+		else {
+			for (std::list<pair<string, int>>::iterator it = var_mappings.begin(); it != var_mappings.end(); it++) {
+				if (this->name == (*it).first) {
+					return IRX((*it).second, RX("rbp"));
+				}
+			}
+			for (std::list<pair<string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); it++) {
+				if ((*it).first == "rbp") {
+					StackX0[(*it).second + var_left_cnt] = this->eval();
+					var_mappings.push_back(make_pair(this->name, var_left_cnt));
+					var_left_cnt--;
+					return IRX(var_left_cnt + 1, RX("rbp"));
+				}
 			}
 		}
 	}
@@ -2283,18 +2305,6 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-
-	/*
-
-			If Ik treats any registers special
-					then add (r,V) to I for all V is element of LiveAfter(k)
-
-			e.g. callq treats caller-saved and %rax registers special so
-						rax, rdx, rcx, rsi, rdi, r8-r11 are special registers
-								for callq function
-
-	*/
-
 	void interference() {
 		bool first = true;
 		bool found = false;
@@ -2616,19 +2626,6 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-
-	/*
-
-		static list<std::string> interference_variables_list;
-
-		If Ik is like (movq src dest)
-			for every V is element of LiveAfter(k) we add (dest,V) to I
-				unless dest==V or src==V --> not extras
-
-		* where I is INTERFERENCE GRAPH
-
-	*/
-
 	void interference() {
 		bool first = true;
 		bool found = false;
@@ -2853,18 +2850,6 @@ public:
 		live_before.emplace_back(temp_list);
 		return;
 	}
-
-	/*
-
-		static list<std::string> interference_variables_list;
-
-			If Ik is arithmetic like (addq src dest)							
-				for every V is element of LiveAfter(k) we add (dest,V) to I
-					unless dest==V --> not to itself
-						* where dest could be register or variable
-
-	*/
-
 	void interference() {
 		bool first = true;
 		bool found = false;
@@ -3005,8 +2990,8 @@ public:
 	}
 	void assign() {
 		this->src = this->src->assign();
-this->dest = this->dest->assign();
-return;
+		this->dest = this->dest->assign();
+		return;
 	}
 	int patch() {
 		if (this->src->isMem() && this->dest->isMem()) {
@@ -3092,18 +3077,6 @@ return;
 		live_before.emplace_back(temp_list);
 		return;
 	}
-
-	/*
-
-		static list<std::string> interference_variables_list;
-
-		If Ik is arithmetic like (addq src dest)
-			for every V is element of LiveAfter(k) we add (dest,V) to I
-				unless dest==V --> not to itself
-					* where dest could be register or variable
-	
-	*/
-
 	void interference() {
 		bool first = true;
 		bool found = false;
@@ -3450,27 +3423,41 @@ public:
 	}
 	void assign() {
 		int var_cnt = 0;
+		bool first;
 
 		init_variables_list.clear();
 
-		for (std::list<pair<string, int>>::iterator it = Variables.begin(); it != Variables.end(); ++it) {
-			var_cnt++;
-			init_variables_list.push_back(std::make_pair((*it).first, 0));
+		// find out how many vars need memory/stack locations
+		if (max_color > 13) {
+			for (int i = 14; i <= max_color; i++) {
+				first = true;
+				for (std::list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++ it) {
+					if (first) {
+						var_cnt++;
+					}
+					first = false;
+				}
+			}
 		}
 
 		std::shared_ptr<LabelX0> lbl_begin(new LabelX0("begin"));
 		std::shared_ptr<LabelX0> lbl_body(new LabelX0("body"));
 		std::shared_ptr<LabelX0> lbl_end(new LabelX0("end"));
 
+		// save states and initialize stack for the execution of body function
 		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("rbp")));
 		blk_begin_list.push_back(std::make_shared<MovqX0>(RX("rsp"), RX("rbp")));
+		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("r12")));
+		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("r13")));
+		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("r14")));
+		blk_begin_list.push_back(std::make_shared<PushqX0>(RX("r15")));
 		blk_begin_list.push_back(std::make_shared<AddqX0>(IX(var_cnt), RX("rsp")));
 		blk_begin_list.push_back(std::make_shared<JumpX0>(LbX("body")));
 
 		var_left_cnt = var_cnt - 1;
 		print_stack_var = var_cnt;
 
-		// blk_body_list --> assigning homes
+		// about to be implemented - new assignment that depending on the color either assigns memory or register
 		for (std::list<std::shared_ptr<InstrX0>>::iterator it = blk_body_list.begin(); it != blk_body_list.end(); it++) {
 			(*it)->assign();
 		}
@@ -3478,6 +3465,10 @@ public:
 		blk_end_list.clear();
 		
 		blk_end_list.push_back(std::make_shared<SubqX0>(IX(var_cnt),RX("rsp")));
+		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r15")));
+		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r14")));
+		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r13")));
+		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r12")));
 		blk_end_list.push_back(std::make_shared<PopqX0>(RX("rbp")));
 		blk_end_list.push_back(std::make_shared<RetqX0>());
 
@@ -3536,53 +3527,7 @@ public:
 		}
 		return;
 	}
-
-	// memory management functions for color-graph
-
-	/*
-	
-	static list<pair<std::string, int>> init_variables_list;
-	
-	// which variables are active at the same time
-	static list<list<std::string>> interference_variables_list;
-
-	// information on: how many interferences this var has {use isVar to separate regs from vars} and what are those 
-		// e.g.		add_0	5	x_0		x_1		add_1	let_0	add_2
-	static list<list<std::string>> detailed_interference_list;
-
-	// information on: what are the vars interfering with along with its colors
-		// e.g.		add_0		x_0	N		x_1	0		add_1 N		let_0 N		add_2 1
-		// add_0	--> add_0 2 into vars_assignment_colors_list
-		// N		--> not yet assigned
-	static list<list<std::string>> interfering_colors_list;
-
-	// information on: how many colors were used and by which vars
-		// 0	x_1		x_5
-		// 1	add_2	let_3
-		// 2	add_0	let_2
-		// 3	x_0
-		// 4	let_0
-		// 5	add_1
-	static list<list<std::string>> vars_assignment_colors_list;
-
-	// information on how many vars is even used in coloring
-	static int colors_used;
-
-	// assigning registers to colors - have to be initialized
-	//	e.g.	[0]	"rax"	[1] "rbx"	[2] "rcx"	[3] "rdx"	... which ones we cannot use?
-	static vector<string> colors_assigned;
-
-	// saturation priority queue
-		// e.g.		"add_0"		"2"		-->		there is 2 colors that add_0 cannot be (0,1)
-	static list<pair<string, int>> priority_queue;
-
-	// what is moved into what
-	static list<pair<string, string>> move_list;
-	
-	*/
-
 	void colorGraph() {
-
 		bool found = false;
 		bool first = true;
 		int var_cnt = 0;
@@ -3789,6 +3734,9 @@ public:
 			system("Cls");
 			temp_var = get_sat_max();
 			temp_color = color(temp_var);
+			if (temp_color > max_color) {
+				max_color = temp_color;
+			}
 			refresh_queue(temp_var, temp_color);
 		}
 

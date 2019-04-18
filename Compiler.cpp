@@ -7,8 +7,6 @@ void print_variables_x0() {
 	for (std::list<pair<std::string, int>>::iterator it = init_variables_list.begin(); it != init_variables_list.end(); ++it) {
 		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 	}
-	cout << "\n";
-	system("Pause");
 }
 void print_registers_x0() {
 	cout << "\nMemory:\n";
@@ -16,8 +14,6 @@ void print_registers_x0() {
 	for (std::list<pair<std::string, int>>::iterator it = RegistersX0->begin(); it != RegistersX0->end(); ++it) {
 		cout << "\t" << (*it).first << "\t\t" << (*it).second << "\n";
 	}
-	cout << "\n";
-	system("Pause");
 }
 void print_stack_x0() {
 	cout << "\nStack Values:\n";
@@ -40,8 +36,6 @@ void print_stack_x0() {
 			temp = temp->link;
 		}
 	*/
-	cout << "\n";
-	system("Pause");
 }
 void print_liveness_before_x0() {
 	cout << "\nLiveness Before Analysis:\n";
@@ -58,8 +52,6 @@ void print_liveness_before_x0() {
 		}
 		cout << "\n";
 	}
-	cout << "\n";
-	system("Pause");
 }
 void print_liveness_after_x0() {
 	cout << "\nLiveness After Analysis:\n";
@@ -76,8 +68,6 @@ void print_liveness_after_x0() {
 		}
 		cout << "\n";
 	}
-	cout << "\n";
-	system("Pause");
 }
 void print_interference_x0() {
 	cout << "\nInterference Analysis:\n";
@@ -94,8 +84,6 @@ void print_interference_x0() {
 		}
 		cout << "\n";
 	}
-	cout << "\n";
-	system("Pause");
 }
 
 int main() {
@@ -524,12 +512,10 @@ int main() {
 		print_registers_x0();
 		//print_stack_x0();
 
-		/*
-
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
 		
 
-		//program_test_select->assign();
+		program_test_select->assign();
 		ProgramX0 *program_test_assign = PX();
 		program_test_assign->emit();
 		program_test_assign->execute();
@@ -538,8 +524,17 @@ int main() {
 		system("Cls");
 		
 		print_variables_x0();
+		cout << "\n\n";
+		system("Pause");
+		system("Cls");
 		print_registers_x0();
+		cout << "\n\n";
+		system("Pause");
+		system("Cls");
 		print_stack_x0();
+		cout << "\n\n";
+		system("Pause");
+		system("Cls");
 
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS USING ONLY ONE MEMORY REFERENCE PER INSTRUCTION: \n\n";
 
@@ -550,8 +545,6 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
-		
-		*/
 
 		/*
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
@@ -566,23 +559,28 @@ int main() {
 		*/
 
 		print_variables_x0();
+		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 		print_registers_x0();
+		cout << "\n\n";
+		system("Pause");
+		system("Cls");
+		print_stack_x0();
+		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 
-		//system("Pause");
-		//system("Cls");
-		//print_stack_x0();
-
 		print_liveness_before_x0();
+		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 		print_liveness_after_x0();
+		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 		print_interference_x0();
+		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 
@@ -592,7 +590,7 @@ int main() {
 		delete tp_uniq;
 		delete tp_res_comp;
 		delete program_test_select;
-		//delete program_test_assign;
+		delete program_test_assign;
 		delete program;
 		//delete program_test_patch;
 		system("Pause");
