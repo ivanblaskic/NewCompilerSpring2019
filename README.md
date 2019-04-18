@@ -66,31 +66,20 @@ Compiler Written in C++ for Jay to Review
 + Implement the uncover-live pass for X0 programs.
 + Write a dozen tests for build-interferences that predict its output.
 + Implement the build-interferences pass for X0 programs.
-- 
---> April 7th, 2:00pm <--
-- D-
-- 
 + Write a dozen tests for color-graph that predict its output.
-' Implement the color-graph function on arbitrary graphs.
-Assign-registers
-- Replace assign-homes with a new pass named assign-registers and implement the stupid-allocate-registers pass for X0 programs.
-- Write a dozen tests for the assign-registers that predict its output and check their behavior.
--
-Allocate-registers
-- Write a dozen tests for allocate-registers that predict its output.
-- Replace stupid-allocate-registers with a new allocate-registers pass on X0 programs.
--
-Main-generation
-- Update the main-generation pass to save and restore callee-saved registers.
-- Connect your test suite to the new main-generation and allocate-registers passes.
--
++ Implement the color-graph function on arbitrary graphs.
++ Replace assign-homes with a new pass named assign-registers and implement the stupid-allocate-registers pass for X0 programs.
++ Write a dozen tests for the assign-registers that predict its output and check their behavior.
++ Write a dozen tests for allocate-registers that predict its output.
++ Replace stupid-allocate-registers with a new allocate-registers pass on X0 programs.
++ Update the main-generation pass to save and restore callee-saved registers.
++ Connect your test suite to the new main-generation and allocate-registers passes.
 + Write a few test programs that have opportunities for move-biasing to be effective.
 + Extend your build-interferences pass to construct a move-graph.
 + Extend your color-graph function to incorporate move-biasing with an optional input argument.
 + Update your allocate-registers pass to make use of the move-biasing feature of color-graph.
 - 
-- < Objective >
---> April 18th, 11:59pm <--
+--> April 19th, 7:28pm <--
 - C- 
 - 
 - Extend your data types from R1 to R2.
