@@ -258,7 +258,7 @@
 
 		>> C- <<
 
-		Completed "Task #N - Description"
+		Completed "Task #66 - Successful Register Allocation"
 
 */
 
@@ -343,6 +343,13 @@ using namespace std;
 //				 - -	-	-			 ---	-	- -  -- -
 //				-	-   -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
+
+// Steps 62+
+/*
+
+	...
+
+*/
 
 // Steps related to X0 [18-62]
 /*
@@ -1122,7 +1129,7 @@ static list<list<std::string>> interfering_colors_list;
 
 // information on how many colors is even available in coloring
 static int colors_used = 13;
-static int max_color = 0;
+static int max_color = 13;
 
 // assigning registers to colors - have to be initialized --> [0] rax, [1] rbx, ...
 static vector<list<string>> colors_assigned;
@@ -1212,6 +1219,17 @@ static int pcnt;
 
 // function that returns the color of how to color the variable var_name
 static int color(string var_name) {
+	// manual testing of assesment of colors greater than 13 
+	/*
+	
+	if (var_name == "A_x_3") {
+		return 15;
+	}
+	if (var_name == "L_x_6") {
+		return 16;
+	}
+	
+	*/
 	bool found = false;
 	bool first;
 	bool nope = false;
@@ -1228,7 +1246,7 @@ static int color(string var_name) {
 		}
 	}
 	// seeing if those regs/vars have anything assigned to them if so keep them in list
-	for (int i = 0; i < 14; ++i) {
+	for (int i = 0; i <= max_color; ++i) {
 		for (list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++it) {
 			for (list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); it1++) {
 				if ((*it) == (*it1)) {
@@ -1259,7 +1277,7 @@ static int color(string var_name) {
 			}// prevedi move_colors u color ako je moguce
 		}
 	}
-	// go through move_colors and if any of assigned 
+	// go through move_colors and if any then assign 
 	for (list<string>::iterator it2 = move_colors.begin(); it2 != move_colors.end(); ++it2) {
 		if ((*it2) != to_string(-1)) {
 			return stoi(*it2);
@@ -1267,7 +1285,7 @@ static int color(string var_name) {
 	}
 	// else if move-biasing is not possible then assign lowest possible color
 	if (found) {
-		for (int i = 0; i < 14; ++i) {
+		for (int i = 0; i <= max_color; ++i) {
 			nope = false;
 			for (list<string>::iterator it1 = cannot_be.begin(); it1 != cannot_be.end(); it1++) {
 				if (to_string(i) == (*it1)) {
@@ -1324,7 +1342,7 @@ static void print_queue() {
 // printing the colors and what registers are assigned to them
 static void print_colors_assigned() {
 	cout << "\n" << "Printing Colors Assignment: " << "\n\n";
-	for (int i = 0; i < 14; ++i) {
+	for (int i = 0; i <= max_color; ++i) {
 		cout << "\t" << i;
 		for (list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++it) {
 			cout << "\t" << *it;
@@ -1370,7 +1388,16 @@ static void refresh_queue(string name, int color) {
 	list<pair<string, int>> temp_queue;
 	list<pair<string, int>> sat_queue;
 	string curr_line;
-	colors_assigned[color].emplace_back(name);
+	if (color <= 13) {
+		colors_assigned[color].emplace_back(name);
+	}
+	else {
+		for (int i = 0; i < (color - 13); i++) {
+			list<string> temp;
+			colors_assigned.push_back(temp);
+		}
+		colors_assigned[color].emplace_back(name);
+	}
 	for (list<list<string>>::iterator it = interfering_colors_list.begin(); it != interfering_colors_list.end(); ++it) {
 		for (list<string>::iterator it1 = (*it).begin(); it1 != (*it).end(); ++it1) {
 			if (first) {
@@ -3430,12 +3457,8 @@ public:
 		// find out how many vars need memory/stack locations
 		if (max_color > 13) {
 			for (int i = 14; i <= max_color; i++) {
-				first = true;
 				for (std::list<string>::iterator it = colors_assigned[i].begin(); it != colors_assigned[i].end(); ++ it) {
-					if (first) {
-						var_cnt++;
-					}
-					first = false;
+					var_cnt++;
 				}
 			}
 		}
