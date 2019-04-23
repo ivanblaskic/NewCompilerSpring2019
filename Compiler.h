@@ -8,6 +8,7 @@
 //		What registers I should not use?
 //		Check if using right callee-saved registers.
 //		Check what does he think about problem with 48-50.
+//		Check if I can have string as an input for CmpR0 --> new CmpR0("<",I(2),I(5))
 
 // Steps taken and to be taken while building compilers
 /*
@@ -4269,6 +4270,24 @@ private:
 
 // R0-R1: steps 1-17 + 27-35 --> compiled R0 into C0
 
+/*
+
+	R0 :=
+		p	:=	program info e
+		eR0	:=	(+ e e) | (- e) | read | number | 
+
+	R1	:=	
+		eR1	:=	eR0 | arg | (let x = xe in be)
+		arg :=	number | var
+
+	R2 :=
+		p	:=	program info e
+		e	:=	eR1 | true | false | (and e e) | (or e e) | (not e) | (- e e) | (cmp e e) | (if e e e)
+		cmp	:=	== | < | <= | >= | >
+		ty	:=	S64 {signed integer} | Bool
+
+*/
+
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
 
@@ -4280,40 +4299,39 @@ static list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>> var_exp_mapp;
 
 enum Operation {Add, Neg, Read, Num};
 
+// Interface class TypeR0
+class TypeR0 {
+	virtual bool isInt() = 0;
+	virtual bool isBool() = 0;
+};
+
 // Interface class ExpR0
 class ExpR0 {
 public:
 	// interpreter of the tree-like program
 	int virtual eval(list<pair<string, int>> *_info) = 0;
-
 	// print the tree in the linear form
 	virtual string toString() = 0;
-
 	// is the expression var or int - opt - let specifically
 	bool virtual simpleExp() = 0;
-
 	// simplifying the code - doing all of the possible calculations ahead of interpretation
 	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) = 0;
-
 	// optimizer helpers - is number, addition of number and read, or neg expression
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
-
 	// R1 maker functions
 	// making the program variable set global
 	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) = 0;
 	// making a tree-like code linear
 	virtual ExpR0* resolve_complex() = 0;
-
 	// identity maker 
 	virtual ExpR0* get_me() = 0;
 	// copy maker
 	virtual ExpR0* create_copy() = 0;
-
 	// Rc0 --> C0 compiler
 	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester,std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) = 0;
-
+	virtual bool typec(string _need) = 0;
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
@@ -4327,7 +4345,48 @@ ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
-class NumR0 : public ExpR0 {
+/*
+class TypeR2 {
+	// check type procedure?
+};
+
+class BoolR2 : public TypeR2, ExpR0 {
+
+	// interpreter of the tree-like program
+	int virtual eval(list<pair<string, int>> *_info) {}
+
+	// print the tree in the linear form
+	virtual string toString() {}
+
+	// is the expression var or int - opt - let specifically
+	bool virtual simpleExp() {}
+
+	// simplifying the code - doing all of the possible calculations ahead of interpretation
+	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {}
+
+	// optimizer helpers - is number, addition of number and read, or neg expression
+	bool virtual isNum() {}
+	bool virtual isNumRead() {}
+	bool virtual isNegExp() {}
+
+	// R1 maker functions
+	// making the program variable set global
+	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {}
+	// making a tree-like code linear
+	virtual ExpR0* resolve_complex() {}
+
+	// identity maker
+	virtual ExpR0* get_me() {}
+	// copy maker
+	virtual ExpR0* create_copy() {}
+
+	// Rc0 --> C0 compiler
+	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {}
+
+};
+*/
+
+class NumR0 : public ExpR0{
 public:
 	NumR0(int _value) {
 		this->value = _value;
@@ -4375,6 +4434,12 @@ public:
 	void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new IntC0(this->value)));
 		return;
+	}
+	bool typec(string _need) {
+		if ((_need == "any") || (_need == "int")) {
+			return true;
+		}
+		return false;
 	}
 private:
 	int value;
@@ -4474,6 +4539,12 @@ public:
 			_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new VarC0(this->name)));
 			return;
 		}
+	}
+	bool typec(string _need) {
+		if ((_need == "any") || (_need == "int")) {
+			return true;
+		}
+		return false;
 	}
 private:
 	int value;
@@ -4620,6 +4691,22 @@ public:
 		cout << "Error in econ for addition for: " << _name << "\n\n";
 		return;
 	}
+	bool typec(string _need) {
+		if ((this->lexp->typec("int")) && (this->rexp->typec("int"))) {
+			if ((_need == "any") || (_need == "int")) {
+				return true;
+			}
+			else {
+				cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+				system("Pause");
+				system("Clear");
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
+	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
@@ -4719,6 +4806,22 @@ public:
 		}
 		cout << "Error in econ for negation for: " << _name << "\n\n";
 		return;
+	}
+	bool typec(string _need) {
+		if (this->exp->typec("int")) {
+			if ((_need == "any") || (_need == "int")) {
+				return true;
+			}
+			else {
+				cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+				system("Pause");
+				system("Clear");
+				return false;
+			}
+		}
+		else {
+			return false;
+		}
 	}
 private:
 	ExpR0 *exp;
@@ -4839,6 +4942,24 @@ public:
 		b_exp->econ(_tail_tester, _lbl_tester, " ", true);
 		return;
 	}
+	bool typec(string _need) {
+		if (!(this->x_exp->typec("int"))) {
+			return false;
+		}
+		else if (!(this->b_exp->typec("int"))) {
+			return false;
+		}
+		else if ((_need == "any") || (_need == "int")) {
+			return true;
+		}
+		else {
+			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+			system("Pause");
+			system("Clear");
+			return false;
+		}
+
+	}
 private:
 	VarR0 *variable;
 	ExpR0 *x_exp, *b_exp;
@@ -4904,9 +5025,42 @@ public:
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new ReadC0()));
 		return;
 	}
+	bool typec(string _need) {
+		if ((_need == "any") || (_need == "int")) {
+			return true;
+		}
+		else {
+			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+			system("Pause");
+			system("Clear");
+			return false;
+		}
+	}
 private:
 	int value;
 };
+
+class BoolR0 : public TypeR0 {
+public:
+	bool isInt() {
+		return false;
+	}
+	bool isBool() {
+		return true;
+	}
+private:
+	bool value;
+};
+
+
+//	ExpR0* AND(ExpR0* l, ExpR0* r) { return new IfR0(l, r, new FalseR0());}
+//	ExpR0* OR(ExpR0* l, ExpR0* r) { return new IfR0(l, new TrueR0(), r);}
+//	ExpR0* T() { return new TrueR0(); }
+//	ExpR0* F() { return new FalseR0(); }
+//  ExpR0* IF(ExpR0* cond, ExpR0* then, ExpR0* else) { return new IfR0(cond, then, else); }
+//  ExpR0* CMP(ExpR0* l, ExpR0* r) { return new CmpR0(l, r); }
+//  ExpR0* NOT(ExpR0* e) { return new NotR0(e); }
+
 
 ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be) {
 	return new LetR0(v, ve, be);
@@ -4922,6 +5076,9 @@ ExpR0* A(ExpR0* l, ExpR0* r) {
 }
 ExpR0* N(ExpR0* e) {
 	return new NegR0(e);
+}
+ExpR0* S(ExpR0* l, ExpR0* r) {
+	return new AddR0(l, new NegR0(r));
 }
 ExpR0* I() {
 	return new NumR0();
@@ -5000,6 +5157,14 @@ public:
 		this->code->econ(new list<shared_ptr<StmtC0>>(), lbl_tester, " ", true);
 
 }
+	string typec() {
+		if (code->typec("any") == false) {
+			return "Error";
+		}
+		else {
+			return "Success";
+		}
+	}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;

@@ -107,7 +107,7 @@ int main() {
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 		// let ([x 5] [+(L [(x 6) x]) (x)]) --> add(let ([x 5] [+(L [(x 6) x]) (x)]), let([x 2] [+ (read) (x)]))
 		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
-		ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),A(V("x"),I(2))));
+		ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),S(V("x"),I(2))));
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
@@ -118,20 +118,39 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
 			
 		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
+
+		if (tp->typec() == "Error") {
+			cout << "\n\tError found when type checking.\n\n";
+			system("Pause");
+			return -1;
+		}
+		else {
+			cout << "\n\tType-check didn't find any errors.\n\n";
+			system("Pause");
+			system("Cls");
+		}
+
 		cout << tp->prnt() << " = " << tp->intrp();
 		//cout << result;
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 
+		//last cut-off
+		/* 
+		
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
-	
+
 		ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
 		int result_uniq = tp_uniq->intrp();
 		cout << tp_uniq->prnt() << " = " << result_uniq;
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
+
+
+		*/
+		
 
 		/* 
 		// comment these 5 out 
@@ -144,17 +163,24 @@ int main() {
 	
 		// R1 resolve_complex function test_suite
 	
+		//last cut-off
+		/*
+		
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES AND SIMPLIFIED FOR COMPILATION: \n\n";
-	
+
 		ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 
 		cout << "\n\nPROGRAM EXECUTION IN C0 LANGUAGE: \n\n";
-	
+
 		tp_res_comp->econ();
+
+
+		*/
 	
+
 		/* 
 		// R1 optimization test_suite
 		// success * 5
@@ -474,12 +500,18 @@ int main() {
 		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
 		*/
 
+		//last cut-off
+		/*
+		
 		ProgC0 *program = new ProgC0();
 		program->execute();
 		program->emit();
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
+
+		
+		*/
 
 	// -----------------------------------------------------------------------------------------------------------
 	//				-	-	-----			-------	----- -   - -----
@@ -489,6 +521,9 @@ int main() {
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
+		//last cut-off
+		/*
+		
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE: \n\n";
 
 		program->select();
@@ -546,6 +581,11 @@ int main() {
 		system("Pause");
 		system("Cls");
 
+		
+		*/
+
+
+		//ostream successful but compiled version not looking properly
 		/*
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 		string temp;
@@ -558,6 +598,9 @@ int main() {
 		myfile.close();
 		*/
 
+		//last cut-off
+		/*
+		
 		print_variables_x0();
 		cout << "\n\n";
 		system("Pause");
@@ -595,6 +638,10 @@ int main() {
 		//delete program_test_patch;
 		system("Pause");
 		system("Cls");
+		
+		
+		*/
+
 
 		/*
 
