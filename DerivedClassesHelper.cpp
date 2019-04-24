@@ -111,86 +111,141 @@ private:
 
 class IfR2 : public ExpR2 {
 public:
-	IfR2() {
-
+	IfR2(ExpR2* _cond, ExpR2* _tr, ExpR2* _fl) {
+		cond = _cond;
+		tr = _tr;
+		fl = _fl;
 	}
 	TypeR2* eval() {
-
+		BoolR2 *temp = dynamic_cast<BoolR2*>(this->cond->eval());
+		if (temp->getVal()) {
+			return this->tr->eval();
+		}
+		else {
+			return this->fl->eval();
+		}
 	}
 	string toString() {
-
+		string temp = "if(" + this->cond->toString() + ") {" + this->tr->toString() + "} else {" + this->fl->toString() + "}";
+		return temp;
 	}
 private:
+	ExpR2* cond;
+	ExpR2* tr;
+	ExpR2* fl;
 };
 
 class AndR2 : public ExpR2 {
 public:
-	AndR2() {
-
+	AndR2(ExpR2* _l, ExpR2* _r) {
+		this->l = _l;
+		this->r = _r;
 	}
 	TypeR2* eval() {
-
+		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval());
+		if (temp_1->getVal()) {
+			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval());
+			if (temp_2->getVal()) {
+				return new BoolR2(true);
+			}
+			else {
+				return new BoolR2(false);
+			}
+		}
+		else {
+			return new BoolR2(false);
+		}
 	}
 	string toString() {
-
+		string temp = "(" + this->l->toString() + " && " + this->r->toString() + ")";
+		return temp;
 	}
 private:
+	ExpR2* l;
+	ExpR2* r;
 };
 
 class OrR2 : public ExpR2 {
 public:
-	OrR2() {
-
+	OrR2(ExpR2* _l, ExpR2* _r) {
+		this->l = _l;
+		this->r = _r;
 	}
 	TypeR2* eval() {
-
+		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval());
+		if (temp_1->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval());
+			if (temp_2->getVal()) {
+				return new BoolR2(true);
+			}
+			else {
+				return new BoolR2(false);
+			}
+		}
 	}
 	string toString() {
-
+		string temp = "(" + this->l->toString() + " || " + this->r->toString() + ")";
+		return temp;
 	}
 private:
+	ExpR2* l;
+	ExpR2* r;
 };
+
 
 class NotR2 : public ExpR2 {
 public:
-	NotR2() {
-
+	NotR2(ExpR2* _arg) {
+		this->arg = _arg;
 	}
 	TypeR2* eval() {
-
+		BoolR2* temp = dynamic_cast<BoolR2*>(this->arg->eval());
+		if (temp->getVal()) {
+			return new BoolR2(false);
+		}
+		else {
+			return new BoolR2(true);
+		}
 	}
 	string toString() {
-
+		string temp = "!(" + arg->toString() + ")";
+		return temp;
 	}
 private:
+	ExpR2* arg;
 };
 
 class FalseR2 : public ExpR2 {
 public:
 	FalseR2() {
-
+		this->value = false;
 	}
 	TypeR2* eval() {
-
+		return new BoolR2(false);
 	}
 	string toString() {
-
+		return "false";
 	}
 private:
+	bool value;
 };
 
 class TrueR2 : public ExpR2 {
 public:
 	TrueR2() {
-
+		this->value = true;
 	}
 	TypeR2* eval() {
-
+		return new BoolR2(true);
 	}
 	string toString() {
-
+		return "true";
 	}
 private:
+	bool value;
 };
 
 class CmpR2 : public ExpR2 {
@@ -215,7 +270,7 @@ public:
 		}
 	}
 	string toString() {
-		string temp = "(< " + this->l->toString() + " " + this->r->toString() + ")";
+		string temp = "(" + this->l->toString() + " < " + this->r->toString() + ")";
 		return temp;
 	}
 private:
@@ -240,7 +295,7 @@ public:
 		}
 	}
 	string toString() {
-		string temp = "(<= " + this->l->toString() + " " + this->r->toString() + ")";
+		string temp = "(" + this->l->toString() + " <= " + this->r->toString() + ")";
 		return temp;
 	}
 private:
@@ -265,7 +320,7 @@ public:
 		}
 	}
 	string toString() {
-		string temp = "(> " + this->l->toString() + " " + this->r->toString() + ")";
+		string temp = "(" + this->l->toString() + " > " + this->r->toString() + ")";
 		return temp;
 	}
 private:
@@ -290,7 +345,7 @@ public:
 		}
 	}
 	string toString() {
-		string temp = "(>= " + this->l->toString() + " " + this->r->toString() + ")";
+		string temp = "(" + this->l->toString() + " >= " + this->r->toString() + ")";
 		return temp;
 	}
 private:
@@ -315,7 +370,7 @@ public:
 		}
 	}
 	string toString() {
-		string temp = "(== " + this->l->toString() + " " + this->r->toString() + ")";
+		string temp = "(" + this->l->toString() + " == " + this->r->toString() + ")";
 		return temp;
 	}
 private:
@@ -325,7 +380,11 @@ private:
 
 
 int main() {
-	ExpR2* program = new GrtrR2(new DoubleR0(new DoubleR0(new NumR0(new IntR2(2)))), new DoubleR0(new NumR0(new IntR2(2))));
+	// ExpR2* program = new NotR2(	new OrR2(	new EqlR2(	new DoubleR0(	new NumR0(	new IntR2(1)	)	), 
+	//														new DoubleR0(	new NumR0(	new IntR2(2)	)	)	), 
+	//											new EqlR2(	new DoubleR0(	new NumR0(	new IntR2(1)	)	), 
+	//														new DoubleR0(	new NumR0(	new IntR2(2)	)	)	)	)	);
+	ExpR2* program = new NotR2(new OrR2(new IfR2(new TrueR2(), new FalseR2(), new TrueR2()), new TrueR2()));
 	TypeR2* result = program->eval();
 	cout << "\n\t" << program->toString() << " = " << result->toString() << "\n\n";
 	system("Pause");
