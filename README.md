@@ -78,16 +78,16 @@ Compiler Written in C++ for Jay to Review
 + Extend your build-interferences pass to construct a move-graph.
 + Extend your color-graph function to incorporate move-biasing with an optional input argument.
 + Update your allocate-registers pass to make use of the move-biasing feature of color-graph.
++ Extend your data types from R1 to R2.
++ Extend your pretty printer from R1 to R2.
++ Write a dozen test R2 programs.
++ Extend your interpreter from R1 to R2.
++ Write type-checker tests for R2.
++ Write a type-checker for R2.
 - 
---> April 19th, 7:28pm <--
+--> April 28th, 10:16pm <--
 - C- 
 - 
-- Extend your data types from R1 to R2.
-- Extend your pretty printer from R1 to R2.
-- Write a dozen test R2 programs.
-- Extend your interpreter from R1 to R2.
-- Write type-checker tests for R2.
-- Write a type-checker for R2.
 - Extend your random generation function from R1 to R2.
 - Write some R2-specific optimizer tests.
 - Extend your optimizer from R1 to R2.
@@ -111,8 +111,8 @@ Compiler Written in C++ for Jay to Review
 - Update your runtime to support printing out booleans, in addition to integers.
 - Update your main-generation pass for boolean-outputting programs.
 - 
-- < Objective >
---> April 30th, 11:59pm <--
+- < New Objective >
+--> May 5th, 11:59pm <--
 - B- 
 - 
 - Extend your compiler to support conditional moves.
