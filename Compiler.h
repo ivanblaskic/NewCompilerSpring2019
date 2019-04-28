@@ -257,9 +257,31 @@
 	66) + update your allocate-registers pass to make use of the move-biasing feature of color-graph
 		- this should be a trivial step of connecting the dots
 
+		  EXTENDING-R0 - TOSTRING(), EVAL(), TYPEC()
+	67) + extend your data types from R1 to R2
+		- recall the definition of R2:
+		- I recommend not making explicit constructors for
+		  binary subtraction, and, or or, but have those be pseudo-ASTs that expand to other forms
+		- for example, in Racket, (define (make-and-ast x y) (make-if-ast x y (make-false-ast)))
+		- this is not required, but will simplify the rest of your compiler
+		- you could do this with not as well and turn some of the comparisons into not’d versions of others,
+		  but I don’t recommend that, because X86-64 supports all of these operations nicely
+		- and and or are specifically useful because their short-circuiting behavior is annoying to implement ow
+	68) + extend your pretty printer from R1 to R2
+		- again, use whichever syntax you think looks nice
+	69) + write a dozen test R2 programs
+		- obviously, these should incorporate the new features
+	70) + extend your interpreter from R1 to R2
+		- there’s nothing very special about this
+	71) + write type-checker tests for R2
+		- these should be programs that fail to type-check
+	72) + write a type-checker for R2 ** figure out let-var portion
+		- you’ll need an environment mapping variables to their types
+		- integrate this into your R2 tests so that every program you’ve written is type-checked before being used
+
 		>> C- <<
 
-		Completed "Task #66 - Successful Register Allocation"
+		Completed "Task #72 - Successful Type-Checker Implementation"
 
 */
 
@@ -4297,19 +4319,74 @@ class ExpR0;
 static int variable_counter_R1 = 0;
 static list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>> var_exp_mapp;
 
+static list<pair<string, bool>> bool_vars;
+static list<pair<string, string>> vars_type_mapp;
+
 enum Operation {Add, Neg, Read, Num};
 
-// Interface class TypeR0
-class TypeR0 {
+class TypeR2 {
 	virtual bool isInt() = 0;
 	virtual bool isBool() = 0;
+	virtual string toString() = 0;
+};
+
+class IntR2 : public TypeR2 {
+public:
+	IntR2(int _value) {
+		this->value = _value;
+	}
+	bool isInt() {
+		return true;
+	}
+	bool isBool() {
+		return false;
+	}
+	string toString() {
+		return to_string(this->value);
+	}
+	int getVal() {
+		return this->value;
+	}
+private:
+	int value;
+};
+
+class BoolR2 : public TypeR2 {
+public:
+	BoolR2(bool _value) {
+		this->value = _value;
+	}
+	bool isBool() {
+		return true;
+	}
+	bool isInt() {
+		return false;
+	}
+	string toString() {
+		if (this->value)
+			return "true";
+		else
+			return "false";
+	}
+	bool getVal() {
+		return this->value;
+	}
+private:
+	bool value;
+};
+
+class ExpR2 {
+public:
+	virtual TypeR2* eval(list<pair<string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
+	virtual string toString() = 0;
+	virtual string typec() = 0;
 };
 
 // Interface class ExpR0
-class ExpR0 {
+class ExpR0 : public ExpR2 {
 public:
 	// interpreter of the tree-like program
-	int virtual eval(list<pair<string, int>> *_info) = 0;
+	virtual TypeR2* eval(list<pair<string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
 	// print the tree in the linear form
 	virtual string toString() = 0;
 	// is the expression var or int - opt - let specifically
@@ -4331,7 +4408,7 @@ public:
 	virtual ExpR0* create_copy() = 0;
 	// Rc0 --> C0 compiler
 	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester,std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) = 0;
-	virtual bool typec(string _need) = 0;
+	virtual string typec() = 0;
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
@@ -4395,8 +4472,8 @@ public:
 		this->value = number_counter;
 		number_counter++;
 	}
-	int eval(list<pair<std::string, int>> *_info) {
-		return this->value;
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		return new IntR2(this->value);
 	}
 	string toString() {
 		return to_string(this->value);
@@ -4435,16 +4512,16 @@ public:
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new IntC0(this->value)));
 		return;
 	}
-	bool typec(string _need) {
-		if ((_need == "any") || (_need == "int")) {
-			return true;
-		}
-		return false;
+	string typec() {
+		return "int";
 	}
 private:
 	int value;
 };
 
+// in future --> change set_value, get_value + rest 
+// it searches through both mappings (var_name) --> (int value) and (var_name) --> (bool value) in case of each sets value, returns IntR2 or BoolR2, returns int or bool & returns "int" or "bool" respectively 
+// static list<pair<string, bool>> bool_vars;
 class VarR0 : public ExpR0 {
 public:
 	VarR0(string _name) {
@@ -4454,12 +4531,31 @@ public:
 		this->name = old_variable->name + "_" + to_string(variable_counter_R1++);
 	}
 	// given the information on value assigned to the variables return the one assigned to this name
-	int eval(list<pair<std::string, int>> *_info) {
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
 		this->info = _info;
+		this->info_bool = _info_bool;
 		std::list<pair<std::string, int>>::iterator it;
-		for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
-			if ((*it).first == this->name) {
-				return (*it).second;
+		for (list<pair<string, string>>::iterator it1 = vars_type_mapp.begin(); it1 != vars_type_mapp.end(); ++it1) {
+			if ((*it1).first == this->name) {
+				if ((*it1).second == "int") {
+					for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
+						if ((*it).first == this->name) {
+							return new IntR2((*it).second);
+						}
+					}
+				}
+				else if ((*it1).second == "bool") {
+					std::list<pair<std::string, bool>>::iterator it2;
+					for (it2 = this->info_bool->begin(); it2 != this->info_bool->end(); ++it2) {
+						if ((*it2).first == this->name) {
+							return new BoolR2((*it2).second);
+						}
+					}
+
+				}
+			}
+			else {
+				cout << "\n\tError Dealing with Variable: " << this->name << "\n\n";
 			}
 		}
 		cout << "\n- error_1: Variable " + this->name + " is not initialized yet - \n";
@@ -4517,8 +4613,14 @@ public:
 	int getValue() {
 		return this->value;
 	}
+	string getValueS() {
+		return this->value_s;
+	}
 	void setValue(int _value) {
 		this->value = _value;
+	}
+	void setValue(string _value_s) {
+		this->value_s = _value_s;
 	}
 	ExpR0* get_me() {
 		return this;
@@ -4540,16 +4642,21 @@ public:
 			return;
 		}
 	}
-	bool typec(string _need) {
-		if ((_need == "any") || (_need == "int")) {
-			return true;
+	string typec() {
+		for (list<pair<string, string>>::iterator it = vars_type_mapp.begin(); it != vars_type_mapp.end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
+			}
 		}
-		return false;
+		cout << "\n\tNo Mapping for variable: " << this->name << "Type-Checker.\n\n";
+		return "error";
 	}
 private:
 	int value;
+	string value_s;
 	string name;
 	list<pair<string, int>> *info;
+	list<pair<std::string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
@@ -4559,9 +4666,14 @@ public:
 		this->lexp = _lexp;
 		this->rexp = _rexp;
 	}
-	int eval(list<pair<std::string, int>> *_info) {
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
 		this->info = _info;
-		return (this->lexp->eval(this->info) + this->rexp->eval(this->info));
+		this->info_bool = _info_bool;
+		TypeR2 *temp_l = this->lexp->eval(this->info, this->info_bool);
+		IntR2 *temp_l_int = dynamic_cast<IntR2*>(temp_l);
+		TypeR2 *temp_r = this->rexp->eval(this->info, this->info_bool);
+		IntR2 *temp_r_int = dynamic_cast<IntR2*>(temp_r);
+		return new IntR2(temp_l_int->getVal() + temp_r_int->getVal());
 	}
 	string toString() {
 		return "(+ " + this->lexp->toString() + " " + this->rexp->toString() + ")";
@@ -4691,25 +4803,21 @@ public:
 		cout << "Error in econ for addition for: " << _name << "\n\n";
 		return;
 	}
-	bool typec(string _need) {
-		if ((this->lexp->typec("int")) && (this->rexp->typec("int"))) {
-			if ((_need == "any") || (_need == "int")) {
-				return true;
-			}
-			else {
-				cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-				system("Pause");
-				system("Clear");
-				return false;
-			}
+	string typec() {
+		if ((this->lexp->typec()=="int") && (this->rexp->typec()=="int")) {
+			return "int";
 		}
 		else {
-			return false;
+			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+			system("Pause");
+			system("Clear");
+			return "error";
 		}
 	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
+	list<pair<string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
@@ -4718,9 +4826,12 @@ public:
 	NegR0(ExpR0 *_exp) {
 		this->exp = _exp;
 	}
-	int eval(list<pair<std::string, int>> *_info) {
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
 		this->info = _info;
-		return -(this->exp->eval(this->info));
+		this->info_bool = _info_bool;
+		TypeR2* temp_val = this->exp->eval(this->info, this->info_bool);
+		IntR2 *temp = dynamic_cast<IntR2*>(temp_val);
+		return new IntR2(-(temp->getVal()));
 	}
 	string toString() {
 		return "(- " + this->exp->toString() + ")";
@@ -4807,58 +4918,79 @@ public:
 		cout << "Error in econ for negation for: " << _name << "\n\n";
 		return;
 	}
-	bool typec(string _need) {
-		if (this->exp->typec("int")) {
-			if ((_need == "any") || (_need == "int")) {
-				return true;
-			}
-			else {
-				cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-				system("Pause");
-				system("Clear");
-				return false;
-			}
+	string typec() {
+		if (this->exp->typec() == "int") {
+			return "int";
 		}
 		else {
-			return false;
+			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
+			system("Pause");
+			system("Clear");
+			return "error";
 		}
 	}
 private:
 	ExpR0 *exp;
 	list<pair<string, int>> *info;
+	list<pair<string, bool>> *info_bool;
 	int value;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
 // kad je variabla ista koristena tada brises u novom environmentu staru vrijednost
 // testiraj kad je variabla x_exp
-class LetR0 : public ExpR0 {
+class LetR0 : public ExpR2 {
 public:
-	LetR0(VarR0 *_variable, ExpR0 *_x_exp, ExpR0 *_b_exp) {
+	LetR0(VarR0 *_variable, ExpR2 *_x_exp, ExpR2 *_b_exp) {
 		this->variable = _variable;
-		this->x_exp = _x_exp;
-		this->b_exp = _b_exp;
+		this->x_exp1 = _x_exp;
+		this->b_exp1 = _b_exp;
+
 	}
-	int eval(list<pair<std::string, int>> *_info) {
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
 		this->info = _info;
-		int var_value = this->x_exp->eval(this->info);
-		list<pair<string, int>> *new_info = new list<pair<string, int>>();
-		*new_info = *info;
-		// in case variable with same name exists it's overwritten
-		std::list<pair<std::string, int>>::iterator it;
-		for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
-			if ((*it).first == this->variable->toString()) {
-				(*it).second = var_value;
-				return b_exp->eval(new_info);
+		this->info_bool = _info_bool;
+		for (list<pair<string, string>>::iterator it1 = vars_type_mapp.begin(); it1 != vars_type_mapp.end(); ++it1) {
+			if ((*it1).first == variable->toString()) {
+				if ((*it1).second == "int") {
+					IntR2 *temp_var_value = dynamic_cast<IntR2*>(this->x_exp1->eval(this->info, this->info_bool));
+					list<pair<string, int>> *new_info = new list<pair<string, int>>();
+					*new_info = *info;
+					// in case variable with same name exists it's overwritten
+					std::list<pair<std::string, int>>::iterator it;
+					for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
+						if ((*it).first == this->variable->toString()) {
+							(*it).second = temp_var_value->getVal();
+							return b_exp1->eval(new_info, _info_bool);
+						}
+					}
+					// o.w. new variable is stored and same list is used furthermore
+					(*this->info).push_back(std::make_pair(this->variable->toString(), temp_var_value->getVal()));
+					return b_exp1->eval(info, _info_bool);
+				}
+				else if ((*it1).second == "bool") {
+					BoolR2 *temp_var_value = dynamic_cast<BoolR2*>(this->x_exp1->eval(this->info, this->info_bool));
+					list<pair<string, bool>> *new_info = new list<pair<string, bool>>();
+					*new_info = *info_bool;
+					// in case variable with same name exists it's overwritten
+					std::list<pair<std::string, bool>>::iterator it;
+					for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
+						if ((*it).first == this->variable->toString()) {
+							(*it).second = temp_var_value->getVal();
+							return b_exp1->eval(_info, new_info);
+						}
+					}
+					// o.w. new variable is stored and same list is used furthermore
+					(*this->info_bool).push_back(std::make_pair(this->variable->toString(), temp_var_value->getVal()));
+					return b_exp1->eval(info, info_bool);
+				}
 			}
 		}
-		// o.w. new variable is stored and same list is used furthermore
-		(*this->info).push_back(std::make_pair(this->variable->toString(), var_value));
-		return b_exp->eval(info);
 	}
 	string toString() {
-		return "Let[(" + this->variable->toString() + " " + this->x_exp->toString() + ") " + this->b_exp->toString() + "]";
+		return "Let[(" + this->variable->toString() + " " + this->x_exp1->toString() + ") " + this->b_exp1->toString() + "]";
 	}
+	/*
 	bool simpleExp() {
 		return false;
 	}
@@ -4942,28 +5074,40 @@ public:
 		b_exp->econ(_tail_tester, _lbl_tester, " ", true);
 		return;
 	}
-	bool typec(string _need) {
-		if (!(this->x_exp->typec("int"))) {
-			return false;
+	*/
+
+	string typec() {
+		if (this->x_exp1->typec() == "int") {
+			vars_type_mapp.emplace_back(make_pair(variable->toString(), "int"));
+			if (this->b_exp1->typec() == "int") {
+				return "int";
+			}
+			if (this->b_exp1->typec() == "bool") {
+				return "bool";
+			}
 		}
-		else if (!(this->b_exp->typec("int"))) {
-			return false;
-		}
-		else if ((_need == "any") || (_need == "int")) {
-			return true;
+		else if (this->x_exp1->typec() == "bool") {
+			vars_type_mapp.emplace_back(make_pair(variable->toString(), "bool"));
+			if (this->b_exp1->typec() == "bool") {
+				return "bool";
+			}
+			if (this->b_exp1->typec() == "int") {
+				return "int";
+			}
 		}
 		else {
 			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
 			system("Pause");
 			system("Clear");
-			return false;
+			return "error";
 		}
-
 	}
 private:
 	VarR0 *variable;
+	ExpR2 *x_exp1, *b_exp1;
 	ExpR0 *x_exp, *b_exp;
 	list<pair<string, int>> *info;
+	list<pair<std::string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp,*new_mapp;
 };
 
@@ -4971,15 +5115,15 @@ class ReadR0 : public ExpR0 {
 public:
 	ReadR0() {
 	}
-	int eval(list<pair<std::string, int>> *_info) {
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
 		if (mode == Interactive) {
 			cout << "Input the value for read: ";
 			cin >> this->value;
-			return this->value;
+			return new IntR2(this->value);
 		}
 		if (mode == Automated) {
 			this->value = ((rand() % 2049) - 1024);
-			return this->value;
+			return new IntR2(this->value);
 		}
 	}
 	string toString() {
@@ -5025,44 +5169,413 @@ public:
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new ReadC0()));
 		return;
 	}
-	bool typec(string _need) {
-		if ((_need == "any") || (_need == "int")) {
-			return true;
-		}
-		else {
-			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-			system("Pause");
-			system("Clear");
-			return false;
-		}
+	string typec() {
+		return "int";
 	}
 private:
 	int value;
 };
 
-class BoolR0 : public TypeR0 {
+class IfR2 : public ExpR2 {
 public:
-	bool isInt() {
-		return false;
+	IfR2(ExpR2* _cond, ExpR2* _tr, ExpR2* _fl) {
+		cond = _cond;
+		tr = _tr;
+		fl = _fl;
 	}
-	bool isBool() {
-		return true;
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		BoolR2 *temp = dynamic_cast<BoolR2*>(this->cond->eval(_info, _info_bool));
+		if (temp->getVal()) {
+			return this->tr->eval(_info, _info_bool);
+		}
+		else {
+			return this->fl->eval(_info, _info_bool);
+		}
+	}
+	string toString() {
+		string temp = "if(" + this->cond->toString() + ") {" + this->tr->toString() + "} else {" + this->fl->toString() + "}";
+		return temp;
+	}
+	string typec() {
+		if (cond->typec() == "bool") {
+			if ((tr->typec() == "int") && (fl->typec() == "int")) {
+				return "int";
+			}
+			if ((tr->typec() == "bool") && (fl->typec() == "bool")) {
+				return "bool";
+			}
+			else {
+				cout << "\n\tTypes are not matching - Error!\n\n";
+				return "error";
+			}
+		}
+		else {
+			cout << "\n\tType of condition is not bool - Error!\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR2* cond;
+	ExpR2* tr;
+	ExpR2* fl;
+};
+
+class AndR2 : public ExpR2 {
+public:
+	AndR2(ExpR2* _l, ExpR2* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval(_info, _info_bool));
+		if (temp_1->getVal()) {
+			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval(_info, _info_bool));
+			if (temp_2->getVal()) {
+				return new BoolR2(true);
+			}
+			else {
+				return new BoolR2(false);
+			}
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " && " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "bool") && (r->typec() == "bool")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not bool in AND operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR2* l;
+	ExpR2* r;
+};
+
+class OrR2 : public ExpR2 {
+public:
+	OrR2(ExpR2* _l, ExpR2* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval(_info, _info_bool));
+		if (temp_1->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval(_info, _info_bool));
+			if (temp_2->getVal()) {
+				return new BoolR2(true);
+			}
+			else {
+				return new BoolR2(false);
+			}
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " || " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "bool") && (r->typec() == "bool")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not bool in OR operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR2* l;
+	ExpR2* r;
+};
+
+class NotR2 : public ExpR2 {
+public:
+	NotR2(ExpR2* _arg) {
+		this->arg = _arg;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		BoolR2* temp = dynamic_cast<BoolR2*>(this->arg->eval(_info, _info_bool));
+		if (temp->getVal()) {
+			return new BoolR2(false);
+		}
+		else {
+			return new BoolR2(true);
+		}
+	}
+	string toString() {
+		string temp = "!(" + arg->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if (arg->typec()=="bool") {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not bool in NOT operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR2* arg;
+};
+
+class FalseR2 : public ExpR2 {
+public:
+	FalseR2() {
+		this->value = false;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		return new BoolR2(false);
+	}
+	string toString() {
+		return "false";
+	}
+	string typec() {
+		return "bool";
 	}
 private:
 	bool value;
 };
 
+class TrueR2 : public ExpR2 {
+public:
+	TrueR2() {
+		this->value = true;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		return new BoolR2(true);
+	}
+	string toString() {
+		return "true";
+	}
+	string typec() {
+		return "bool";
+	}
+private:
+	bool value;
+};
 
-//	ExpR0* AND(ExpR0* l, ExpR0* r) { return new IfR0(l, r, new FalseR0());}
-//	ExpR0* OR(ExpR0* l, ExpR0* r) { return new IfR0(l, new TrueR0(), r);}
-//	ExpR0* T() { return new TrueR0(); }
-//	ExpR0* F() { return new FalseR0(); }
-//  ExpR0* IF(ExpR0* cond, ExpR0* then, ExpR0* else) { return new IfR0(cond, then, else); }
-//  ExpR0* CMP(ExpR0* l, ExpR0* r) { return new CmpR0(l, r); }
-//  ExpR0* NOT(ExpR0* e) { return new NotR0(e); }
+class CmpR2 : public ExpR2 {
+	virtual TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
+	virtual string toString() = 0;
+	virtual string typec() = 0;
+};
 
+class LessR2 : public CmpR2 {
+public:
+	LessR2(ExpR0* _l, ExpR0* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
+		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
+		if (temp_l->getVal() < temp_r->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " < " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "int") && (r->typec() == "int")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR0* l;
+	ExpR0* r;
+};
 
-ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be) {
+class LseqR2 : public CmpR2 {
+public:
+	LseqR2(ExpR0* _l, ExpR0* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
+		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
+		if (temp_l->getVal() <= temp_r->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " <= " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "int") && (r->typec() == "int")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR0* l;
+	ExpR0* r;
+};
+
+class GrtrR2 : public CmpR2 {
+public:
+	GrtrR2(ExpR0* _l, ExpR0* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
+		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
+		if (temp_l->getVal() > temp_r->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " > " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "int") && (r->typec() == "int")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR0* l;
+	ExpR0* r;
+};
+
+class GreqR2 : public CmpR2 {
+public:
+	GreqR2(ExpR0* _l, ExpR0* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
+		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
+		if (temp_l->getVal() >= temp_r->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " >= " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "int") && (r->typec() == "int")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR0* l;
+	ExpR0* r;
+};
+
+class EqlR2 : public CmpR2 {
+public:
+	EqlR2(ExpR0* _l, ExpR0* _r) {
+		this->l = _l;
+		this->r = _r;
+	}
+	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
+		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
+		if (temp_l->getVal() == temp_r->getVal()) {
+			return new BoolR2(true);
+		}
+		else {
+			return new BoolR2(false);
+		}
+	}
+	string toString() {
+		string temp = "(" + this->l->toString() + " == " + this->r->toString() + ")";
+		return temp;
+	}
+	string typec() {
+		if ((l->typec() == "int") && (r->typec() == "int")) {
+			return "bool";
+		}
+		else {
+			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
+			return "error";
+		}
+	}
+private:
+	ExpR0* l;
+	ExpR0* r;
+};
+
+ExpR2* AND(ExpR2* l, ExpR2* r) { 
+	return new IfR2(l, r, new FalseR2());
+}
+ExpR2* OR(ExpR2* l, ExpR2* r) { 
+	return new IfR2(l, new TrueR2(), r);
+}
+ExpR2* T() { 
+	return new TrueR2(); 
+}
+ExpR2* F() { 
+	return new FalseR2(); 
+}
+ExpR2* IF(ExpR2* cond, ExpR2* then, ExpR2* ow) { 
+	return new IfR2(cond, then, ow); 
+}
+ExpR2* NOT(ExpR2* e) { 
+	return new NotR2(e); 
+}
+ExpR2* LS(ExpR0* l, ExpR0* r) {
+	return new LessR2(l, r);
+}
+ExpR2* GR(ExpR0* l, ExpR0* r) {
+	return new GrtrR2(l, r);
+}
+ExpR2* LE(ExpR0* l, ExpR0* r) {
+	return new LseqR2(l, r);
+}
+ExpR2* GE(ExpR0* l, ExpR0* r) {
+	return new GreqR2(l, r);
+}
+ExpR2* EQ(ExpR0* l, ExpR0* r) {
+	return new EqlR2(l, r);
+}
+
+ExpR2* L(VarR0* v, ExpR2* ve, ExpR2* be) {
 	return new LetR0(v, ve, be);
 }
 VarR0* V(string x) {
@@ -5092,16 +5605,31 @@ ExpR0* I(int _value) {
 
 class ProgR0 {
 public:
-	ProgR0(list<pair<string, int>> *_info, ExpR0 *_code) {
+	ProgR0(list<pair<string, int>> *_info, ExpR2 *_code) {
 //		srand(time(NULL));
-		code = _code;
+		code1 = _code;
 		info = _info;
 	}
-	int intrp() {
-		return code->eval(this->info);
+	string intrp() {
+		if (this->typec() == "int") {
+			IntR2 *temp = dynamic_cast<IntR2*>(code1->eval(this->info, new list<pair<string,bool>>()));
+			return to_string(temp->getVal());
+		}
+		else if (this->typec() == "bool") {
+			BoolR2 *temp = dynamic_cast<BoolR2*>(code1->eval(this->info, new list<pair<string,bool>>()));
+			if (temp->getVal() == true) {
+				return "true";
+			}
+			else {
+				return "false";
+			}
+		}
+		else {
+			return "-result has error type-";
+		}
 	}
 	string prnt() {
-		return code->toString();
+		return code1->toString();
 	}
 	ExpR0* optmz(list<pair<std::string, ExpR0*>> *_info) {
 		return code->opt(_info);
@@ -5128,7 +5656,7 @@ public:
 			}
 			result_holder = L(V(it->first->toString()), it->second->create_copy(), result_holder);
 		}
-		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>());
+		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>(), new list<pair<string,bool>>());
 		return result_holder;
 	}
 	void econ() {
@@ -5158,16 +5686,20 @@ public:
 
 }
 	string typec() {
-		if (code->typec("any") == false) {
-			return "Error";
+		if (code1->typec() == "int") {
+			return "int";
+		}
+		else if (code1->typec() == "bool") {
+			return "bool";
 		}
 		else {
-			return "Success";
+			return "error";
 		}
 	}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;
+	ExpR2 *code1;
 	ExpR0 *result_holder;
 	bool init = false;
 };

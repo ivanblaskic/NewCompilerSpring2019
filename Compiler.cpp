@@ -1,6 +1,5 @@
 #include "Compiler.h"
 
-
 void print_variables_x0() {
 	cout << "\nVariables:\n";
 	cout << "\tName\tValue\n";
@@ -107,7 +106,11 @@ int main() {
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 		// let ([x 5] [+(L [(x 6) x]) (x)]) --> add(let ([x 5] [+(L [(x 6) x]) (x)]), let([x 2] [+ (read) (x)]))
 		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
-		ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),S(V("x"),I(2))));
+		//ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),S(V("x"),I(2))));
+		// if ((< (let [x 5] x+2) (8)) (Int (1)) (Int (0)))
+		//ExpR2 *te = IF(LS(L(V("x"), I(5), A(V("x"),I(2))),I(8)),(I(1)),I(0));
+		// if ((let (x true) (x)) (Int (1)) (Int (0)))
+		ExpR2 *te = IF(L(V("x"), T(), V("x")), I(0), I(1));
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
@@ -118,17 +121,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
 			
 		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
-
-		if (tp->typec() == "Error") {
-			cout << "\n\tError found when type checking.\n\n";
-			system("Pause");
-			return -1;
-		}
-		else {
-			cout << "\n\tType-check didn't find any errors.\n\n";
-			system("Pause");
-			system("Cls");
-		}
 
 		cout << tp->prnt() << " = " << tp->intrp();
 		//cout << result;
