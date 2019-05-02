@@ -2,22 +2,33 @@
 getValueFromASM proc
 begin:	push rbp
 mov rbp, rsp
-add rsp, 4
+push r12
+push r13
+push r14
+push r15
+add rsp, 0
 jmp body
+pop r15
+pop r14
+pop r13
+pop r12
 
-body:	call function_name
-mov [rbp+3], rax
-mov rax, [rbp+3]
-mov [rbp+2], rax
-mov [rbp+1], 5
-mov rax, [rbp+3]
-add [rbp+1], rax
-mov rax, [rbp+1]
-mov [rbp+0], rax
-mov rax, [rbp+0]
+body:	mov rax, 2
+mov rax, 2
+add rax, 2
+mov rax, rax
+mov rbx, 5
+mov rbx, 6
+mov rbx, 6
+mov rcx, 5
+add rcx, rbx
+mov rcx, rcx
+mov rax, rax
+add rax, rcx
+mov rax, rax
 jmp end
 
-end:	sub rsp, 4
+end:	sub rsp, 0
 pop rbp
 ret
 

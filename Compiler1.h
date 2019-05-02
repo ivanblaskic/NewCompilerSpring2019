@@ -1,9 +1,13 @@
-#pragma once
+ï»¿#pragma once
 
 // JAY WISDOM: Only evaluate and consider saving computational time when it has saving human time as an end point
 // 54:00
 
 // Question for Jay: After Color is assigned 
+//		Move to don't have colors neighboors or just to priority queue is fine?
+//		What registers I should not use?
+//		Check if using right callee-saved registers.
+//		Check what does he think about problem with 48-50.
 
 // Steps taken and to be taken while building compilers
 /*
@@ -116,7 +120,7 @@
 		- ensure that every test program behaves the same before and after the uniquify pass by using the R1 interpreter
 	30) 1/6 write a half-dozen tests for resolve-complex that predict its output
 		- write a half-dozen tests for resolve-complex that predict its output
-		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
+		- work through the complicated examples and especially ensure that you donï¿½t introduce aliases unnecessarily
 	31)	+ implement the resolve-complex pass for R1 programs
 		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions 
 		- we can express this as a new language
@@ -141,11 +145,11 @@
 		  and stores them for later passes in the auxiliary field of C0 programs
 	38)	+ connect uncover-locals to your test suite
 		- ensure that every test program behaves the same before and after uncover-locals by using the C0 interpter 
-		- this is trivial because uncover-locals shouldn’t effect the behavior of programs 
-		- you’re just doing this to make sure you call it and to make you didn’t accidentally change anything important 
+		- this is trivial because uncover-locals shouldnï¿½t effect the behavior of programs 
+		- youï¿½re just doing this to make sure you call it and to make you didnï¿½t accidentally change anything important 
 		  during this pass
 	39) 1/6 write a half-dozen tests for select-instr that predict its output
-		- you’ll want to make sure that you maintain the correct order and select the write assembly instructions
+		- youï¿½ll want to make sure that you maintain the correct order and select the write assembly instructions
 	40) + implement the select-instr pass for C0 programs
 		- this pass takes C0 programs and returns X0 programs 
 		- it should preserve the set of variables used in the program
@@ -153,7 +157,7 @@
 	41) + connect select-instr to your test suite
 		- ensure that every test program behaves the same before and after select-instr by using the X0 interpreter
 	42) + write a few tests for assign-homes that predict its output
-		- you’ll want to make sure that the output program contains no variables 
+		- youï¿½ll want to make sure that the output program contains no variables 
 		  and that variables are assigned homes consistently
 	43) + implement the assign-homes pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which do not mention variables
@@ -163,7 +167,7 @@
 		- ensure that every test program behaves the same before and after assign-homes by using the X0 interpreter 
 		- you may want to also include a check that guarantees the result contains no variable references
 	45) 1/6 write a half-dozen tests for patch-instructions that predict its output
-		- you’ll want to make sure memory references are legal
+		- youï¿½ll want to make sure memory references are legal
 	46) + implement the patch-instructions pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which mention memory 
 		  either zero or one times per instruction
@@ -182,24 +186,24 @@
 	50) ? connect your test suite to your system assembler and language runtime
 		- close the final knot and get an actual compiler by having your final X0 programs 
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime 
-		- you finally have a working compiler! Aren’t you proud? 
+		- you finally have a working compiler! Arenï¿½t you proud? 
 
 	SKIPPED 48-50 with 48 & 49 being partially done and commented out in the .cpp and .asm file that has the program stored in it is named ASMFunction.asm
 
 		  UNCOVER-LIVE()
 	51) + write a dozen tests for uncover-live that predict its output
-		- I don’t remember using examples from real programs, because they are likely to be too complicated
+		- I donï¿½t remember using examples from real programs, because they are likely to be too complicated
 		- instead, use simple ones that you come up with by hand
 	52) + implement the uncover-live pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs 
-		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction 
+		  where the blockï¿½s auxiliary field contains a list of live-after sets corresponds to each instruction 
 		- make sure that you add registers to the live sets, not just variables
 
 		  BUILD-INTERFERENCES()
 	53) + Write a dozen tests for build-interferences that predict its output
 		- these should be the same programs you tested uncover-live with
 	54) + implement the build-interferences pass for X0 programs
-		- don’t go overboard with finding and using a graph library for your language 
+		- donï¿½t go overboard with finding and using a graph library for your language 
 		- these are really simple graphs, relax
 
 		  COLOR-GRAPH()
@@ -252,31 +256,9 @@
 	66) + update your allocate-registers pass to make use of the move-biasing feature of color-graph
 		- this should be a trivial step of connecting the dots
 
-		  EXTENDING-R0 - TOSTRING(), EVAL(), TYPEC()
-	67) + extend your data types from R1 to R2
-		- recall the definition of R2:
-		- I recommend not making explicit constructors for
-		  binary subtraction, and, or or, but have those be pseudo-ASTs that expand to other forms
-		- for example, in Racket, (define (make-and-ast x y) (make-if-ast x y (make-false-ast)))
-		- this is not required, but will simplify the rest of your compiler
-		- you could do this with not as well and turn some of the comparisons into not’d versions of others,
-		  but I don’t recommend that, because X86-64 supports all of these operations nicely
-		- and and or are specifically useful because their short-circuiting behavior is annoying to implement ow
-	68) + extend your pretty printer from R1 to R2
-		- again, use whichever syntax you think looks nice
-	69) + write a dozen test R2 programs
-		- obviously, these should incorporate the new features
-	70) + extend your interpreter from R1 to R2
-		- there’s nothing very special about this
-	71) + write type-checker tests for R2
-		- these should be programs that fail to type-check
-	72) + write a type-checker for R2 ** figure out let-var portion
-		- you’ll need an environment mapping variables to their types
-		- integrate this into your R2 tests so that every program you’ve written is type-checked before being used
-
 		>> C- <<
 
-		Completed "Task #72 - Successful Type-Checker Implementation"
+		Completed "Task #66 - Successful Register Allocation"
 
 */
 
@@ -314,7 +296,7 @@
 /*
 	30) ! write a half-dozen tests for resolve-complex that predict its output
 		- write a half-dozen tests for resolve-complex that predict its output
-		- work through the complicated examples and especially ensure that you don’t introduce aliases unnecessarily
+		- work through the complicated examples and especially ensure that you donï¿½t introduce aliases unnecessarily
 	31)	! implement the resolve-complex pass for R1 programs
 		- this accepts R1 programs and returns new R1 programs that do not use complex expressions in argument positions
 		- we can express this as a new language
@@ -430,7 +412,7 @@ using namespace std;
 		- W: vertices (G) - priority queue - where priority is a size of saturation 
 			- while W is not empty 
 				- select vertex from W where sat(vertex) is maximum
-				- find the lowest color that is not in {color(u)|(u) € adj(vertex)}
+				- find the lowest color that is not in {color(u)|(u) ï¿½ adj(vertex)}
 				* colors are numbers now and will eventually be registers
 				- color(vertex) <-- c	*** rather than finding the lowest color
 										*** look at the the move graph - who am I related to in regards to moving
@@ -581,18 +563,18 @@ using namespace std;
 
 		* UNCOVER-LIVE()
 	51) + write a dozen tests for uncover-live that predict its output
-		- I don’t remember using examples from real programs, because they are likely to be too complicated
+		- I donï¿½t remember using examples from real programs, because they are likely to be too complicated
 		- instead, use simple ones that you come up with by hand
 	52) + implement the uncover-live pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs
-		  where the block’s auxiliary field contains a list of live-after sets corresponds to each instruction
+		  where the blockï¿½s auxiliary field contains a list of live-after sets corresponds to each instruction
 		- make sure that you add registers to the live sets, not just variables
 
 		** BUILD-INTERFERENCES()
 	53) + Write a dozen tests for build-interferences that predict its output
 		- these should be the same programs you tested uncover-live with
 	54) + implement the build-interferences pass for X0 programs
-		- don’t go overboard with finding and using a graph library for your language
+		- donï¿½t go overboard with finding and using a graph library for your language
 		- these are really simple graphs, relax
 
 		** which variables are active at the same time - they cannot use the same register
@@ -922,7 +904,7 @@ BETTER>		Iterating through the instructions rather than the variables
 	50) ! connect your test suite to your system assembler and language runtime
 		- close the final knot and get an actual compiler by having your final X0 programs
 		  (that come out of main-generation) sent to the system assembler and linked with your language runtime
-		- you finally have a working compiler! Aren’t you proud?
+		- you finally have a working compiler! Arenï¿½t you proud?
 
 		Language Runtime for printing out the functions
 
@@ -1024,7 +1006,7 @@ BETTER>		Iterating through the instructions rather than the variables
 		- automatically compare results of assembled program and your interpreter
 
 	42) 1/6 write a few tests for assign-homes that predict its output
-		- you’ll want to make sure that the output program contains no variables
+		- youï¿½ll want to make sure that the output program contains no variables
 		  and that variables are assigned homes consistently
 	43) + implement the assign-homes pass for X0 programs
 		- this pass takes X0 programs and returns new X0 programs which do not mention variables
@@ -2358,7 +2340,7 @@ public:
 				list<string> temp_list = *it;
 				first = true;
 				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
-					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+					if (found) {																				// if found then do for every V ï¿½ of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != "rax") {
 							string input = to_string(line_number);
@@ -2679,7 +2661,7 @@ public:
 				list<string> temp_list = *it;
 				first = true;
 				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
-					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+					if (found) {																				// if found then do for every V ï¿½ of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if ((temp_string != this->dest->getName()) && (temp_string != this->src->getName())) {
 							string input = to_string(line_number);
@@ -2903,7 +2885,7 @@ public:
 				list<string> temp_list = *it;
 				first = true;
 				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
-					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+					if (found) {																				// if found then do for every V ï¿½ of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != this->dest->getName()) {
 							string input = to_string(line_number);
@@ -3130,7 +3112,7 @@ public:
 				list<string> temp_list = *it;
 				first = true;
 				for (std::list<string>::iterator it1 = temp_list.begin(); it1 != temp_list.end(); ++it1) {
-					if (found) {																				// if found then do for every V € of LiveAfter(k) add (dest,V) to mapping - iterating
+					if (found) {																				// if found then do for every V ï¿½ of LiveAfter(k) add (dest,V) to mapping - iterating
 						string temp_string = *it1;
 						if (temp_string != this->dest->getName()) {
 							string input = to_string(line_number);
@@ -4253,129 +4235,6 @@ private:
 //				-	 -  -----			-------	----- -   - -----
 // -----------------------------------------------------------------------------------------------------------
 
-// Class notes --> Adding Control Flow {Changes Everything} + Need of Type Checker {2 types}
-/*
-
-	R1 :=
-		p	:=  program info e
-		e	:=  (+ e e) | (- e) | number | var | read | (let x = xe in be) {where x --> var}
-
-	R2 :=
-		e	:=	.... | true | false | (and e e) | (or e e) | (not e) | (cmp e e) | (if e e e) | (sub e e)
-		cmp	:=	== | < | <= | >= | >
-		ty	:=	S64 {signed integer} | Bool
-
-	Cijeli program se koristi rekurzivnim pozivima -
-		potreban je type-checker kao komponenta expressiona koji ce ici kroz svaki poziv
-			te provjeravati je li vrijednost koja se vraca ona koja se ocekuje.
-
-	Od (+, -, number, var, read, let, sub, var) ocekuje se broj/number.
-	Od (cmp, not, and, or, true, false) ocekuje se bool/true-false.
-	Od (if) ocekuje se bilo sta ja mislim - provjeri u notes.
-
-	Zanimljivo je kako onda implementirati interpreter/eval() sada kada se ne ocekuje vise int
-		pretpostavljam da mi znamo je za svaku funkciju sto se vraca i za svaku sto se ocekuje kao ulaz
-			ali sto sa if-om? sto on vraca? ili moze samo vratiti broj?
-
-
-
-	let x = 5 in
-		let y = 4 in
-			if (> x y) (x) (y)
-
-	let x = 5 in
-		let y = 4 in
-			if (true) (if (cmp x y) (x) (y))
-
-	class BoolR2 : public ExpR0, TypeR2 {
-	public:
-		BoolR2(BoolR2* _bool_type) {
-			this->bool_type = _bool_type;
-		}
-	private:
-		BoolR2* bool_type;
-	};
-
-	class TrueR2 : public BoolR2 {
-	public:
-		TrueR2() {}
-	private:
-		bool is_true = true;
-	};
-
-	class TypeR2 {
-	public:
-		virtual TypeR2* type_checker(ExpR0* check_exp) = 0;
-	};
-
-	class NumR0 : public ExpR0, TypeR2 {
-
-	};
-
-	interp	sigma	true		=		true
-					false		=		false
-					and (eL eR)	= if (eL eR false)
-					or (eL eR)	= if (eL true eR)
-					not (eA)	= if (interp sigma ea) (false) else (true)
-
-					if (eCond eT eF) = if (interp{I} sigma eCond) (I sigma eT) else (I sigma eF)
-					comp (eL eR)	 = (I sigma eL) cmp (I sigma eR) {depending on cmp sign given}
-									   * (1 <= true) --> undefined behavior {UB}
-											* implement type-checker
-												* identifies {UB} and refuses to compile program
-
-	* macros: compiler API - allows you to modify things in compiler
-
-	* different if then C: there you are true if you are != 0 and false if == 0
-		x = y || z --> x can be 42 or any number doesn't have to be true
-		No type systems in C but just rules for manipulating bits
-
-
-
-
-	Type-Checker {typec}:	e	-->	error - detect it and notify properly
-
-	Gamma: mapping from variables to their types
-
-	--> Gamma proves that expression e has type t
-
-	Gamma-t	e	:	t
-	Gamma-t x	:	Gamma(x)	--> look inside our type environment what the variable is
-
-	if you call type-checker and you give it type environment it will return that type
-
-	Gamma-t n	:	S64
-	Gamma-t t/f	:	Bool
-
-	Gamma proves that an addition of eL and eR has type S64
-		if gamma proves that eL has type 64 and gamma proves that eR has type 64
-			--> recursive call to the type checker with the same gamma and eL
-				--> then look at the code
-
-	** longer version
-	translated to code --> typec gamma (+ eL eR) =
-								tyL = typec gamma (eL)
-								tyR	= typec gamma (eR)
-								if tyL != S64	error
-								if tyr != S64	error
-							S64
-
-	*** shorter version
-	{Gamma-t	(+ eL eR)			: S64}		if {Gamma-t		(eL) : S64  &&  Gamma-t		(eR) : S64}
-	{Gamma-t	(- eL)				: S64}		if {Gamma-t		(eL) : S64}
-	{Gamma-t	(cmp eL eR)			: Bool}		if {Gamma-t		(eL) : S64	&&	Gamma-t		(eR) : S64}
-	{Gamma-t	(not eA)			: Bool}		if {Gamma-t		(eA) : Bool}
-	{Gamma-t	(if eC eT eF)		: tyR}		if {Gamma-t		(eC) : Bool	&&  Gamma-t (eT,eF) : tyR}
-	{Gamma-t	(let x = xe in be)	: tyB}		if {Gamma-t		(xe) : tyX	&&  Gamma[x-->tyX] <-- be : tyB}
-
-	-->	notice that {<--} stands for gamma extended with the mapping x-->tyX then be has to be typed tyB
-
-	Continue:
-		- next class link --> https://echo360.org/lesson/G_79ff9958-bdaf-488c-ad67-efc8c8df744d_048d767f-297d-4866-b7b5-56943761d03a_2019-02-12T11:00:00.000_2019-02-12T12:20:00.000/classroom#sortDirection=desc
-		- 7.pdf in CC file on Desktop
-
-*/
-
 // Resolve-complex() + econ() passes formulated
 /*
 
@@ -4410,24 +4269,6 @@ private:
 
 // R0-R1: steps 1-17 + 27-35 --> compiled R0 into C0
 
-/*
-
-	R0 :=
-		p	:=	program info e
-		eR0	:=	(+ e e) | (- e) | read | number | 
-
-	R1	:=	
-		eR1	:=	eR0 | arg | (let x = xe in be)
-		arg :=	number | var
-
-	R2 :=
-		p	:=	program info e
-		e	:=	eR1 | true | false | (and e e) | (or e e) | (not e) | (- e e) | (cmp e e) | (if e e e)
-		cmp	:=	== | < | <= | >= | >
-		ty	:=	S64 {signed integer} | Bool
-
-*/
-
 enum Mode {Interactive,Automated};
 static Mode mode = Interactive;
 
@@ -4437,96 +4278,42 @@ class ExpR0;
 static int variable_counter_R1 = 0;
 static list<pair<shared_ptr<VarR0>, shared_ptr<ExpR0>>> var_exp_mapp;
 
-static list<pair<string, bool>> bool_vars;
-static list<pair<string, string>> vars_type_mapp;
-
 enum Operation {Add, Neg, Read, Num};
 
-class TypeR2 {
-	virtual bool isInt() = 0;
-	virtual bool isBool() = 0;
-	virtual string toString() = 0;
-};
-
-class IntR2 : public TypeR2 {
-public:
-	IntR2(int _value) {
-		this->value = _value;
-	}
-	bool isInt() {
-		return true;
-	}
-	bool isBool() {
-		return false;
-	}
-	string toString() {
-		return to_string(this->value);
-	}
-	int getVal() {
-		return this->value;
-	}
-private:
-	int value;
-};
-
-class BoolR2 : public TypeR2 {
-public:
-	BoolR2(bool _value) {
-		this->value = _value;
-	}
-	bool isBool() {
-		return true;
-	}
-	bool isInt() {
-		return false;
-	}
-	string toString() {
-		if (this->value)
-			return "true";
-		else
-			return "false";
-	}
-	bool getVal() {
-		return this->value;
-	}
-private:
-	bool value;
-};
-
-class ExpR2 {
-public:
-	virtual TypeR2* eval(list<pair<string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
-	virtual string toString() = 0;
-	virtual string typec() = 0;
-};
-
 // Interface class ExpR0
-class ExpR0 : public ExpR2 {
+class ExpR0 {
 public:
 	// interpreter of the tree-like program
-	virtual TypeR2* eval(list<pair<string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
+	int virtual eval(list<pair<string, int>> *_info) = 0;
+
 	// print the tree in the linear form
 	virtual string toString() = 0;
+
 	// is the expression var or int - opt - let specifically
 	bool virtual simpleExp() = 0;
+
 	// simplifying the code - doing all of the possible calculations ahead of interpretation
 	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) = 0;
+
 	// optimizer helpers - is number, addition of number and read, or neg expression
 	bool virtual isNum() = 0;
 	bool virtual isNumRead() = 0;
 	bool virtual isNegExp() = 0;
+
 	// R1 maker functions
 	// making the program variable set global
 	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) = 0;
 	// making a tree-like code linear
 	virtual ExpR0* resolve_complex() = 0;
+
 	// identity maker 
 	virtual ExpR0* get_me() = 0;
 	// copy maker
 	virtual ExpR0* create_copy() = 0;
+
 	// Rc0 --> C0 compiler
 	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester,std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) = 0;
-	virtual string typec() = 0;
+
 };
 
 ExpR0* A(ExpR0* l, ExpR0* r);
@@ -4540,48 +4327,7 @@ ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
-/*
-class TypeR2 {
-	// check type procedure?
-};
-
-class BoolR2 : public TypeR2, ExpR0 {
-
-	// interpreter of the tree-like program
-	int virtual eval(list<pair<string, int>> *_info) {}
-
-	// print the tree in the linear form
-	virtual string toString() {}
-
-	// is the expression var or int - opt - let specifically
-	bool virtual simpleExp() {}
-
-	// simplifying the code - doing all of the possible calculations ahead of interpretation
-	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {}
-
-	// optimizer helpers - is number, addition of number and read, or neg expression
-	bool virtual isNum() {}
-	bool virtual isNumRead() {}
-	bool virtual isNegExp() {}
-
-	// R1 maker functions
-	// making the program variable set global
-	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {}
-	// making a tree-like code linear
-	virtual ExpR0* resolve_complex() {}
-
-	// identity maker
-	virtual ExpR0* get_me() {}
-	// copy maker
-	virtual ExpR0* create_copy() {}
-
-	// Rc0 --> C0 compiler
-	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {}
-
-};
-*/
-
-class NumR0 : public ExpR0{
+class NumR0 : public ExpR0 {
 public:
 	NumR0(int _value) {
 		this->value = _value;
@@ -4590,8 +4336,8 @@ public:
 		this->value = number_counter;
 		number_counter++;
 	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		return new IntR2(this->value);
+	int eval(list<pair<std::string, int>> *_info) {
+		return this->value;
 	}
 	string toString() {
 		return to_string(this->value);
@@ -4630,16 +4376,10 @@ public:
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new IntC0(this->value)));
 		return;
 	}
-	string typec() {
-		return "int";
-	}
 private:
 	int value;
 };
 
-// in future --> change set_value, get_value + rest 
-// it searches through both mappings (var_name) --> (int value) and (var_name) --> (bool value) in case of each sets value, returns IntR2 or BoolR2, returns int or bool & returns "int" or "bool" respectively 
-// static list<pair<string, bool>> bool_vars;
 class VarR0 : public ExpR0 {
 public:
 	VarR0(string _name) {
@@ -4649,28 +4389,12 @@ public:
 		this->name = old_variable->name + "_" + to_string(variable_counter_R1++);
 	}
 	// given the information on value assigned to the variables return the one assigned to this name
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+	int eval(list<pair<std::string, int>> *_info) {
 		this->info = _info;
-		this->info_bool = _info_bool;
 		std::list<pair<std::string, int>>::iterator it;
-		for (list<pair<string, string>>::iterator it1 = vars_type_mapp.begin(); it1 != vars_type_mapp.end(); ++it1) {
-			if ((*it1).first == this->name) {
-				if ((*it1).second == "int") {
-					for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
-						if ((*it).first == this->name) {
-							return new IntR2((*it).second);
-						}
-					}
-				}
-				else if ((*it1).second == "bool") {
-					std::list<pair<std::string, bool>>::iterator it2;
-					for (it2 = this->info_bool->begin(); it2 != this->info_bool->end(); ++it2) {
-						if ((*it2).first == this->name) {
-							return new BoolR2((*it2).second);
-						}
-					}
-
-				}
+		for (it = (*this->info).begin(); it != (*this->info).end(); ++it) {
+			if ((*it).first == this->name) {
+				return (*it).second;
 			}
 		}
 		cout << "\n- error_1: Variable " + this->name + " is not initialized yet - \n";
@@ -4728,14 +4452,8 @@ public:
 	int getValue() {
 		return this->value;
 	}
-	string getValueS() {
-		return this->value_s;
-	}
 	void setValue(int _value) {
 		this->value = _value;
-	}
-	void setValue(string _value_s) {
-		this->value_s = _value_s;
 	}
 	ExpR0* get_me() {
 		return this;
@@ -4757,21 +4475,10 @@ public:
 			return;
 		}
 	}
-	string typec() {
-		for (list<pair<string, string>>::iterator it = vars_type_mapp.begin(); it != vars_type_mapp.end(); ++it) {
-			if ((*it).first == this->name) {
-				return (*it).second;
-			}
-		}
-		cout << "\n\tNo Mapping for variable: " << this->name << "Type-Checker.\n\n";
-		return "error";
-	}
 private:
 	int value;
-	string value_s;
 	string name;
 	list<pair<string, int>> *info;
-	list<pair<std::string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
@@ -4781,14 +4488,9 @@ public:
 		this->lexp = _lexp;
 		this->rexp = _rexp;
 	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+	int eval(list<pair<std::string, int>> *_info) {
 		this->info = _info;
-		this->info_bool = _info_bool;
-		TypeR2 *temp_l = this->lexp->eval(this->info, this->info_bool);
-		IntR2 *temp_l_int = dynamic_cast<IntR2*>(temp_l);
-		TypeR2 *temp_r = this->rexp->eval(this->info, this->info_bool);
-		IntR2 *temp_r_int = dynamic_cast<IntR2*>(temp_r);
-		return new IntR2(temp_l_int->getVal() + temp_r_int->getVal());
+		return (this->lexp->eval(this->info) + this->rexp->eval(this->info));
 	}
 	string toString() {
 		return "(+ " + this->lexp->toString() + " " + this->rexp->toString() + ")";
@@ -4918,21 +4620,9 @@ public:
 		cout << "Error in econ for addition for: " << _name << "\n\n";
 		return;
 	}
-	string typec() {
-		if ((this->lexp->typec()=="int") && (this->rexp->typec()=="int")) {
-			return "int";
-		}
-		else {
-			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-			system("Pause");
-			system("Clear");
-			return "error";
-		}
-	}
 private:
 	ExpR0 *lexp, *rexp;
 	list<pair<string, int>> *info;
-	list<pair<string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
@@ -4941,12 +4631,9 @@ public:
 	NegR0(ExpR0 *_exp) {
 		this->exp = _exp;
 	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+	int eval(list<pair<std::string, int>> *_info) {
 		this->info = _info;
-		this->info_bool = _info_bool;
-		TypeR2* temp_val = this->exp->eval(this->info, this->info_bool);
-		IntR2 *temp = dynamic_cast<IntR2*>(temp_val);
-		return new IntR2(-(temp->getVal()));
+		return -(this->exp->eval(this->info));
 	}
 	string toString() {
 		return "(- " + this->exp->toString() + ")";
@@ -5033,79 +4720,42 @@ public:
 		cout << "Error in econ for negation for: " << _name << "\n\n";
 		return;
 	}
-	string typec() {
-		if (this->exp->typec() == "int") {
-			return "int";
-		}
-		else {
-			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-			system("Pause");
-			system("Clear");
-			return "error";
-		}
-	}
 private:
 	ExpR0 *exp;
 	list<pair<string, int>> *info;
-	list<pair<string, bool>> *info_bool;
 	int value;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
 // kad je variabla ista koristena tada brises u novom environmentu staru vrijednost
 // testiraj kad je variabla x_exp
-class LetR0 : public ExpR2 {
+class LetR0 : public ExpR0 {
 public:
-	LetR0(VarR0 *_variable, ExpR2 *_x_exp, ExpR2 *_b_exp) {
+	LetR0(VarR0 *_variable, ExpR0 *_x_exp, ExpR0 *_b_exp) {
 		this->variable = _variable;
-		this->x_exp1 = _x_exp;
-		this->b_exp1 = _b_exp;
-
+		this->x_exp = _x_exp;
+		this->b_exp = _b_exp;
 	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+	int eval(list<pair<std::string, int>> *_info) {
 		this->info = _info;
-		this->info_bool = _info_bool;
-		for (list<pair<string, string>>::iterator it1 = vars_type_mapp.begin(); it1 != vars_type_mapp.end(); ++it1) {
-			if ((*it1).first == variable->toString()) {
-				if ((*it1).second == "int") {
-					IntR2 *temp_var_value = dynamic_cast<IntR2*>(this->x_exp1->eval(this->info, this->info_bool));
-					list<pair<string, int>> *new_info = new list<pair<string, int>>();
-					*new_info = *info;
-					// in case variable with same name exists it's overwritten
-					std::list<pair<std::string, int>>::iterator it;
-					for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
-						if ((*it).first == this->variable->toString()) {
-							(*it).second = temp_var_value->getVal();
-							return b_exp1->eval(new_info, _info_bool);
-						}
-					}
-					// o.w. new variable is stored and same list is used furthermore
-					(*this->info).push_back(std::make_pair(this->variable->toString(), temp_var_value->getVal()));
-					return b_exp1->eval(info, _info_bool);
-				}
-				else if ((*it1).second == "bool") {
-					BoolR2 *temp_var_value = dynamic_cast<BoolR2*>(this->x_exp1->eval(this->info, this->info_bool));
-					list<pair<string, bool>> *new_info = new list<pair<string, bool>>();
-					*new_info = *info_bool;
-					// in case variable with same name exists it's overwritten
-					std::list<pair<std::string, bool>>::iterator it;
-					for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
-						if ((*it).first == this->variable->toString()) {
-							(*it).second = temp_var_value->getVal();
-							return b_exp1->eval(_info, new_info);
-						}
-					}
-					// o.w. new variable is stored and same list is used furthermore
-					(*this->info_bool).push_back(std::make_pair(this->variable->toString(), temp_var_value->getVal()));
-					return b_exp1->eval(info, info_bool);
-				}
+		int var_value = this->x_exp->eval(this->info);
+		list<pair<string, int>> *new_info = new list<pair<string, int>>();
+		*new_info = *info;
+		// in case variable with same name exists it's overwritten
+		std::list<pair<std::string, int>>::iterator it;
+		for (it = (*new_info).begin(); it != (*new_info).end(); ++it) {
+			if ((*it).first == this->variable->toString()) {
+				(*it).second = var_value;
+				return b_exp->eval(new_info);
 			}
 		}
+		// o.w. new variable is stored and same list is used furthermore
+		(*this->info).push_back(std::make_pair(this->variable->toString(), var_value));
+		return b_exp->eval(info);
 	}
 	string toString() {
-		return "Let[(" + this->variable->toString() + " " + this->x_exp1->toString() + ") " + this->b_exp1->toString() + "]";
+		return "Let[(" + this->variable->toString() + " " + this->x_exp->toString() + ") " + this->b_exp->toString() + "]";
 	}
-	/*
 	bool simpleExp() {
 		return false;
 	}
@@ -5189,40 +4839,10 @@ public:
 		b_exp->econ(_tail_tester, _lbl_tester, " ", true);
 		return;
 	}
-	*/
-
-	string typec() {
-		if (this->x_exp1->typec() == "int") {
-			vars_type_mapp.emplace_back(make_pair(variable->toString(), "int"));
-			if (this->b_exp1->typec() == "int") {
-				return "int";
-			}
-			if (this->b_exp1->typec() == "bool") {
-				return "bool";
-			}
-		}
-		else if (this->x_exp1->typec() == "bool") {
-			vars_type_mapp.emplace_back(make_pair(variable->toString(), "bool"));
-			if (this->b_exp1->typec() == "bool") {
-				return "bool";
-			}
-			if (this->b_exp1->typec() == "int") {
-				return "int";
-			}
-		}
-		else {
-			cout << "\n\tError in expected value from: " << this->toString() << "\n\n";
-			system("Pause");
-			system("Clear");
-			return "error";
-		}
-	}
 private:
 	VarR0 *variable;
-	ExpR2 *x_exp1, *b_exp1;
 	ExpR0 *x_exp, *b_exp;
 	list<pair<string, int>> *info;
-	list<pair<std::string, bool>> *info_bool;
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp,*new_mapp;
 };
 
@@ -5230,15 +4850,15 @@ class ReadR0 : public ExpR0 {
 public:
 	ReadR0() {
 	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
+	int eval(list<pair<std::string, int>> *_info) {
 		if (mode == Interactive) {
 			cout << "Input the value for read: ";
 			cin >> this->value;
-			return new IntR2(this->value);
+			return this->value;
 		}
 		if (mode == Automated) {
 			this->value = ((rand() % 2049) - 1024);
-			return new IntR2(this->value);
+			return this->value;
 		}
 	}
 	string toString() {
@@ -5284,413 +4904,11 @@ public:
 		_tail_tester->push_back(std::make_shared<AssignC0>(new VarC0(_name), new ReadC0()));
 		return;
 	}
-	string typec() {
-		return "int";
-	}
 private:
 	int value;
 };
 
-class IfR2 : public ExpR2 {
-public:
-	IfR2(ExpR2* _cond, ExpR2* _tr, ExpR2* _fl) {
-		cond = _cond;
-		tr = _tr;
-		fl = _fl;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		BoolR2 *temp = dynamic_cast<BoolR2*>(this->cond->eval(_info, _info_bool));
-		if (temp->getVal()) {
-			return this->tr->eval(_info, _info_bool);
-		}
-		else {
-			return this->fl->eval(_info, _info_bool);
-		}
-	}
-	string toString() {
-		string temp = "if(" + this->cond->toString() + ") {" + this->tr->toString() + "} else {" + this->fl->toString() + "}";
-		return temp;
-	}
-	string typec() {
-		if (cond->typec() == "bool") {
-			if ((tr->typec() == "int") && (fl->typec() == "int")) {
-				return "int";
-			}
-			if ((tr->typec() == "bool") && (fl->typec() == "bool")) {
-				return "bool";
-			}
-			else {
-				cout << "\n\tTypes are not matching - Error!\n\n";
-				return "error";
-			}
-		}
-		else {
-			cout << "\n\tType of condition is not bool - Error!\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR2* cond;
-	ExpR2* tr;
-	ExpR2* fl;
-};
-
-class AndR2 : public ExpR2 {
-public:
-	AndR2(ExpR2* _l, ExpR2* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval(_info, _info_bool));
-		if (temp_1->getVal()) {
-			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval(_info, _info_bool));
-			if (temp_2->getVal()) {
-				return new BoolR2(true);
-			}
-			else {
-				return new BoolR2(false);
-			}
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " && " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "bool") && (r->typec() == "bool")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not bool in AND operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR2* l;
-	ExpR2* r;
-};
-
-class OrR2 : public ExpR2 {
-public:
-	OrR2(ExpR2* _l, ExpR2* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		BoolR2 *temp_1 = dynamic_cast<BoolR2*>(this->l->eval(_info, _info_bool));
-		if (temp_1->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			BoolR2* temp_2 = dynamic_cast<BoolR2*>(this->r->eval(_info, _info_bool));
-			if (temp_2->getVal()) {
-				return new BoolR2(true);
-			}
-			else {
-				return new BoolR2(false);
-			}
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " || " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "bool") && (r->typec() == "bool")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not bool in OR operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR2* l;
-	ExpR2* r;
-};
-
-class NotR2 : public ExpR2 {
-public:
-	NotR2(ExpR2* _arg) {
-		this->arg = _arg;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		BoolR2* temp = dynamic_cast<BoolR2*>(this->arg->eval(_info, _info_bool));
-		if (temp->getVal()) {
-			return new BoolR2(false);
-		}
-		else {
-			return new BoolR2(true);
-		}
-	}
-	string toString() {
-		string temp = "!(" + arg->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if (arg->typec()=="bool") {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not bool in NOT operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR2* arg;
-};
-
-class FalseR2 : public ExpR2 {
-public:
-	FalseR2() {
-		this->value = false;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		return new BoolR2(false);
-	}
-	string toString() {
-		return "false";
-	}
-	string typec() {
-		return "bool";
-	}
-private:
-	bool value;
-};
-
-class TrueR2 : public ExpR2 {
-public:
-	TrueR2() {
-		this->value = true;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		return new BoolR2(true);
-	}
-	string toString() {
-		return "true";
-	}
-	string typec() {
-		return "bool";
-	}
-private:
-	bool value;
-};
-
-class CmpR2 : public ExpR2 {
-	virtual TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) = 0;
-	virtual string toString() = 0;
-	virtual string typec() = 0;
-};
-
-class LessR2 : public CmpR2 {
-public:
-	LessR2(ExpR0* _l, ExpR0* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
-		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
-		if (temp_l->getVal() < temp_r->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " < " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "int") && (r->typec() == "int")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR0* l;
-	ExpR0* r;
-};
-
-class LseqR2 : public CmpR2 {
-public:
-	LseqR2(ExpR0* _l, ExpR0* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
-		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
-		if (temp_l->getVal() <= temp_r->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " <= " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "int") && (r->typec() == "int")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR0* l;
-	ExpR0* r;
-};
-
-class GrtrR2 : public CmpR2 {
-public:
-	GrtrR2(ExpR0* _l, ExpR0* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
-		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
-		if (temp_l->getVal() > temp_r->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " > " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "int") && (r->typec() == "int")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR0* l;
-	ExpR0* r;
-};
-
-class GreqR2 : public CmpR2 {
-public:
-	GreqR2(ExpR0* _l, ExpR0* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
-		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
-		if (temp_l->getVal() >= temp_r->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " >= " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "int") && (r->typec() == "int")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR0* l;
-	ExpR0* r;
-};
-
-class EqlR2 : public CmpR2 {
-public:
-	EqlR2(ExpR0* _l, ExpR0* _r) {
-		this->l = _l;
-		this->r = _r;
-	}
-	TypeR2* eval(list<pair<std::string, int>> *_info, list<pair<std::string, bool>> *_info_bool) {
-		IntR2 *temp_l = dynamic_cast<IntR2*>(this->l->eval(_info, _info_bool));
-		IntR2 *temp_r = dynamic_cast<IntR2*>(this->r->eval(_info, _info_bool));
-		if (temp_l->getVal() == temp_r->getVal()) {
-			return new BoolR2(true);
-		}
-		else {
-			return new BoolR2(false);
-		}
-	}
-	string toString() {
-		string temp = "(" + this->l->toString() + " == " + this->r->toString() + ")";
-		return temp;
-	}
-	string typec() {
-		if ((l->typec() == "int") && (r->typec() == "int")) {
-			return "bool";
-		}
-		else {
-			cout << "\n\tOne of the types is not int in " << this->toString() << " operation\n\n";
-			return "error";
-		}
-	}
-private:
-	ExpR0* l;
-	ExpR0* r;
-};
-
-ExpR2* AND(ExpR2* l, ExpR2* r) { 
-	return new IfR2(l, r, new FalseR2());
-}
-ExpR2* OR(ExpR2* l, ExpR2* r) { 
-	return new IfR2(l, new TrueR2(), r);
-}
-ExpR2* T() { 
-	return new TrueR2(); 
-}
-ExpR2* F() { 
-	return new FalseR2(); 
-}
-ExpR2* IF(ExpR2* cond, ExpR2* then, ExpR2* ow) { 
-	return new IfR2(cond, then, ow); 
-}
-ExpR2* NOT(ExpR2* e) { 
-	return new NotR2(e); 
-}
-ExpR2* LS(ExpR0* l, ExpR0* r) {
-	return new LessR2(l, r);
-}
-ExpR2* GR(ExpR0* l, ExpR0* r) {
-	return new GrtrR2(l, r);
-}
-ExpR2* LE(ExpR0* l, ExpR0* r) {
-	return new LseqR2(l, r);
-}
-ExpR2* GE(ExpR0* l, ExpR0* r) {
-	return new GreqR2(l, r);
-}
-ExpR2* EQ(ExpR0* l, ExpR0* r) {
-	return new EqlR2(l, r);
-}
-
-ExpR2* L(VarR0* v, ExpR2* ve, ExpR2* be) {
+ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be) {
 	return new LetR0(v, ve, be);
 }
 VarR0* V(string x) {
@@ -5705,9 +4923,6 @@ ExpR0* A(ExpR0* l, ExpR0* r) {
 ExpR0* N(ExpR0* e) {
 	return new NegR0(e);
 }
-ExpR0* S(ExpR0* l, ExpR0* r) {
-	return new AddR0(l, new NegR0(r));
-}
 ExpR0* I() {
 	return new NumR0();
 }
@@ -5720,31 +4935,16 @@ ExpR0* I(int _value) {
 
 class ProgR0 {
 public:
-	ProgR0(list<pair<string, int>> *_info, ExpR2 *_code) {
+	ProgR0(list<pair<string, int>> *_info, ExpR0 *_code) {
 //		srand(time(NULL));
-		code1 = _code;
+		code = _code;
 		info = _info;
 	}
-	string intrp() {
-		if (this->typec() == "int") {
-			IntR2 *temp = dynamic_cast<IntR2*>(code1->eval(this->info, new list<pair<string,bool>>()));
-			return to_string(temp->getVal());
-		}
-		else if (this->typec() == "bool") {
-			BoolR2 *temp = dynamic_cast<BoolR2*>(code1->eval(this->info, new list<pair<string,bool>>()));
-			if (temp->getVal() == true) {
-				return "true";
-			}
-			else {
-				return "false";
-			}
-		}
-		else {
-			return "-result has error type-";
-		}
+	int intrp() {
+		return code->eval(this->info);
 	}
 	string prnt() {
-		return code1->toString();
+		return code->toString();
 	}
 	ExpR0* optmz(list<pair<std::string, ExpR0*>> *_info) {
 		return code->opt(_info);
@@ -5771,7 +4971,7 @@ public:
 			}
 			result_holder = L(V(it->first->toString()), it->second->create_copy(), result_holder);
 		}
-		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>(), new list<pair<string,bool>>());
+		cout << "\n\n\t" << "Result is: " << result_holder->eval(new list<pair<string, int>>());
 		return result_holder;
 	}
 	void econ() {
@@ -5800,21 +5000,9 @@ public:
 		this->code->econ(new list<shared_ptr<StmtC0>>(), lbl_tester, " ", true);
 
 }
-	string typec() {
-		if (code1->typec() == "int") {
-			return "int";
-		}
-		else if (code1->typec() == "bool") {
-			return "bool";
-		}
-		else {
-			return "error";
-		}
-	}
 private:
 	list<pair<string, int>> *info;
 	ExpR0 *code;
-	ExpR2 *code1;
 	ExpR0 *result_holder;
 	bool init = false;
 };

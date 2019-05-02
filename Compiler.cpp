@@ -101,16 +101,19 @@ int main() {
 
 		mode = Interactive;
 		
-		// R1 uniquify & resolve_complex test_suite
+		// R1 uniquify & resolve_complex test_suite & full compiler 
 		// R1 uniquify function test_suite
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
 		// let ([x 5] [+(L [(x 6) x]) (x)]) --> add(let ([x 5] [+(L [(x 6) x]) (x)]), let([x 2] [+ (read) (x)]))
 		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
 		//ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),S(V("x"),I(2))));
+		
+		// ExpR2 Testing
 		// if ((< (let [x 5] x+2) (8)) (Int (1)) (Int (0)))
 		//ExpR2 *te = IF(LS(L(V("x"), I(5), A(V("x"),I(2))),I(8)),(I(1)),I(0));
 		// if ((let (x true) (x)) (Int (1)) (Int (0)))
-		ExpR2 *te = IF(L(V("x"), T(), V("x")), I(0), I(1));
+		ExpR2 *te = IF(L(V("x"), I(5), L(V("y"), I(6), LS(V("x"),V("y")))),T(),F());
+
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
@@ -118,31 +121,31 @@ int main() {
 		// let ([x (read)][+ (x) (5)])
 		//ExpR0 *te = L(V("x"), R(), A(V("x"), I(5)));
 
+		// ExpR2 Testing
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
-			
 		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
-
 		cout << tp->prnt() << " = " << tp->intrp();
 		//cout << result;
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
 
-		//last cut-off
-		/* 
-		
-		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
+		/*
+		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
+		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
+		*/
 
+		/*
+		//last cut-off
+		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 		ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
-		int result_uniq = tp_uniq->intrp();
+		string result_uniq = tp_uniq->intrp();
 		cout << tp_uniq->prnt() << " = " << result_uniq;
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
-
-
 		*/
-		
+
 
 		/* 
 		// comment these 5 out 
@@ -157,7 +160,6 @@ int main() {
 	
 		//last cut-off
 		/*
-		
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES AND SIMPLIFIED FOR COMPILATION: \n\n";
 
 		ProgR0 *tp_res_comp = new ProgR0(new list<pair<string,int>>(), tp_uniq->resolv());
@@ -168,8 +170,6 @@ int main() {
 		cout << "\n\nPROGRAM EXECUTION IN C0 LANGUAGE: \n\n";
 
 		tp_res_comp->econ();
-
-
 		*/
 	
 
@@ -468,14 +468,14 @@ int main() {
 		std::shared_ptr<LabelC0> lbl2_tester(new LabelC0("end:"));
 
 		// initializing program
-		list<std::shared_ptr<StmtC0>> tail1_tester;
+		static list<std::shared_ptr<StmtC0>> tail1_tester;
 
 		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("x"), new ReadC0()));
 		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("y"), new IntC0(5)));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("x")));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("x"))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("z"), new VarC0("y")));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("a"), new NegC0(new VarC0("z"))));
 		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("b"), new NegC0(new IntC0(5))));
-		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new IntC0(5), new VarC0("x"))));
+		tail1_tester.push_back(std::make_shared<AssignC0>(new VarC0("c"), new AddC0(new VarC0("z"), new VarC0("b"))));
 
 		Variables.push_back(std::make_pair("a", 0));
 		Variables.push_back(std::make_pair("b", 0));
@@ -484,25 +484,22 @@ int main() {
 		Variables.push_back(std::make_pair("y", 0));
 		Variables.push_back(std::make_pair("z", 0));
 
-		TailC0 *temp_tail1 = new TailC0(&tail1_tester);
-		auto tail_main = std::make_shared<TailC0>(*temp_tail1);
-		auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("x")));
+		static TailC0 *temp_tail1 = new TailC0(&tail1_tester);
+		static auto tail_main = std::make_shared<TailC0>(*temp_tail1);
+		static auto tail_end = std::make_shared<TailC0>(new RetC0(new VarC0("c")));
 
 		label_tail_list.emplace_back(std::make_pair(lbl1_tester, tail_main));
 		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
 		*/
 
-		//last cut-off
+		//last cut-off 
 		/*
-		
 		ProgC0 *program = new ProgC0();
 		program->execute();
 		program->emit();
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
-
-		
 		*/
 
 	// -----------------------------------------------------------------------------------------------------------
@@ -515,11 +512,13 @@ int main() {
 
 		//last cut-off
 		/*
-		
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE: \n\n";
 
 		program->select();
+		*/
 
+		// last cutoff
+		/*
 		ProgramX0 *program_test_select = PX();
 		program_test_select->emit();
 		program_test_select->execute();
@@ -540,8 +539,10 @@ int main() {
 		//print_stack_x0();
 
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
-		
+		*/
 
+		// last cutoff
+		/*
 		program_test_select->assign();
 		ProgramX0 *program_test_assign = PX();
 		program_test_assign->emit();
@@ -549,7 +550,10 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
-		
+		*/
+
+		// last cutoff
+		/*
 		print_variables_x0();
 		cout << "\n\n";
 		system("Pause");
@@ -562,7 +566,10 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
+		*/
 
+		// last cutoff
+		/*
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS USING ONLY ONE MEMORY REFERENCE PER INSTRUCTION: \n\n";
 
 		program_test_assign->patch();
@@ -572,10 +579,7 @@ int main() {
 		cout << "\n\n";
 		system("Pause");
 		system("Cls");
-
-		
 		*/
-
 
 		//ostream successful but compiled version not looking properly
 		/*
