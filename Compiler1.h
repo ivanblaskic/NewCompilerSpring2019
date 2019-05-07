@@ -3335,7 +3335,7 @@ public:
 		return false;
 	}
 	string masm() {
-		return "jmp " + this->label->getName();
+		return "jmp " + this->label->getName() + "q";
 	}
 	void liveness() {
 		writtenVars();
@@ -3488,10 +3488,10 @@ public:
 		blk_end_list.clear();
 		
 		blk_end_list.push_back(std::make_shared<SubqX0>(IX(var_cnt),RX("rsp")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r15")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r14")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r13")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r12")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r15")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r14")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r13")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r12")));
 		blk_end_list.push_back(std::make_shared<PopqX0>(RX("rbp")));
 		blk_end_list.push_back(std::make_shared<RetqX0>());
 
@@ -3752,6 +3752,7 @@ public:
 		while (!(isQueueEmpty())) {
 			print_color_graph_x0(&interfering_colors_list);
 			system("Pause");
+			system("cls");
 			print_queue();
 			system("Pause");
 			system("Cls");
@@ -3768,8 +3769,6 @@ public:
 		system("Pause");
 		system("Cls");
 
-		cout << "\n\tProgram Execution Is Over.\n\tPress >>ENTER<< To Exit The Terminal.\n\n";
-		system("Pause");
 	}
 private:
 };

@@ -1,4 +1,13 @@
+#pragma comment(lib, "SHELL32.LIB") 
+
+
 #include "Compiler1.h"
+
+#include "Stdafx.h"
+#include <fstream>
+#include <Windows.h>
+#include <shellapi.h>
+#include <iomanip>
 
 void print_variables_x0() {
 	cout << "\nVariables:\n";
@@ -119,11 +128,12 @@ int main() {
 	cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
 
 	ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
-	cout << tp->prnt() << " = " << tp->intrp();
+	int correct_result = tp->intrp();
+	cout << tp->prnt() << " = " << correct_result;
 	//cout << result;
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 
@@ -131,8 +141,8 @@ int main() {
 	int result_uniq = tp_uniq->intrp();
 	cout << tp_uniq->prnt() << " = " << result_uniq;
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	/*
 	// comment these 5 out
@@ -150,8 +160,8 @@ int main() {
 	ProgR0 *tp_res_comp = new ProgR0(new list<pair<string, int>>(), tp_uniq->resolv());
 
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	cout << "\n\nPROGRAM EXECUTION IN C0 LANGUAGE: \n\n";
 
@@ -480,8 +490,8 @@ int main() {
 	program->execute();
 	program->emit();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	// -----------------------------------------------------------------------------------------------------------
 	//				-	-	-----			-------	----- -   - -----
@@ -497,21 +507,39 @@ int main() {
 
 	ProgramX0 *program_test_select = PX();
 	program_test_select->emit();
+	system("Pause");
+	system("Cls");
 	program_test_select->execute();
 	program_test_select->liveness();
+	system("Pause");
+	system("Cls");
 	program_test_select->interference();
 	cout << "\n\n";
-	//system("Pause");
+	system("Pause");
+	system("Cls");
+
+	print_liveness_before_x0();
+	cout << "\n\n";
+	system("Pause");
+	system("Cls");
+	print_liveness_after_x0();
+	cout << "\n\n";
+	system("Pause");
+	system("Cls");
+	print_interference_x0();
+	cout << "\n\n";
+	system("Pause");
+	system("Cls");
 	//system("Cls");
 
 	program_test_select->moveGraph();
 	program_test_select->colorGraph();
-	cout << "\n\n";
-	//system("Pause");
 	//system("Cls");
 
 	print_variables_x0();
 	print_registers_x0();
+	system("Pause");
+	system("Cls");
 	//print_stack_x0();
 
 	cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS NOT USING VARIABLES: \n\n";
@@ -522,21 +550,21 @@ int main() {
 	program_test_assign->emit();
 	program_test_assign->execute();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	print_variables_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 	print_registers_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 	print_stack_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
 	cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE THAT IS USING ONLY ONE MEMORY REFERENCE PER INSTRUCTION: \n\n";
 
@@ -545,46 +573,106 @@ int main() {
 	program_test_patch->emit();
 	program_test_patch->execute();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
+
+	remove("ASMFunction.asm");
 
 	std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 	string temp;
 	for (it = label_block_list.begin(); it != label_block_list.end(); ++it) {
-		temp += it->first->getName() + ":" + "\t" + it->second->masm() + "\n";
+		temp += it->first->getName() + "q" + ":" + "\t" + it->second->masm() + "\n";
 	}
 	ofstream myfile;
 	myfile.open("ASMFunction.asm");
 	myfile << ".code\n" << "getValueFromASM proc\n" << temp << "getValueFromASM endp\n" << "end";
 	myfile.close();
 
+	// *** MISSING THE COMPILATION COMMAND THAT WILL DO FOLLOWING ***
+	/*
+	
+		On this location: "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2017\Visual Studio Tools\VC"
+			run "x64 Native Tools Command Prompt for VS 2017"
+		Inside of it do: "cd C:\Users\User\Desktop\Compiler Construction\CompilerConstruction\CompilerConstruction",
+			then "ml64 /c /Cx ASMFunction.asm",
+				then "cl /EHsc Main.cpp ASMFunction.obj"
+
+		Or just call cl.exe in a specific way so it creates Main.exe
+
+	*/
+
+	string path = "\"C:\\Users\\User\\Desktop\\Compiler Construction\\CompilerConstruction\\CompilerConstruction\"";
+	string command1 = "cd "+ path;
+	string command2 = "ml64 / c / Cx ASMFunction.asm";
+	string command3 = "cl / EHsc Main.cpp ASMFunction.obj";
+
+	string commands = "/C " + command1 + " && " + command2 + " && " + command3;
+
+	//ShellExecuteA(NULL, "open", "\"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Visual Studio 2017\\Visual Studio Tools\\VC\\x64 Native Tools Command Prompt for VS 2017.lnk\"" , 
+	//	_T("/C \"cd \"C:\\Users\\User\\Desktop\\Compiler Construction\\CompilerConstruction\\CompilerConstruction\" && ml64 / c / Cx ASMFunction.asm && cl / EHsc Main.cpp ASMFunction.obj\""), 
+	//	NULL, 
+	//	SW_SHOWDEFAULT);
+
+	SHELLEXECUTEINFO info = { 0 };
+
+	info.cbSize = sizeof(SHELLEXECUTEINFO);
+	info.fMask = SEE_MASK_NOCLOSEPROCESS;
+	info.hwnd = NULL;
+	info.lpVerb = NULL;
+	//info.lpFile = "\"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Visual Studio 2017\\Visual Studio Tools\\VC\\x64 Native Tools Command Prompt for VS 2017.lnk\"";
+	info.lpFile = "cmd.exe";
+	info.lpParameters = "/k \"cd \"C:\\Users\\User\\Desktop\\Compiler Construction\\CompilerConstruction\\CompilerConstruction\" && \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Auxiliary\\Build\\vcvars64.bat\" && ml64 /c /Cx ASMFunction.asm && cl /EHsc Main.cpp ASMFunction.obj\" && exit";
+	info.lpDirectory = NULL;
+	info.nShow = SW_SHOW;
+	info.hInstApp = NULL;
+
+	//%comspec% /k "cd "C:\Users\User\Desktop\Compiler Construction\CompilerConstruction\CompilerConstruction" && "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat" && ml64 /c /Cx ASMFunction.asm && cl /EHsc Main.cpp ASMFunction.obj"
+
+	// && ml64 / c / Cx ASMFunction.asm && cl / EHsc Main.cpp ASMFunction.obj
+
+	ShellExecuteExA(&info);
+	system("pause");
+
+	// cd "C:\Users\User\Desktop\Compiler Construction\CompilerConstruction\CompilerConstruction" && ml64 / c / Cx ASMFunction.asm && cl / EHsc Main.cpp ASMFunction.obj - needs to be run
+	
+	//ShellExecuteA(NULL, "open", "ml64 /c /Cx ASMFunction.asm", NULL, NULL, SW_SHOWDEFAULT);
+	//ShellExecuteA(NULL, "open", "cl /EHsc Main.cpp ASMFunction.obj", NULL, NULL, SW_SHOWDEFAULT);
+
+	//ShellExecuteA(NULL, "open", "\"C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Visual Studio 2017\\Visual Studio Tools\\VC\\x64 Native Tools Command Prompt for VS 2017.lnk\"", "[/command cd C:\\Users\\User\\Desktop\\Compiler Construction\\CompilerConstruction\\CompilerConstruction]", NULL, SW_SHOWDEFAULT);
+	ShellExecuteA(NULL, "open", "Main.exe", NULL, NULL, SW_SHOWDEFAULT);
+
+	string temp_result;
+	ifstream myfile_result;
+	myfile_result.open("result.txt");
+	if (myfile_result.is_open()) {
+		while (!myfile_result.eof()) {
+			myfile_result >> temp_result;
+		}
+	}
+
 	print_variables_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 	print_registers_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 	print_stack_x0();
 	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
+	system("Pause");
+	system("Cls");
 
-	print_liveness_before_x0();
-	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
-	print_liveness_after_x0();
-	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
-	print_interference_x0();
-	cout << "\n\n";
-	//system("Pause");
-	//system("Cls");
-
-	cout << "\n\nHOPE YOU ENJOYED!\n\n";
+	if (correct_result == stoi(temp_result)) {
+		cout << "\n\t" << "GENERATED ASSEMBLY CODE PRODUCES THE CORRECT RESULT!\n\n\n";
+		system("pause");
+		system("cls");
+	}
+	else {
+		cout << "\n\t" << "GENERATED ASSEMBLY CODE PRODUCES THE INCORRECT RESULT!\n\n\n";
+		system("pause");
+		system("cls");
+	}
 	delete te;
 	delete tp;
 	delete tp_uniq;
@@ -592,9 +680,10 @@ int main() {
 	delete program_test_select;
 	delete program_test_assign;
 	delete program;
-	//delete program_test_patch;
+	delete program_test_patch;
+
+	cout << "\n\tProgram Execution Is Over.\n\tPress >>ENTER<< To Exit The Terminal.\n\n";
 	system("Pause");
-	system("Cls");
 
 	/*
 
