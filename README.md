@@ -52,16 +52,9 @@ Compiler Written in C++ for Jay to Review
 1/6 Write a half-dozen tests for patch-instructions that predict its output.
 + Implement the patch-instructions pass for X0 programs.
 + Connect patch-instructions to your test suite.
-- 
---> March 30th, 2:00pm <--
-- F+
-- 
-- SKIP
-- Implement your language runtime.
-- Implement the main-generation pass for X0 programs.
-- Connect your test suite to your system assembler and language runtime.
-- SKIP
--   
++ Implement your language runtime.
++ Implement the main-generation pass for X0 programs.
++ Connect your test suite to your system assembler and language runtime.
 + Write a dozen tests for uncover-live that predict its output.
 + Implement the uncover-live pass for X0 programs.
 + Write a dozen tests for build-interferences that predict its output.
@@ -100,6 +93,11 @@ Compiler Written in C++ for Jay to Review
 - Extend your emitter from X0 to X1 programs.
 - Write a half-dozen X1 test programs.
 - Extend your interpreter from X0 to X1 programs.
+- 
+- < New Objective >
+--> May 9th, 11:59pm <--
+- C+ 
+- 
 - Extend the resolve-complex pass from R1 to R2 programs, with a few test cases to check its output.
 - Extend the explicate-control pass from R1 to R2 programs, with a half-dozen tests that predict its output.
 - Extend the uncover-locals pass for C1 programs.
@@ -110,11 +108,6 @@ Compiler Written in C++ for Jay to Review
 - Extend the patch-instructions pass for X1 programs, with a few test cases to check its output.
 - Update your runtime to support printing out booleans, in addition to integers.
 - Update your main-generation pass for boolean-outputting programs.
-- 
-- < New Objective >
---> May 5th, 11:59pm <--
-- B- 
-- 
 - Extend your compiler to support conditional moves.
 - Extend your data types from R2 to R3.
 - Extend your pretty printer from R2 to R3.
