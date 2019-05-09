@@ -273,8 +273,14 @@
 	72) + write a type-checker for R2 ** figure out let-var portion
 		- you’ll need an environment mapping variables to their types
 		- integrate this into your R2 tests so that every program you’ve written is type-checked before being used
+	73) + extend your random generation function from R1 to R2
+		- you should have two helper functions. The first should generate an R2 program
+		  that returns a number and the other should generate one that returns a boolean
+		- you’ll need to extend your environment to record the type of let-bound variables
+	74) + write some R2-specific optimizer tests
+		- again, to verify that you are actually optimizing the programs
 
-		>> C- <<
+		>> C <<
 
 		Completed "Task #72 - Successful Type-Checker Implementation"
 
@@ -3353,7 +3359,7 @@ public:
 		return false;
 	}
 	string masm() {
-		return "jmp " + this->label->getName();
+		return "jmp " + this->label->getName() + "q";
 	}
 	void liveness() {
 		writtenVars();
@@ -3506,10 +3512,10 @@ public:
 		blk_end_list.clear();
 		
 		blk_end_list.push_back(std::make_shared<SubqX0>(IX(var_cnt),RX("rsp")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r15")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r14")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r13")));
-		blk_begin_list.push_back(std::make_shared<PopqX0>(RX("r12")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r15")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r14")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r13")));
+		blk_end_list.push_back(std::make_shared<PopqX0>(RX("r12")));
 		blk_end_list.push_back(std::make_shared<PopqX0>(RX("rbp")));
 		blk_end_list.push_back(std::make_shared<RetqX0>());
 
@@ -3805,11 +3811,13 @@ ProgramX0* PX(){
 
 // C0: steps 23-26 --> compiled R0 into C0
 
+// C0 --> C1 Steps Explained
 /*
 
 
 */
 
+// C0 language defintion
 /*
 	Ivan Blaskic [ @UML 4Jay's-CC-class ]
 	C0Language.hpp
@@ -4050,6 +4058,7 @@ public:
 	void virtual select() = 0;
 private:
 };
+
 // (assign var exp) <-- stmt
 class AssignC0 : public StmtC0 {
 public:
@@ -4244,7 +4253,6 @@ public:
 private:
 };
 
-
 // -----------------------------------------------------------------------------------------------------------
 //				-----	-----			-------	----- -   - -----
 //				-	 -	-	-			   ---	-	- --  - -
@@ -4410,6 +4418,7 @@ private:
 
 // R0-R1: steps 1-17 + 27-35 --> compiled R0 into C0
 
+// R0 language definition
 /*
 
 	R0 :=
@@ -4540,47 +4549,6 @@ ExpR0* L(VarR0* v, ExpR0* ve, ExpR0* be);
 
 static int number_counter;
 
-/*
-class TypeR2 {
-	// check type procedure?
-};
-
-class BoolR2 : public TypeR2, ExpR0 {
-
-	// interpreter of the tree-like program
-	int virtual eval(list<pair<string, int>> *_info) {}
-
-	// print the tree in the linear form
-	virtual string toString() {}
-
-	// is the expression var or int - opt - let specifically
-	bool virtual simpleExp() {}
-
-	// simplifying the code - doing all of the possible calculations ahead of interpretation
-	virtual ExpR0* opt(list<pair<std::string, ExpR0*>> *_info) {}
-
-	// optimizer helpers - is number, addition of number and read, or neg expression
-	bool virtual isNum() {}
-	bool virtual isNumRead() {}
-	bool virtual isNegExp() {}
-
-	// R1 maker functions
-	// making the program variable set global
-	virtual ExpR0* uniquify(list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *_mapp) {}
-	// making a tree-like code linear
-	virtual ExpR0* resolve_complex() {}
-
-	// identity maker
-	virtual ExpR0* get_me() {}
-	// copy maker
-	virtual ExpR0* create_copy() {}
-
-	// Rc0 --> C0 compiler
-	virtual void econ(list<shared_ptr<StmtC0>> *_tail_tester, std::shared_ptr<LabelC0> _lbl_tester, string _name, bool _is_end) {}
-
-};
-*/
-
 class NumR0 : public ExpR0{
 public:
 	NumR0(int _value) {
@@ -4637,9 +4605,12 @@ private:
 	int value;
 };
 
-// in future --> change set_value, get_value + rest 
-// it searches through both mappings (var_name) --> (int value) and (var_name) --> (bool value) in case of each sets value, returns IntR2 or BoolR2, returns int or bool & returns "int" or "bool" respectively 
-// static list<pair<string, bool>> bool_vars;
+// future references of VarR0
+/*
+ in future --> change set_value, get_value + rest
+ it searches through both mappings (var_name) --> (int value) and (var_name) --> (bool value) in case of each sets value, returns IntR2 or BoolR2, returns int or bool & returns "int" or "bool" respectively
+ static list<pair<string, bool>> bool_vars;
+*/
 class VarR0 : public ExpR0 {
 public:
 	VarR0(string _name) {
@@ -5052,8 +5023,11 @@ private:
 	list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *mapp;
 };
 
+// future of LetR0
+/*
 // kad je variabla ista koristena tada brises u novom environmentu staru vrijednost
 // testiraj kad je variabla x_exp
+*/
 class LetR0 : public ExpR2 {
 public:
 	LetR0(VarR0 *_variable, ExpR2 *_x_exp, ExpR2 *_b_exp) {
@@ -5731,7 +5705,7 @@ public:
 			return to_string(temp->getVal());
 		}
 		else if (this->typec() == "bool") {
-			BoolR2 *temp = dynamic_cast<BoolR2*>(code1->eval(this->info, new list<pair<string,bool>>()));
+			BoolR2 *temp = dynamic_cast<BoolR2*>(code1->eval(this->info, new list<pair<string,bool>>(bool_vars)));
 			if (temp->getVal() == true) {
 				return "true";
 			}
@@ -5819,23 +5793,202 @@ private:
 	bool init = false;
 };
 
-// onNth and randP testing functions' definitions
+// JAAAAAY! DO I DEMAND INT FROM THE USER AND JUST TRUST THEM THAT THEY WILL GIVE IT TO ME OR WHAT?
+// OR I CAN MAKE SELF FEED READ THAT GETS STRING "int" OR "bool" AND THEN GENERATES RANDOM "int" or "bool"
+
+// onNth testing functions' definitions
 /*
 ExpR0* onNth(int m) {
 	if (m == 0) return I(1);
 	if (m > 0) return A(onNth(m - 1), onNth(m - 1));
 	if (m < 0) cout << "Error calling function onNth: m < 0\n";
 }
+*/
 
+static int fun_thingy;
+
+static string expect;
+	// type_vars contains mapping of 2 types to all variables assigned to them
+	// names of variables of type int are listed at type_vars[0] 
+	// names of variables of type bool are listed at type_vars[1]
+	// this will probably be used internally as types are being assigned
+static vector<list<string>> type_vars; 
+ExpR2* randExp (vector<list<string>> _type_vars, string _type_being_generated, int _depth) {
+	srand(time(NULL));
+	int random_number = rand() + fun_thingy;
+	fun_thingy++;
+	if (_type_being_generated == "int") {
+		// int generation
+		if (_depth == 0) {
+			if ((random_number % 3) == 0) {
+				mode = Interactive;
+				cout << "read";
+				return R();
+			}
+			else if((random_number % 3) == 1) {
+				cout << "int";
+				return I();
+			}
+			// change so it just find the var of "int" type by using the mapping provided
+			else {
+				string ret_var_name = _type_vars[0].back();
+				cout << "var";
+				return V(ret_var_name);
+			}
+		}
+		else {
+			//complicated stuff implementation
+			if ((random_number % 4) == 0) {
+				int random_number = rand();
+				cout << "neg";
+				return N(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+			}
+			else if ((random_number % 4) == 1) {
+				int random_number = rand();
+				cout << "add";
+				return A(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+			}
+			else if ((random_number % 4) == 2) {
+				cout << "let";
+				int random_number = rand();
+				//list<pair<string, int>> *new_info = new list<pair<string, int>>();
+				//*new_info = *_info;
+				return L(dynamic_cast<VarR0*>(V("x")), randExp(_type_vars, "int", _depth - 1), randExp(_type_vars, "int", _depth - 1));
+			}
+			else {
+				cout << "if";
+				int random_number = rand();
+				return IF(randExp(_type_vars, "bool", _depth - 1), (randExp(_type_vars, "int", _depth - 1)), (randExp(_type_vars, "int", _depth - 1)));
+			}
+			/*
+			
+			either		(if (randExp SIGMA Bool 1) (RandExp SIGMA Num 1) (RandExp SIGMA Num 1))
+			or			(let x := xe in b [ where xe := randExp SIGMA Any 1 ] [ where b := randExp SIGMA(+ type x) Int 1 ])
+			or			(like below)
+
+			if ((random_number % 4) == 0)
+				return N(randExp(_type_vars, "int", _depth - 1));
+			else if ((random_number % 4) == 1)
+				return A(randExp(_type_vars, "int", _depth - 1), randExp(_type_vars, "int", _depth - 1));
+			else if ((random_number % 4) == 2) {
+				list<pair<string, int>> *new_info = new list<pair<string, int>>();
+				*new_info = *_info;
+				return L(dynamic_cast<VarR0*>(V("x")), randExp(_type_vars,"int", _depth - 1), randExp(_type_vars, "int", _depth - 1));
+			}
+			else {
+				return IF(randExp(_type_vars, "bool", _depth - 1) (randExp(_type_vars, "int", _depth - 1)) (randExp(_type_vars, "int", _depth - 1)));
+			}
+
+			*/
+		}
+	}
+	if (_type_being_generated == "bool") {
+		if (_depth == 0) {
+			if ((random_number % 3) == 0) {
+				cout << "true";
+				return T();
+			}
+			else if((random_number % 3) == 1) {
+				cout << "false";
+				return F();
+			}
+			// change so it just find the var of "bool" type by using the mapping provided
+			else {
+				cout << "var - bool";
+				string ret_var_name = _type_vars[1].back();
+				return V(ret_var_name);
+			}
+		}
+		else {
+			//complicated stuff implementation
+			/*
+			
+			 Bool 2	   = either		(cmp (rande SIGMA Num 1) (rande SIGMA Num 1)) 
+									 or			(let x := xe in b [ where xe := randExp SIGMA Any 1 ] [ where b := randExp SIGMA(+ type x) Bool 1 ])
+									 or			(if (randExp SIGMA Bool 1) (RandExp SIGMA Bool 1) (RandExp SIGMA Bool 1))
+
+			*/
+			if ((random_number % 4) == 0) {
+				int random_number = rand();
+				cout << "let - bool";
+				return L(dynamic_cast<VarR0*>(V("x")), randExp(_type_vars, "int", _depth - 1), randExp(_type_vars, "bool", _depth - 1));
+			}
+			else if ((random_number % 4) == 1) {
+				int random_number = rand();
+				if ((random_number % 5) == 0) {
+					cout << "equal";
+					return EQ(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+				}
+				else if ((random_number % 5) == 1) {
+					cout << "less=";
+					return LE(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+				}
+				else if ((random_number % 5) == 2) {
+					cout << "less";
+					return LS(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+				}
+				else if ((random_number % 5) == 3) {
+					cout << "greater";
+					return GR(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+				}
+				else {
+					cout << "greater=";
+					return GE(dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)), dynamic_cast<ExpR0*>(randExp(_type_vars, "int", _depth - 1)));
+				}
+			}
+			else if ((random_number % 4) == 2) {
+				cout << "if";
+				int random_number = rand();
+				return IF(randExp(_type_vars, "bool", _depth - 1), (randExp(_type_vars, "bool", _depth - 1)), (randExp(_type_vars, "bool", _depth - 1)));
+			}
+			else {
+				cout << "not - bool";
+				return NOT(randExp(_type_vars, "bool", _depth - 1));
+			}
+		}
+	}
+	else {
+		cout << "\n\t>>> ERROR: Demanded Type (" << _type_being_generated << ") is not supported in R2 language. <<<\n\n";
+		system("Pause");
+		exit(1);
+	}
+}
+ExpR2* randProg (int _depth) { 
+	srand(time(NULL)); 
+	int random_number = rand();
+
+	bool_vars.emplace_back(make_pair("y", true));
+	// really shouldn't be possible to have only var sent back when 0 
+	// but we would manipulate it this way
+	vars_type_mapp.emplace_back(make_pair("x", "int"));
+	vars_type_mapp.emplace_back(make_pair("y", "bool"));
+	// x -> int, y -> string
+	vector<list<string>> type_var_mapping{ {"x"}, {"y"} };
+	if (random_number % 2) {
+		expect = "bool";
+		return randExp(type_var_mapping, "bool", _depth);
+	}
+	else {
+		expect = "int";
+		return randExp (type_var_mapping, "int", _depth);
+	}	
+}
+
+static int random_number;
+// randP testing functions' definitions
+/*
+
+// randP testing functions' definitions
 ExpR0* randP(list<pair<string, int>> *_info, int n) {
 	(*_info).push_back(std::make_pair("x", 10));
+	srand(time(NULL));
 	if (n == 0) {
-		int temp_1 = rand();
-		if ((temp_1 % 3) == 0) {
+		random_number = rand();
+		if ((random_number % 3) == 0) {
 			mode = Interactive;
 			return R();
 		}
-		else if((temp_1 % 3) == 1) {
+		else if((random_number % 3) == 1) {
 			return I();
 		}
 		else {
@@ -5845,10 +5998,10 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		}
 	}
 	else {
-		int temp_2 = rand() % 3;
-		if ((temp_2) == 0)
+		random_number = rand() % 3;
+		if ((random_number) == 0)
 			return N(randP(_info,n - 1));
-		else if ((temp_2) == 1) 
+		else if ((random_number) == 1)
 			return A(randP(_info,n - 1), randP(_info,n - 1));
 		else {
 			list<pair<string, int>> *new_info = new list<pair<string, int>>();
@@ -5857,6 +6010,8 @@ ExpR0* randP(list<pair<string, int>> *_info, int n) {
 		}
 	}
 }
+
+
 */
 
 // -----------------------------------------------------------------------------------------------------------

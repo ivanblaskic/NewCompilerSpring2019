@@ -101,42 +101,55 @@ int main() {
 
 		mode = Interactive;
 		
-		// R1 uniquify & resolve_complex test_suite & full compiler 
-		// R1 uniquify function test_suite
 		list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>> *variables_mapping = new list<pair<unique_ptr<VarR0>, unique_ptr<VarR0>>>();
+
+		// R1 uniquify & resolve_complex & full compiler test_suite  
+		/*
 		// let ([x 5] [+(L [(x 6) x]) (x)]) --> add(let ([x 5] [+(L [(x 6) x]) (x)]), let([x 2] [+ (read) (x)]))
 		//ExpR0 *te = L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x")));
 		//ExpR0 *te = A(L(dynamic_cast<VarR0*>(V("x")), I(5), A(L(dynamic_cast<VarR0*>(V("x")), I(6), V("x")), V("x"))),L(V("x"),I(2),S(V("x"),I(2))));
+		*/
 		
-		// ExpR2 Testing
+		// ExpR2 Test 1
+		/*
 		// if ((< (let [x 5] x+2) (8)) (Int (1)) (Int (0)))
 		//ExpR2 *te = IF(LS(L(V("x"), I(5), A(V("x"),I(2))),I(8)),(I(1)),I(0));
-		// if ((let (x true) (x)) (Int (1)) (Int (0)))
-		ExpR2 *te = IF(L(V("x"), I(5), L(V("y"), I(6), LS(V("x"),V("y")))),T(),F());
+		*/
 
+		// last test
+		// if ((let (x true) (x)) (Int (1)) (Int (0)))
+		//ExpR2 *te = IF(L(V("x"), I(5), L(V("y"), I(6), LS(V("x"),V("y")))),T(),F());
+
+		// test cases expressions
+		/*
 		// let ([x 5] [+ (x) (2)]) 
 		//ExpR0 *te = L((dynamic_cast<VarR0*>(V("x"))), I(5), A((V("x")), I(2)));
 		// (+ (5) (6))
 		//ExpR0 *te = A(I(5), I(2));
 		// let ([x (read)][+ (x) (5)])
 		//ExpR0 *te = L(V("x"), R(), A(V("x"), I(5)));
+		*/
 
+		// last test
 		// ExpR2 Testing
-		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
-		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
-		cout << tp->prnt() << " = " << tp->intrp();
-		//cout << result;
-		cout << "\n\n";
-		system("Pause");
-		system("Cls");
+		/*
+			cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
+			ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
+			cout << tp->prnt() << " = " << tp->intrp();
+			//cout << result;
+			cout << "\n\n";
+			system("Pause");
+			system("Cls");
+		*/
 
+		// last cutoff
 		/*
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE: \n\n";
 		ProgR0 *tp = new ProgR0(new list<pair<string, int>>(), te);
 		*/
 
+		// last cutoff
 		/*
-		//last cut-off
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES: \n\n";
 		ProgR0 *tp_uniq = new ProgR0(new list<pair<string, int>>(), te->uniquify(variables_mapping));
 		string result_uniq = tp_uniq->intrp();
@@ -146,7 +159,7 @@ int main() {
 		system("Cls");
 		*/
 
-
+		// checking correctness of evaluation of R0 code
 		/* 
 		// comment these 5 out 
 		if (result == result_uniq)
@@ -158,7 +171,7 @@ int main() {
 	
 		// R1 resolve_complex function test_suite
 	
-		//last cut-off
+		// last cutoff
 		/*
 		cout << "\n\nPROGRAM EXECUTION IN R0 LANGUAGE WITH UNIQUE VARIABLE NAMES AND SIMPLIFIED FOR COMPILATION: \n\n";
 
@@ -173,8 +186,8 @@ int main() {
 		*/
 	
 
-		/* 
 		// R1 optimization test_suite
+		/* 
 		// success * 5
 		// Let([X 5] Let([Y 95] X+Y)) = 100
 		ExpR0 *te_1 = L(V("x"), I(5), L(V("y"), I(95), A(V("x"), V("y"))));
@@ -227,8 +240,8 @@ int main() {
 		system("Pause");
 		*/
 		
-		/*
 		// R1 test_suite
+		/*
 		// success * 12
 		// Let([x 4+5] Let([x 3+4] -x) + x) = 2
 		ExpR0 *te_1 = L(V("x"), A(I(4), I(5)), A(L(V("x"), A(I(3), I(4)), N(V("x"))), V("x")));
@@ -262,8 +275,8 @@ int main() {
 		system("Pause");
 		*/
 	
-		/*
 		// optimization test
+		/*
 		mode = Interactive;
 
 		// success * 3+
@@ -309,8 +322,8 @@ int main() {
 		system("Pause");
 		*/
 		
+		// function onNth test
 		/*
-		// function onNth test 
 		mode = Interactive;
 		int m_test = 5;
 		ProgR0 *test_program_onNth = new ProgR0(NULL, onNth(m_test));
@@ -320,12 +333,33 @@ int main() {
 		system("Pause");
 		*/
 	
-		/* 
+		mode = Interactive;
+		static list<pair<string, int>> init_list_info;
+		init_list_info.emplace_back(make_pair("x", 5));
+		for (int i = 0; i < 5; ++i) {
+			ProgR0 *test_program_randProg = new ProgR0(&init_list_info, randProg(3));
+			cout << test_program_randProg->prnt() << " = " << test_program_randProg->intrp();
+			cout << "\n\n";
+			system("Pause");
+		}
+
+		// new optimization test
+		/*
+		ExpR2 *te = IF(L(V("x"), I(5), L(V("y"), I(6), LS(V("x"),V("y")))),T(),F());;
+		cout << te->toString() << " = " << te->eval(NULL);
+		cout << "\n\n";
+		ExpR0 *te_opt = te->opt();
+		cout << te_opt->toString() << " = " << te_opt->eval(NULL);
+		cout << "\n\n";
+		system("Pause");
+		*/
+
 		// randP function for R1 successfully tested
 		// L ( [x (L[(x L[(x (+ x (read))) (-[read])]) (+ [-(read)] [Let([x read] [read])])])] 
 		//		[Let([x (+ [+ (read) (read)] [Let ([x x] [x])])] [+ (-[read]) (+ [read] [x])])]) = 20
 		// 
 		// function randP test
+		/*
 		mode = Interactive;
 		list<pair<std::string, int>> *info = new list<pair<std::string, int>>();
 	
@@ -338,8 +372,8 @@ int main() {
 		}
 		*/
 	
-		/*
 		// program 1 definition
+		/*
 		// (+ [-(5) (+ [read] 10)]) = (-5) + (10 + read) = 5 + read
 		mode = Interactive;
 		ExpR0 *test_suite1 = new AddR0(	new NegR0(	new NumR0(5)),
@@ -353,8 +387,8 @@ int main() {
 		system("Pause");
 		*/
 		
-		/*
 		// program 2 definition
+		/*
 		// (- [+ (+ [- 2] [+ 14 (-2)]) -(23)]) = - [((14-2) - 2) - 23] = -12 + 2 + 23 = 13
 		ExpR0 *test_suite2 = new NegR0(	new AddR0(	new AddR0(	new NegR0(	new NumR0(2)),
 																new AddR0(	new NumR0(14),
@@ -374,8 +408,8 @@ int main() {
 		system("Pause");
 		*/
 		
-		/*
 		// program 4 definition
+		/*
 		// (+ [read] [+ (+ [10] [-(7)]) (+ [14] [read])]) = (+ read [+ 3 (+ 14 read)]) = (+ 17 (+ read read)) 
 		ExpR0 *test_suite4 = A(R(), A(A(I(10), N(I(7))), A(I(14), R())));	
 		cout << "is it (17+x+y)?" << "\n";
@@ -401,8 +435,8 @@ int main() {
 		system("Pause");
 		*/
 	
+		// programs' 7-12 definitions
 		/*
-		// program 7 definition
 		// (+ (14) (-291)) = -277
 		ExpR0 *test_suite7 = A(I(14), N(I(291)));
 		cout << "is it -277?\n";
@@ -462,6 +496,7 @@ int main() {
 	//				 ----   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
+		// C0 native program test
 		/*
 		// label tester
 		std::shared_ptr<LabelC0> lbl1_tester(new LabelC0("main:"));
@@ -492,7 +527,7 @@ int main() {
 		label_tail_list.emplace_back(std::make_pair(lbl2_tester, tail_end));
 		*/
 
-		//last cut-off 
+		// last cutoff 
 		/*
 		ProgC0 *program = new ProgC0();
 		program->execute();
@@ -510,7 +545,7 @@ int main() {
 	//				-	-   -----			-------	----- -   - -----
 	// -----------------------------------------------------------------------------------------------------------
 
-		//last cut-off
+		// last cutoff
 		/*
 		cout << "\n\nPROGRAM EXECUTION IN X0 LANGUAGE: \n\n";
 
@@ -581,7 +616,7 @@ int main() {
 		system("Cls");
 		*/
 
-		//ostream successful but compiled version not looking properly
+		// ostream successful but compiled version not looking properly
 		/*
 		std::list<pair<std::shared_ptr<LabelX0>, std::shared_ptr<BlockX0>>>::iterator it;
 		string temp;
@@ -594,7 +629,7 @@ int main() {
 		myfile.close();
 		*/
 
-		//last cut-off
+		// last cut-off
 		/*
 		
 		print_variables_x0();
@@ -638,7 +673,7 @@ int main() {
 		
 		*/
 
-
+		// X0 native program test
 		/*
 
 		// label-block init
