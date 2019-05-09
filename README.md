@@ -77,12 +77,12 @@ Compiler Written in C++ for Jay to Review
 + Extend your interpreter from R1 to R2.
 + Write type-checker tests for R2.
 + Write a type-checker for R2.
++ Extend your random generation function from R1 to R2.
++ Write some R2-specific optimizer tests.
 - 
---> April 28th, 10:16pm <--
-- C- 
+--> May 9th, 10:16pm <--
+- C 
 - 
-- Extend your random generation function from R1 to R2.
-- Write some R2-specific optimizer tests.
 - Extend your optimizer from R1 to R2.
 - Extend the uniquify pass from R1 to R2 programs, with a few test cases to check its output.
 - Extend your data types from C0 to C1.
